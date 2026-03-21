@@ -27,6 +27,10 @@ function OffersGridNew({ categoryId, subcategoryId, filters, onViewListing, sear
 
   async function loadListings() {
     setLoading(true);
+
+    const { data: { user } } = await supabase.auth.getUser();
+    console.log('Current user:', user?.id);
+
     let query = supabase
       .from('listings')
       .select('*, cities(*), categories(*), subcategories(*)')
@@ -71,6 +75,9 @@ function OffersGridNew({ categoryId, subcategoryId, filters, onViewListing, sear
     }
 
     const { data, error } = await query;
+
+    console.log('Listings loaded:', data?.length);
+    console.log('First listing user_id:', data?.[0]?.user_id);
 
     if (error) {
       console.error('Error loading listings:', error);
