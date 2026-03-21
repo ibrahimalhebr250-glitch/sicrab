@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { ArrowRight, Upload, X, MapPin, Package, DollarSign, FileText, Image as ImageIcon, Check, ChevronLeft, User } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import PhoneVerification from '../components/PhoneVerification';
 import ImageUpload from '../components/ImageUpload';
 
@@ -47,7 +47,9 @@ interface AddListingProps {
 export default function AddListing({ onBack, onSuccess }: AddListingProps) {
   const { user, profile } = useAuth();
   const navigate = useNavigate();
+  const { id: editId } = useParams<{ id: string }>();
   const [step, setStep] = useState(1);
+  const [isEditMode, setIsEditMode] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
   const [subcategories, setSubcategories] = useState<Subcategory[]>([]);
   const [categoryFields, setCategoryFields] = useState<CategoryField[]>([]);
@@ -76,7 +78,73 @@ export default function AddListing({ onBack, onSuccess }: AddListingProps) {
   useEffect(() => {
     loadCategories();
     loadCities();
-  }, []);
+
+    if (editId) {
+      console.log('📝 [AddListing] Edit mode - Loading listing:', editId);
+      setIsEditMode(true);
+      loadListingData(editId);
+    }
+  }, [editId]);
+
+  async function loadListingData(listingId: string) {
+    try {
+      console.log('🔍 [AddListing] Fetching listing data for:', listingId);
+
+      const { data, error } = await supabase
+        .from('listings')
+        .select('*')
+        .eq('id', listingId)
+        .maybeSingle();
+
+      if (error) {
+        console.error('❌ [AddListing] Error loading listing:', error);
+        throw error;
+      }
+
+      if (!data) {
+        console.error('❌ [AddListing] Listing not found');
+        alert('الإعلان غير موجود');
+        navigate('/my-listings');
+        return;
+      }
+
+      console.log('✅ [AddListing] Listing loaded:', data);
+      console.log('👤 [AddListing] Listing owner:', data.user_id);
+      console.log('👤 [AddListing] Current user:', user?.id);
+
+      if (data.user_id !== user?.id) {
+        console.error('❌ [AddListing] Not the owner of this listing');
+        alert('ليس لديك صلاحية لتعديل هذا الإعلان');
+        navigate('/my-listings');
+        return;
+      }
+
+      setFormData({
+        category_id: data.category_id || '',
+        subcategory_id: data.subcategory_id || '',
+        city_id: data.city_id || '',
+        title: data.title || '',
+        description: data.description || '',
+        price: data.price?.toString() || '',
+        price_type: data.price_type || 'fixed',
+        contact_name: data.contact_name || '',
+        phone: data.phone || '',
+        whatsapp_number: data.whatsapp_number || '',
+      });
+
+      if (data.images && Array.isArray(data.images)) {
+        setImageUrls(data.images);
+      }
+
+      if (data.custom_fields) {
+        setCustomFieldsData(data.custom_fields);
+      }
+
+      console.log('✅ [AddListing] Form data loaded successfully');
+    } catch (error) {
+      console.error('❌ [AddListing] Error in loadListingData:', error);
+    }
+  }
 
   useEffect(() => {
     if (formData.category_id) {
@@ -174,7 +242,9 @@ export default function AddListing({ onBack, onSuccess }: AddListingProps) {
 
     setLoading(true);
 
-    const { error } = await supabase.from('listings').insert({
+    console.log(isEditMode ? '✏️ [AddListing] Updating listing:' : '➕ [AddListing] Creating listing:', editId);
+
+    const listingData = {
       user_id: user.id,
       category_id: formData.category_id,
       subcategory_id: formData.subcategory_id || null,
@@ -192,21 +262,40 @@ export default function AddListing({ onBack, onSuccess }: AddListingProps) {
       whatsapp_number: formData.whatsapp_number || formData.phone,
       custom_fields: customFieldsData,
       is_active: true,
-    });
+    };
+
+    let error;
+
+    if (isEditMode && editId) {
+      console.log('🔄 [AddListing] Performing UPDATE operation for listing:', editId);
+      const result = await supabase
+        .from('listings')
+        .update(listingData)
+        .eq('id', editId);
+      error = result.error;
+      console.log('📊 [AddListing] Update result:', result);
+    } else {
+      console.log('🆕 [AddListing] Performing INSERT operation');
+      const result = await supabase.from('listings').insert(listingData);
+      error = result.error;
+      console.log('📊 [AddListing] Insert result:', result);
+    }
 
     setLoading(false);
 
     if (error) {
-      console.error('Error creating listing:', error);
-      alert('حدث خطأ أثناء إضافة الإعلان');
+      console.error('❌ [AddListing] Error saving listing:', error);
+      alert('حدث خطأ أثناء حفظ الإعلان: ' + error.message);
       return;
     }
 
-    alert('تم إضافة الإعلان بنجاح!');
+    console.log('✅ [AddListing] Listing saved successfully');
+    alert(isEditMode ? 'تم تحديث الإعلان بنجاح!' : 'تم إضافة الإعلان بنجاح!');
+
     if (onSuccess) {
       onSuccess();
     } else {
-      navigate('/');
+      navigate('/my-listings');
     }
   }
 
@@ -224,7 +313,7 @@ export default function AddListing({ onBack, onSuccess }: AddListingProps) {
             <ArrowRight className="w-5 h-5 text-gray-700" />
           </button>
           <div className="flex-1 text-center mx-4">
-            <h1 className="text-lg font-bold text-gray-900">إضافة إعلان</h1>
+            <h1 className="text-lg font-bold text-gray-900">{isEditMode ? 'تعديل إعلان' : 'إضافة إعلان'}</h1>
             <p className="text-xs text-gray-500 mt-0.5">خطوة {step} من {totalSteps}</p>
           </div>
           <div className="w-10"></div>

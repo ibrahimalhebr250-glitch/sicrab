@@ -27,6 +27,7 @@ export default function Router() {
       <Route path="/" element={<HomePage />} />
       <Route path="/search" element={<SearchPage />} />
       <Route path="/listing/:slug" element={<ListingDetails />} />
+      <Route path="/listing/:id/edit" element={<AddListing />} />
       <Route path="/add" element={<AddListing />} />
       <Route path="/login" element={<Login />} />
       <Route path="/profile" element={<Profile />} />

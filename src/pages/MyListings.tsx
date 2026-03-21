@@ -31,16 +31,20 @@ export default function MyListings() {
 
   const fetchMyListings = async () => {
     try {
+      console.log('🔍 [MyListings] Fetching listings for user:', user?.id);
+
       const { data, error } = await supabase
         .from('listings')
         .select('*')
         .eq('user_id', user?.id)
         .order('created_at', { ascending: false });
 
+      console.log('📦 [MyListings] Fetched listings:', data?.length, 'Error:', error);
+
       if (error) throw error;
       setListings(data || []);
     } catch (error) {
-      console.error('Error fetching listings:', error);
+      console.error('❌ [MyListings] Error fetching listings:', error);
     } finally {
       setLoading(false);
     }
@@ -49,6 +53,9 @@ export default function MyListings() {
   const handleDelete = async (id: string) => {
     if (!confirm('هل أنت متأكد من حذف هذا الإعلان؟')) return;
 
+    console.log('🗑️ [MyListings] Attempting to delete listing:', id);
+    console.log('👤 [MyListings] Current user:', user?.id);
+
     setDeletingId(id);
     try {
       const { error } = await supabase
@@ -56,11 +63,16 @@ export default function MyListings() {
         .delete()
         .eq('id', id);
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ [MyListings] Delete error:', error);
+        throw error;
+      }
+
+      console.log('✅ [MyListings] Successfully deleted listing:', id);
       setListings(listings.filter(listing => listing.id !== id));
     } catch (error) {
-      console.error('Error deleting listing:', error);
-      alert('حدث خطأ أثناء حذف الإعلان');
+      console.error('❌ [MyListings] Error deleting listing:', error);
+      alert('حدث خطأ أثناء حذف الإعلان: ' + (error as any)?.message);
     } finally {
       setDeletingId(null);
     }
