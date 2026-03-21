@@ -44,6 +44,15 @@ interface AddListingProps {
   onSuccess?: () => void;
 }
 
+const PHONE_REGEX = /(\+?966|00966|0)?[\s\-]?5[\s\-]?\d[\s\-]?\d[\s\-]?\d[\s\-]?\d[\s\-]?\d[\s\-]?\d[\s\-]?\d[\s\-]?\d|(\+?[0-9]{7,})/g;
+
+function stripPhoneNumbers(value: string): { cleaned: string; found: boolean } {
+  const found = PHONE_REGEX.test(value);
+  PHONE_REGEX.lastIndex = 0;
+  const cleaned = value.replace(PHONE_REGEX, '');
+  return { cleaned, found };
+}
+
 const DRAFT_KEY = 'addListingDraft';
 
 function loadDraft() {
@@ -100,6 +109,7 @@ export default function AddListing({ onBack, onSuccess }: AddListingProps) {
 
   const [customFieldsData, setCustomFieldsData] = useState<Record<string, string>>(draft?.customFieldsData ?? {});
   const [showDraftBanner, setShowDraftBanner] = useState<boolean>(!editId && !!draft);
+  const [phoneWarning, setPhoneWarning] = useState<string | null>(null);
 
   useEffect(() => {
     if (!editId) {
@@ -227,7 +237,16 @@ export default function AddListing({ onBack, onSuccess }: AddListingProps) {
   }
 
   function handleInputChange(field: string, value: string) {
-    setFormData({ ...formData, [field]: value });
+    if (field === 'title' || field === 'description') {
+      const { cleaned, found } = stripPhoneNumbers(value);
+      if (found) {
+        setPhoneWarning('لا يمكن إدخال أرقام الجوال في هذا الحقل. أدخل رقم جوالك في خانة "رقم الجوال" بالخطوة الأخيرة.');
+        setTimeout(() => setPhoneWarning(null), 5000);
+      }
+      setFormData({ ...formData, [field]: cleaned });
+    } else {
+      setFormData({ ...formData, [field]: value });
+    }
   }
 
   function handleCustomFieldChange(fieldKey: string, value: string) {
@@ -547,6 +566,15 @@ export default function AddListing({ onBack, onSuccess }: AddListingProps) {
         </div>
       </div>
 
+      {phoneWarning && (
+        <div className="fixed top-16 left-0 right-0 z-50 mx-4 mt-2 flex items-start gap-3 bg-red-600 text-white px-4 py-3.5 rounded-2xl shadow-xl animate-fade-in">
+          <div className="w-6 h-6 bg-white/20 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+            <span className="text-xs font-black">!</span>
+          </div>
+          <p className="text-sm font-medium leading-snug">{phoneWarning}</p>
+        </div>
+      )}
+
       <div className="flex-1 overflow-y-auto pb-24">
         <div className="max-w-2xl mx-auto px-4 py-6">
           {step === 1 && (
@@ -609,6 +637,7 @@ export default function AddListing({ onBack, onSuccess }: AddListingProps) {
                   placeholder="مثال: حديد سكراب نظيف جداً"
                   className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all outline-none"
                 />
+                <p className="text-xs text-gray-400 mt-1.5 text-right">ممنوع ذكر أرقام الجوال هنا</p>
               </div>
 
               <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
@@ -622,6 +651,7 @@ export default function AddListing({ onBack, onSuccess }: AddListingProps) {
                   rows={4}
                   className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all outline-none resize-none"
                 />
+                <p className="text-xs text-gray-400 mt-1.5 text-right">ممنوع ذكر أرقام الجوال هنا — أدخله في خانة التواصل بالخطوة الأخيرة</p>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
