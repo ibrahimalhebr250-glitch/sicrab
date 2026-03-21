@@ -136,24 +136,24 @@ export default function OffersGrid({ categoryId, subcategoryId, filters, onViewL
   }
 
   return (
-    <div className="bg-white min-h-screen">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
-        <div className="mb-6 flex items-center justify-between bg-gradient-to-r from-gray-50 to-white rounded-2xl p-4 shadow-sm border-2 border-gray-100">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-teal-500 to-emerald-500 rounded-xl flex items-center justify-center shadow-lg shadow-teal-200">
-              <span className="text-white font-bold text-sm">{listings.length}</span>
+    <div className="bg-white min-h-screen pb-24">
+      <div className="max-w-7xl mx-auto px-3 py-4">
+        <div className="mb-4 flex items-center justify-between bg-gradient-to-r from-teal-50 to-emerald-50 rounded-2xl p-3 shadow-md border-2 border-teal-200">
+          <div className="flex items-center gap-2">
+            <div className="w-11 h-11 bg-gradient-to-br from-teal-600 to-emerald-600 rounded-xl flex items-center justify-center shadow-lg">
+              <span className="text-white font-black text-base">{listings.length}</span>
             </div>
             <div>
-              <span className="text-sm font-bold text-gray-800 block">إعلان متاح</span>
-              <span className="text-xs text-gray-500">جاهز للمعاينة</span>
+              <span className="text-sm font-black text-gray-900 block">إعلان متاح</span>
+              <span className="text-xs text-gray-600 font-semibold">جاهز للمعاينة</span>
             </div>
           </div>
           <select
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value)}
-            className="text-sm border-2 border-gray-200 rounded-xl px-4 py-2.5 focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-100 bg-white font-semibold shadow-sm hover:shadow-md transition-all"
+            className="text-sm border-2 border-teal-300 rounded-xl px-3 py-2 focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-200 bg-white font-bold shadow-md"
           >
-            <option value="created_at">الأحدث أولاً</option>
+            <option value="created_at">الأحدث</option>
             <option value="views">الأكثر مشاهدة</option>
             <option value="price_asc">الأقل سعراً</option>
             <option value="price_desc">الأعلى سعراً</option>
@@ -167,7 +167,7 @@ export default function OffersGrid({ categoryId, subcategoryId, filters, onViewL
         ) : (
           <div className="space-y-4">
             {listings.map((listing) => (
-              <ProductCard key={listing.id} listing={listing} onClick={() => onViewListing?.(listing.id)} />
+              <ModernListingCard key={listing.id} listing={listing} onClick={() => onViewListing?.(listing.id)} />
             ))}
           </div>
         )}
@@ -176,7 +176,7 @@ export default function OffersGrid({ categoryId, subcategoryId, filters, onViewL
   );
 }
 
-function ProductCard({ listing, onClick }: { listing: ListingWithPromotion; onClick: () => void }) {
+function ModernListingCard({ listing, onClick }: { listing: ListingWithPromotion; onClick: () => void }) {
   const imageUrl = listing.images && listing.images.length > 0 ? listing.images[0] : 'https://images.pexels.com/photos/1108101/pexels-photo-1108101.jpeg';
 
   function getTimeAgo(dateString: string) {
@@ -186,93 +186,102 @@ function ProductCard({ listing, onClick }: { listing: ListingWithPromotion; onCl
     const diffInHours = Math.floor(diffInMs / (1000 * 60 * 60));
     const diffInDays = Math.floor(diffInHours / 24);
 
-    if (diffInHours < 1) return 'قبل أقل من ساعة';
-    if (diffInHours < 24) return `قبل ${diffInHours} ساعة`;
+    if (diffInHours < 1) return 'قبل ساعة';
+    if (diffInHours < 24) return `قبل ${diffInHours}س`;
     if (diffInDays === 1) return 'قبل يوم';
     if (diffInDays < 7) return `قبل ${diffInDays} أيام`;
-    if (diffInDays < 14) return 'قبل أسبوع';
-    if (diffInDays < 30) return `قبل ${Math.floor(diffInDays / 7)} أسابيع`;
-    return `قبل ${Math.floor(diffInDays / 30)} شهر`;
+    return `قبل ${Math.floor(diffInDays / 7)} أسابيع`;
   }
 
   return (
     <div
       onClick={onClick}
-      className={`group rounded-3xl overflow-hidden hover:shadow-2xl transition-all duration-300 cursor-pointer border-3 w-full transform hover:scale-[1.01] ${
+      className={`relative overflow-hidden cursor-pointer transition-all duration-300 ${
         listing.is_featured
-          ? 'bg-gradient-to-br from-amber-50 via-yellow-50 to-orange-50 border-amber-300 hover:border-amber-400 shadow-xl shadow-amber-200/50'
-          : 'bg-white border-gray-200 hover:border-teal-300 hover:shadow-xl'
+          ? 'bg-gradient-to-br from-amber-100 via-yellow-100 to-orange-100 shadow-2xl'
+          : 'bg-white shadow-lg hover:shadow-2xl'
       }`}
-      style={{ borderWidth: '3px' }}
+      style={{
+        borderRadius: '24px',
+        border: listing.is_featured ? '4px solid rgb(251, 191, 36)' : '3px solid rgb(229, 231, 235)',
+        minHeight: '180px'
+      }}
     >
-      <div className="flex flex-row h-40 md:h-48">
-        <div className="flex-1 min-w-0 flex flex-col justify-between p-5 md:p-6">
-          <div className="space-y-3">
-            <div className="flex items-start justify-between gap-3">
-              <h3 className="flex-1 text-xl md:text-2xl font-black text-gray-900 text-right line-clamp-2 group-hover:text-teal-600 transition-colors leading-tight">
+      <div className="flex flex-row" style={{ height: '180px' }}>
+        <div className="flex-1 flex flex-col justify-between p-4" style={{ minWidth: '0' }}>
+          <div>
+            <div className="flex items-start justify-between gap-2 mb-3">
+              <h3 className="flex-1 font-black text-gray-900 line-clamp-2 leading-tight" style={{ fontSize: '19px' }}>
                 {listing.title}
               </h3>
               <button
                 onClick={(e) => { e.stopPropagation(); }}
-                className="w-11 h-11 bg-gradient-to-br from-white via-gray-50 to-gray-100 rounded-2xl flex items-center justify-center transition-all shadow-lg hover:shadow-xl hover:scale-110 border-3 border-gray-200 hover:border-red-300 flex-shrink-0"
-                style={{ borderWidth: '3px' }}
+                className="flex-shrink-0 bg-white rounded-2xl flex items-center justify-center transition-transform hover:scale-110 shadow-lg"
+                style={{ width: '44px', height: '44px', border: '3px solid rgb(254, 202, 202)' }}
               >
-                <Heart className="w-5 h-5 text-red-500" strokeWidth={3} />
+                <Heart className="text-red-500" style={{ width: '22px', height: '22px', strokeWidth: 3 }} />
               </button>
             </div>
 
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="px-4 py-1.5 bg-gradient-to-r from-blue-100 to-cyan-100 border-2 border-blue-300 text-blue-800 text-sm font-black rounded-xl shadow-sm">
+            <div className="flex items-center gap-2 mb-3 flex-wrap">
+              <span className="bg-gradient-to-r from-blue-200 to-cyan-200 text-blue-900 font-black rounded-xl shadow-sm px-3 py-1" style={{ fontSize: '13px', border: '2px solid rgb(147, 197, 253)' }}>
                 {listing.condition}
               </span>
-              <span className="px-4 py-1.5 bg-gradient-to-r from-gray-100 to-slate-100 border-2 border-gray-300 text-gray-800 text-sm font-black rounded-xl shadow-sm flex items-center gap-1.5">
+              <span className="bg-gradient-to-r from-gray-200 to-slate-200 text-gray-900 font-black rounded-xl shadow-sm px-3 py-1 flex items-center gap-1" style={{ fontSize: '13px', border: '2px solid rgb(209, 213, 219)' }}>
                 <span>{listing.quantity}</span>
-                <span className="text-gray-600">{listing.unit}</span>
+                <span>{listing.unit}</span>
               </span>
             </div>
           </div>
 
-          <div className="space-y-3">
-            <div className="flex items-baseline gap-2 flex-wrap">
-              <div className="text-3xl md:text-4xl font-black bg-gradient-to-r from-teal-600 via-emerald-600 to-green-600 bg-clip-text text-transparent leading-none">
+          <div>
+            <div className="flex items-baseline gap-2 mb-2 flex-wrap">
+              <div className="font-black bg-gradient-to-r from-teal-600 via-emerald-600 to-green-600 bg-clip-text text-transparent" style={{ fontSize: '34px', lineHeight: '1' }}>
                 {listing.price.toLocaleString()}
               </div>
-              <span className="text-base font-black text-gray-700">ريال</span>
-              {listing.price_type === 'per_unit' && <span className="text-sm text-gray-600 font-bold">/ {listing.unit}</span>}
-              {listing.price_type === 'negotiable' && <span className="text-sm text-amber-700 font-black px-3 py-1 bg-amber-100 rounded-lg border-2 border-amber-300">قابل للتفاوض</span>}
+              <span className="font-black text-gray-800" style={{ fontSize: '16px' }}>ريال</span>
+              {listing.price_type === 'per_unit' && <span className="text-gray-600 font-bold" style={{ fontSize: '13px' }}>/ {listing.unit}</span>}
+              {listing.price_type === 'negotiable' && (
+                <span className="text-amber-900 font-black px-2 py-0.5 bg-amber-200 rounded-lg" style={{ fontSize: '12px', border: '2px solid rgb(251, 191, 36)' }}>
+                  قابل للتفاوض
+                </span>
+              )}
             </div>
 
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-amber-100 to-orange-100 rounded-xl border-2 border-amber-300 shadow-sm">
-                <MapPin className="w-4 h-4 text-amber-700" strokeWidth={3} />
-                <span className="font-black text-sm text-gray-800">{listing.cities?.name_ar}</span>
+              <div className="flex items-center gap-1.5 bg-gradient-to-r from-amber-200 to-orange-200 rounded-xl px-2.5 py-1.5 shadow-sm" style={{ border: '2px solid rgb(251, 191, 36)' }}>
+                <MapPin className="text-amber-800" style={{ width: '16px', height: '16px', strokeWidth: 3 }} />
+                <span className="font-black text-gray-900" style={{ fontSize: '13px' }}>{listing.cities?.name_ar}</span>
               </div>
-              <span className="text-sm text-gray-600 font-bold">{getTimeAgo(listing.created_at)}</span>
+              <span className="text-gray-600 font-bold" style={{ fontSize: '12px' }}>{getTimeAgo(listing.created_at)}</span>
             </div>
           </div>
         </div>
 
-        <div className="relative w-40 md:w-52 flex-shrink-0">
+        <div className="relative flex-shrink-0" style={{ width: '165px' }}>
           <img
             src={imageUrl}
             alt={listing.title}
             className="w-full h-full object-cover"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-black/20"></div>
+          <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-black/20"></div>
+
           {listing.is_featured && (
-            <div className="absolute top-3 right-3 px-3 py-2 bg-gradient-to-r from-amber-600 to-orange-600 text-white text-sm font-black rounded-xl shadow-2xl flex items-center gap-2 border-2 border-white">
-              <Star className="w-4 h-4 fill-white" strokeWidth={3} />
+            <div className="absolute flex items-center gap-1.5 bg-gradient-to-r from-amber-600 to-orange-600 text-white font-black rounded-xl shadow-2xl px-2.5 py-1.5" style={{ top: '12px', right: '12px', fontSize: '13px', border: '2px solid white' }}>
+              <Star style={{ width: '16px', height: '16px', strokeWidth: 3 }} className="fill-white" />
               <span>مميز</span>
             </div>
           )}
+
           {listing.is_pinned && (
-            <div className="absolute top-3 left-3 px-3 py-2 bg-gradient-to-r from-cyan-600 to-blue-600 text-white text-sm font-black rounded-xl shadow-2xl flex items-center gap-2 border-2 border-white">
-              <Pin className="w-4 h-4 fill-white" strokeWidth={3} />
+            <div className="absolute flex items-center gap-1.5 bg-gradient-to-r from-cyan-600 to-blue-600 text-white font-black rounded-xl shadow-2xl px-2.5 py-1.5" style={{ top: '12px', left: '12px', fontSize: '13px', border: '2px solid white' }}>
+              <Pin style={{ width: '16px', height: '16px', strokeWidth: 3 }} className="fill-white" />
               <span>مثبت</span>
             </div>
           )}
-          <div className="absolute bottom-3 right-3 px-3 py-1.5 bg-black/90 backdrop-blur-md text-white text-sm font-black rounded-xl flex items-center gap-2 shadow-xl border-2 border-white/30">
-            <Eye className="w-4 h-4" strokeWidth={3} />
+
+          <div className="absolute flex items-center gap-1.5 bg-black/90 backdrop-blur-md text-white font-black rounded-xl px-2.5 py-1.5 shadow-xl" style={{ bottom: '12px', right: '12px', fontSize: '13px', border: '2px solid rgba(255,255,255,0.3)' }}>
+            <Eye style={{ width: '16px', height: '16px', strokeWidth: 3 }} />
             <span>{listing.views_count}</span>
           </div>
         </div>
