@@ -274,7 +274,7 @@ export default function AddListing({ onBack, onSuccess }: AddListingProps) {
       case 3:
         return true;
       case 4:
-        return true;
+        return !!formData.city_id;
       case 5:
         return !!formData.phone;
       default:
@@ -283,7 +283,7 @@ export default function AddListing({ onBack, onSuccess }: AddListingProps) {
   }
 
   async function handleSubmit() {
-    if (!formData.category_id || !formData.title || !formData.price || !formData.phone) {
+    if (!formData.category_id || !formData.title || !formData.price || !formData.phone || !formData.city_id) {
       alert('الرجاء ملء جميع الحقول المطلوبة');
       return;
     }
@@ -315,8 +315,8 @@ export default function AddListing({ onBack, onSuccess }: AddListingProps) {
       unit: 'قطعة',
       condition: 'مستعمل',
       images: imageUrls,
-      contact_name: formData.contact_name,
-      phone: formData.phone,
+      contact_name: formData.contact_name || formData.phone,
+      contact_phone: formData.phone,
       whatsapp_number: formData.whatsapp_number || formData.phone,
       custom_fields: customFieldsData,
       is_active: true,
