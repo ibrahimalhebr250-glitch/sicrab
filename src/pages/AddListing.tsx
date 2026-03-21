@@ -293,10 +293,6 @@ export default function AddListing({ onBack, onSuccess }: AddListingProps) {
       return;
     }
 
-    if (!profile?.phone_verified) {
-      setShowPhoneVerification(true);
-      return;
-    }
 
     setLoading(true);
 
