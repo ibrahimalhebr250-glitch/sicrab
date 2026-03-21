@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
-import { ArrowRight, Star, Pin, Zap, Check } from 'lucide-react';
+import { ArrowRight, Star, Pin, Zap, Check, CheckCircle } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
+import { useParams, useNavigate } from 'react-router-dom';
 
 interface PromotionPackage {
   id: string;
@@ -17,13 +18,9 @@ interface PromotionPackage {
   display_order: number;
 }
 
-interface PromoteListingProps {
-  listingId: string;
-  onBack: () => void;
-  onSuccess: () => void;
-}
-
-export default function PromoteListing({ listingId, onBack, onSuccess }: PromoteListingProps) {
+export default function PromoteListing() {
+  const { id: listingId } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const { user } = useAuth();
   const [packages, setPackages] = useState<PromotionPackage[]>([]);
   const [selectedPackage, setSelectedPackage] = useState<string | null>(null);
@@ -52,7 +49,7 @@ export default function PromoteListing({ listingId, onBack, onSuccess }: Promote
   }
 
   async function handlePromote() {
-    if (!selectedPackage || !user) return;
+    if (!selectedPackage || !user || !listingId) return;
 
     setLoading(true);
     setError('');
@@ -84,7 +81,7 @@ export default function PromoteListing({ listingId, onBack, onSuccess }: Promote
     }
 
     setLoading(false);
-    onSuccess();
+    navigate('/my-promotions');
   }
 
   const getPackageIcon = (type: string) => {
@@ -118,7 +115,7 @@ export default function PromoteListing({ listingId, onBack, onSuccess }: Promote
       <div className="sticky top-0 z-10 bg-white border-b border-gray-200 shadow-sm">
         <div className="max-w-4xl mx-auto px-4 py-4 flex items-center gap-4">
           <button
-            onClick={onBack}
+            onClick={() => navigate(-1)}
             className="p-2 hover:bg-gray-100 rounded-full transition-colors"
           >
             <ArrowRight className="w-6 h-6 text-gray-700" />
