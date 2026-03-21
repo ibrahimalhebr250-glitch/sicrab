@@ -65,9 +65,6 @@ export default function AddListing({ onBack, onSuccess }: AddListingProps) {
     description: '',
     price: '',
     price_type: 'fixed',
-    quantity: '',
-    unit: 'طن',
-    condition: 'مستعمل',
     contact_name: '',
     phone: '',
     whatsapp_number: '',
@@ -185,9 +182,9 @@ export default function AddListing({ onBack, onSuccess }: AddListingProps) {
       description: formData.description,
       price: parseFloat(formData.price),
       price_type: formData.price_type,
-      quantity: parseFloat(formData.quantity) || 1,
-      unit: formData.unit,
-      condition: formData.condition,
+      quantity: 1,
+      unit: 'قطعة',
+      condition: 'مستعمل',
       images: imageUrls,
       contact_name: formData.contact_name,
       phone: formData.phone,
@@ -378,66 +375,12 @@ export default function AddListing({ onBack, onSuccess }: AddListingProps) {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
-                  <label className="block mb-2">
-                    <span className="text-sm font-bold text-gray-700">الكمية</span>
-                  </label>
-                  <input
-                    type="number"
-                    value={formData.quantity}
-                    onChange={(e) => handleInputChange('quantity', e.target.value)}
-                    placeholder="1"
-                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all outline-none"
-                  />
-                </div>
-
-                <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
-                  <label className="block mb-2">
-                    <span className="text-sm font-bold text-gray-700">الوحدة</span>
-                  </label>
-                  <select
-                    value={formData.unit}
-                    onChange={(e) => handleInputChange('unit', e.target.value)}
-                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all outline-none bg-white"
-                  >
-                    <option value="طن">طن</option>
-                    <option value="كيلو">كيلو</option>
-                    <option value="قطعة">قطعة</option>
-                    <option value="متر">متر</option>
-                    <option value="متر مربع">متر مربع</option>
-                    <option value="لتر">لتر</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-2xl p-5 border-2 border-purple-100">
-                <label className="block mb-3">
-                  <span className="text-sm font-bold text-gray-700">حالة المادة</span>
-                </label>
-                <div className="grid grid-cols-3 gap-3">
-                  {['جديد', 'مستعمل', 'متوسط'].map((condition) => (
-                    <button
-                      key={condition}
-                      onClick={() => handleInputChange('condition', condition)}
-                      className={`py-3 px-2 rounded-xl text-sm font-medium transition-all duration-200 ${
-                        formData.condition === condition
-                          ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-md scale-105'
-                          : 'bg-white text-gray-700 hover:bg-purple-100 hover:scale-105 active:scale-95'
-                      }`}
-                    >
-                      {condition}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
               {categoryFields.length > 0 && (
-                <div className="mt-6 space-y-5">
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className="h-1 flex-1 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full"></div>
-                    <h3 className="text-lg font-bold text-gray-900">تفاصيل إضافية</h3>
-                    <div className="h-1 flex-1 bg-gradient-to-l from-blue-500 to-cyan-500 rounded-full"></div>
+                <div className="space-y-5">
+                  <div className="flex items-center gap-2 mt-6">
+                    <div className="h-1 flex-1 bg-gradient-to-r from-cyan-500 to-blue-500 rounded-full"></div>
+                    <h3 className="text-lg font-bold text-gray-900">مواصفات المادة</h3>
+                    <div className="h-1 flex-1 bg-gradient-to-l from-cyan-500 to-blue-500 rounded-full"></div>
                   </div>
 
                   {categoryFields.map((field) => (
