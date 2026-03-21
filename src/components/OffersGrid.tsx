@@ -16,7 +16,7 @@ interface OffersGridProps {
   searchQuery?: string;
 }
 
-export default function OffersGrid({ categoryId, subcategoryId, filters, onViewListing, searchQuery = '' }: OffersGridProps) {
+function OffersGridNew({ categoryId, subcategoryId, filters, onViewListing, searchQuery = '' }: OffersGridProps) {
   const [listings, setListings] = useState<ListingWithPromotion[]>([]);
   const [loading, setLoading] = useState(true);
   const [sortBy, setSortBy] = useState('created_at');
@@ -289,3 +289,5 @@ function FreshListingCard({ listing, onClick }: { listing: ListingWithPromotion;
     </div>
   );
 }
+
+export default OffersGridNew;
