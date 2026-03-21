@@ -8,6 +8,7 @@ interface Profile {
   phone: string | null;
   avatar_url: string | null;
   bio: string | null;
+  phone_verified?: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -17,10 +18,15 @@ interface AuthContextType {
   profile: Profile | null;
   session: Session | null;
   loading: boolean;
-  signUp: (email: string, password: string, fullName: string, phone?: string) => Promise<{ error: any }>;
-  signIn: (email: string, password: string) => Promise<{ error: any }>;
+  signUp: (phone: string, password: string, fullName: string) => Promise<{ error: any }>;
+  signIn: (phone: string, password: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
   updateProfile: (updates: Partial<Profile>) => Promise<{ error: any }>;
+}
+
+function phoneToEmail(phone: string): string {
+  const digits = phone.replace(/\D/g, '');
+  return `${digits}@sms.local`;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -75,15 +81,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const signUp = async (email: string, password: string, fullName: string, phone?: string) => {
+  const signUp = async (phone: string, password: string, fullName: string) => {
     try {
+      const email = phoneToEmail(phone);
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
           data: {
             full_name: fullName,
-            phone: phone || null,
+            phone: phone,
           },
         },
       });
@@ -98,8 +105,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const signIn = async (email: string, password: string) => {
+  const signIn = async (phone: string, password: string) => {
     try {
+      const email = phoneToEmail(phone);
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
