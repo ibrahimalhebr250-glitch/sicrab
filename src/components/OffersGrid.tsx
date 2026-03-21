@@ -165,9 +165,9 @@ export default function OffersGrid({ categoryId, subcategoryId, filters, onViewL
             <p className="text-gray-500 text-lg font-medium">لا توجد إعلانات متاحة</p>
           </div>
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-4">
             {listings.map((listing) => (
-              <OfferCard key={listing.id} listing={listing} onClick={() => onViewListing(listing.id)} />
+              <ProductCard key={listing.id} listing={listing} onClick={() => onViewListing?.(listing.id)} />
             ))}
           </div>
         )}
@@ -176,7 +176,7 @@ export default function OffersGrid({ categoryId, subcategoryId, filters, onViewL
   );
 }
 
-function OfferCard({ listing, onClick }: { listing: ListingWithPromotion; onClick: () => void }) {
+function ProductCard({ listing, onClick }: { listing: ListingWithPromotion; onClick: () => void }) {
   const imageUrl = listing.images && listing.images.length > 0 ? listing.images[0] : 'https://images.pexels.com/photos/1108101/pexels-photo-1108101.jpeg';
 
   function getTimeAgo(dateString: string) {
@@ -198,79 +198,81 @@ function OfferCard({ listing, onClick }: { listing: ListingWithPromotion; onClic
   return (
     <div
       onClick={onClick}
-      className={`group rounded-2xl overflow-hidden hover:shadow-xl transition-all duration-300 cursor-pointer border-2 w-full ${
+      className={`group rounded-3xl overflow-hidden hover:shadow-2xl transition-all duration-300 cursor-pointer border-3 w-full transform hover:scale-[1.01] ${
         listing.is_featured
-          ? 'bg-gradient-to-br from-amber-50 via-yellow-50 to-orange-50 border-amber-200 hover:border-amber-300 shadow-lg shadow-amber-100'
-          : 'bg-white border-gray-100 hover:border-teal-200 hover:shadow-lg'
+          ? 'bg-gradient-to-br from-amber-50 via-yellow-50 to-orange-50 border-amber-300 hover:border-amber-400 shadow-xl shadow-amber-200/50'
+          : 'bg-white border-gray-200 hover:border-teal-300 hover:shadow-xl'
       }`}
+      style={{ borderWidth: '3px' }}
     >
-      <div className="flex flex-row h-32 md:h-36">
-        <div className="flex-1 min-w-0 flex flex-col justify-between p-4 md:p-5">
-          <div className="space-y-2">
+      <div className="flex flex-row h-40 md:h-48">
+        <div className="flex-1 min-w-0 flex flex-col justify-between p-5 md:p-6">
+          <div className="space-y-3">
             <div className="flex items-start justify-between gap-3">
-              <h3 className="flex-1 text-base md:text-lg font-bold text-gray-900 text-right line-clamp-1 group-hover:text-teal-600 transition-colors leading-snug">
+              <h3 className="flex-1 text-xl md:text-2xl font-black text-gray-900 text-right line-clamp-2 group-hover:text-teal-600 transition-colors leading-tight">
                 {listing.title}
               </h3>
               <button
                 onClick={(e) => { e.stopPropagation(); }}
-                className="w-9 h-9 bg-gradient-to-br from-white to-gray-50 rounded-xl flex items-center justify-center transition-all shadow-md hover:shadow-lg hover:scale-110 border-2 border-gray-100 hover:border-red-200 flex-shrink-0"
+                className="w-11 h-11 bg-gradient-to-br from-white via-gray-50 to-gray-100 rounded-2xl flex items-center justify-center transition-all shadow-lg hover:shadow-xl hover:scale-110 border-3 border-gray-200 hover:border-red-300 flex-shrink-0"
+                style={{ borderWidth: '3px' }}
               >
-                <Heart className="w-4 h-4 text-red-500" strokeWidth={2.5} />
+                <Heart className="w-5 h-5 text-red-500" strokeWidth={3} />
               </button>
             </div>
 
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="px-3 py-1 bg-gradient-to-r from-blue-50 to-cyan-50 border border-blue-200 text-blue-700 text-xs font-bold rounded-lg">
+              <span className="px-4 py-1.5 bg-gradient-to-r from-blue-100 to-cyan-100 border-2 border-blue-300 text-blue-800 text-sm font-black rounded-xl shadow-sm">
                 {listing.condition}
               </span>
-              <span className="px-3 py-1 bg-gradient-to-r from-gray-50 to-slate-50 border border-gray-200 text-gray-700 text-xs font-bold rounded-lg flex items-center gap-1">
+              <span className="px-4 py-1.5 bg-gradient-to-r from-gray-100 to-slate-100 border-2 border-gray-300 text-gray-800 text-sm font-black rounded-xl shadow-sm flex items-center gap-1.5">
                 <span>{listing.quantity}</span>
-                <span className="text-gray-500">{listing.unit}</span>
+                <span className="text-gray-600">{listing.unit}</span>
               </span>
             </div>
           </div>
 
-          <div className="space-y-2">
-            <div className="flex items-baseline gap-2">
-              <div className="text-2xl md:text-3xl font-black bg-gradient-to-r from-teal-600 via-emerald-600 to-green-600 bg-clip-text text-transparent leading-none">
+          <div className="space-y-3">
+            <div className="flex items-baseline gap-2 flex-wrap">
+              <div className="text-3xl md:text-4xl font-black bg-gradient-to-r from-teal-600 via-emerald-600 to-green-600 bg-clip-text text-transparent leading-none">
                 {listing.price.toLocaleString()}
               </div>
-              <span className="text-sm font-bold text-gray-600">ريال</span>
-              {listing.price_type === 'per_unit' && <span className="text-xs text-gray-500 font-semibold">/ {listing.unit}</span>}
-              {listing.price_type === 'negotiable' && <span className="text-xs text-amber-600 font-bold px-2 py-0.5 bg-amber-50 rounded">قابل للتفاوض</span>}
+              <span className="text-base font-black text-gray-700">ريال</span>
+              {listing.price_type === 'per_unit' && <span className="text-sm text-gray-600 font-bold">/ {listing.unit}</span>}
+              {listing.price_type === 'negotiable' && <span className="text-sm text-amber-700 font-black px-3 py-1 bg-amber-100 rounded-lg border-2 border-amber-300">قابل للتفاوض</span>}
             </div>
 
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-1.5 px-2.5 py-1 bg-gradient-to-r from-amber-50 to-orange-50 rounded-lg border border-amber-100">
-                <MapPin className="w-3.5 h-3.5 text-amber-600" strokeWidth={2.5} />
-                <span className="font-bold text-xs text-gray-700">{listing.cities?.name_ar}</span>
+              <div className="flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-amber-100 to-orange-100 rounded-xl border-2 border-amber-300 shadow-sm">
+                <MapPin className="w-4 h-4 text-amber-700" strokeWidth={3} />
+                <span className="font-black text-sm text-gray-800">{listing.cities?.name_ar}</span>
               </div>
-              <span className="text-xs text-gray-500 font-semibold">{getTimeAgo(listing.created_at)}</span>
+              <span className="text-sm text-gray-600 font-bold">{getTimeAgo(listing.created_at)}</span>
             </div>
           </div>
         </div>
 
-        <div className="relative w-36 md:w-44 flex-shrink-0">
+        <div className="relative w-40 md:w-52 flex-shrink-0">
           <img
             src={imageUrl}
             alt={listing.title}
             className="w-full h-full object-cover"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-black/10"></div>
+          <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-black/20"></div>
           {listing.is_featured && (
-            <div className="absolute top-3 right-3 px-2.5 py-1.5 bg-gradient-to-r from-amber-500 to-orange-500 text-white text-xs font-bold rounded-lg shadow-xl flex items-center gap-1.5">
-              <Star className="w-3.5 h-3.5 fill-white" strokeWidth={2.5} />
+            <div className="absolute top-3 right-3 px-3 py-2 bg-gradient-to-r from-amber-600 to-orange-600 text-white text-sm font-black rounded-xl shadow-2xl flex items-center gap-2 border-2 border-white">
+              <Star className="w-4 h-4 fill-white" strokeWidth={3} />
               <span>مميز</span>
             </div>
           )}
           {listing.is_pinned && (
-            <div className="absolute top-3 left-3 px-2.5 py-1.5 bg-gradient-to-r from-cyan-500 to-blue-500 text-white text-xs font-bold rounded-lg shadow-xl flex items-center gap-1.5">
-              <Pin className="w-3.5 h-3.5 fill-white" strokeWidth={2.5} />
+            <div className="absolute top-3 left-3 px-3 py-2 bg-gradient-to-r from-cyan-600 to-blue-600 text-white text-sm font-black rounded-xl shadow-2xl flex items-center gap-2 border-2 border-white">
+              <Pin className="w-4 h-4 fill-white" strokeWidth={3} />
               <span>مثبت</span>
             </div>
           )}
-          <div className="absolute bottom-3 right-3 px-2.5 py-1 bg-black/80 backdrop-blur-md text-white text-xs font-bold rounded-lg flex items-center gap-1.5 shadow-lg">
-            <Eye className="w-3.5 h-3.5" strokeWidth={2.5} />
+          <div className="absolute bottom-3 right-3 px-3 py-1.5 bg-black/90 backdrop-blur-md text-white text-sm font-black rounded-xl flex items-center gap-2 shadow-xl border-2 border-white/30">
+            <Eye className="w-4 h-4" strokeWidth={3} />
             <span>{listing.views_count}</span>
           </div>
         </div>
