@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ArrowRight, Upload, X, MapPin, Package, DollarSign, FileText, Image as ImageIcon, Check, ChevronLeft, User } from 'lucide-react';
+import { ArrowRight, MapPin, FileText, Image as ImageIcon, Check, ChevronLeft, User, Recycle, Box, Factory, Building, Container, Warehouse, Layers, ChevronRight, Sparkles, TrendingUp, Shield } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -302,12 +302,173 @@ export default function AddListing({ onBack, onSuccess }: AddListingProps) {
   const totalSteps = 5;
   const progressPercentage = (step / totalSteps) * 100;
 
+  const getCategoryIcon = (iconName: string) => {
+    const iconMap: Record<string, React.ReactNode> = {
+      Recycle: <Recycle className="w-7 h-7" />,
+      Box: <Box className="w-7 h-7" />,
+      Factory: <Factory className="w-7 h-7" />,
+      Building: <Building className="w-7 h-7" />,
+      Container: <Container className="w-7 h-7" />,
+      Warehouse: <Warehouse className="w-7 h-7" />,
+      Layers: <Layers className="w-7 h-7" />,
+    };
+    return iconMap[iconName] || <Box className="w-7 h-7" />;
+  };
+
+  const categoryColors = [
+    { bg: 'from-orange-500 to-amber-500', light: 'from-orange-50 to-amber-50', border: 'border-orange-200', text: 'text-orange-600', ring: 'ring-orange-300' },
+    { bg: 'from-blue-500 to-cyan-500', light: 'from-blue-50 to-cyan-50', border: 'border-blue-200', text: 'text-blue-600', ring: 'ring-blue-300' },
+    { bg: 'from-emerald-500 to-teal-500', light: 'from-emerald-50 to-teal-50', border: 'border-emerald-200', text: 'text-emerald-600', ring: 'ring-emerald-300' },
+    { bg: 'from-rose-500 to-pink-500', light: 'from-rose-50 to-pink-50', border: 'border-rose-200', text: 'text-rose-600', ring: 'ring-rose-300' },
+    { bg: 'from-violet-500 to-blue-500', light: 'from-violet-50 to-blue-50', border: 'border-violet-200', text: 'text-violet-600', ring: 'ring-violet-300' },
+    { bg: 'from-yellow-500 to-orange-500', light: 'from-yellow-50 to-orange-50', border: 'border-yellow-200', text: 'text-yellow-600', ring: 'ring-yellow-300' },
+  ];
+
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
+      {step === 1 ? (
+        <div className="flex-1 flex flex-col overflow-hidden">
+          <div className="relative bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 px-6 pt-12 pb-8 overflow-hidden">
+            <div className="absolute inset-0">
+              <div className="absolute top-0 left-0 w-72 h-72 bg-amber-500/10 rounded-full -translate-x-1/2 -translate-y-1/2 blur-3xl" />
+              <div className="absolute bottom-0 right-0 w-64 h-64 bg-orange-500/10 rounded-full translate-x-1/3 translate-y-1/3 blur-3xl" />
+              <div className="absolute inset-0 opacity-5" style={{backgroundImage: 'radial-gradient(circle at 1px 1px, white 1px, transparent 0)', backgroundSize: '24px 24px'}} />
+            </div>
+
+            <div className="relative">
+              <button
+                onClick={onBack || (() => navigate('/'))}
+                className="absolute -top-2 right-0 w-9 h-9 flex items-center justify-center bg-white/10 backdrop-blur-sm rounded-full hover:bg-white/20 transition-all"
+              >
+                <ArrowRight className="w-4 h-4 text-white" />
+              </button>
+
+              <div className="flex items-center gap-2 mb-6">
+                <div className="flex gap-1.5">
+                  {[1,2,3,4,5].map(i => (
+                    <div key={i} className={`h-1 rounded-full transition-all duration-300 ${i === 1 ? 'w-8 bg-amber-400' : 'w-4 bg-white/20'}`} />
+                  ))}
+                </div>
+                <span className="text-white/50 text-xs mr-1">١ من ٥</span>
+              </div>
+
+              <div className="flex items-center gap-4 mb-2">
+                <div className="w-14 h-14 bg-gradient-to-br from-amber-400 to-orange-500 rounded-2xl flex items-center justify-center shadow-lg shadow-orange-500/30">
+                  <Sparkles className="w-7 h-7 text-white" />
+                </div>
+                <div>
+                  <h1 className="text-2xl font-black text-white leading-tight">انشر إعلانك الآن</h1>
+                  <p className="text-white/60 text-sm mt-0.5">ابدأ باختيار فئة المادة</p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-4 mt-6 pt-5 border-t border-white/10">
+                <div className="flex items-center gap-2">
+                  <div className="w-7 h-7 bg-emerald-500/20 rounded-full flex items-center justify-center">
+                    <TrendingUp className="w-3.5 h-3.5 text-emerald-400" />
+                  </div>
+                  <span className="text-white/70 text-xs">وصول أسرع للمشترين</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-7 h-7 bg-blue-500/20 rounded-full flex items-center justify-center">
+                    <Shield className="w-3.5 h-3.5 text-blue-400" />
+                  </div>
+                  <span className="text-white/70 text-xs">نشر آمن وموثوق</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex-1 overflow-y-auto px-4 py-5 pb-28">
+            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4 text-center">اختر الفئة الأنسب لمادتك</p>
+
+            <div className="grid grid-cols-2 gap-3">
+              {categories.map((cat, index) => {
+                const color = categoryColors[index % categoryColors.length];
+                const isSelected = formData.category_id === cat.id;
+                return (
+                  <button
+                    key={cat.id}
+                    onClick={() => handleInputChange('category_id', cat.id)}
+                    className={`relative group text-right overflow-hidden rounded-2xl border-2 transition-all duration-300 active:scale-95 ${
+                      isSelected
+                        ? `bg-gradient-to-br ${color.light} ${color.border} shadow-lg ring-2 ${color.ring}`
+                        : 'bg-white border-gray-100 hover:border-gray-200 hover:shadow-md'
+                    }`}
+                  >
+                    {isSelected && (
+                      <div className="absolute inset-0 opacity-5">
+                        <div className="absolute inset-0" style={{backgroundImage: 'radial-gradient(circle at 1px 1px, currentColor 1px, transparent 0)', backgroundSize: '16px 16px'}} />
+                      </div>
+                    )}
+
+                    {isSelected && (
+                      <div className={`absolute top-3 left-3 w-6 h-6 bg-gradient-to-br ${color.bg} rounded-full flex items-center justify-center shadow-md`}>
+                        <Check className="w-3.5 h-3.5 text-white" />
+                      </div>
+                    )}
+
+                    <div className="p-5">
+                      <div className={`inline-flex items-center justify-center w-14 h-14 rounded-2xl mb-3 transition-all duration-300 ${
+                        isSelected
+                          ? `bg-gradient-to-br ${color.bg} text-white shadow-lg`
+                          : `bg-gray-50 ${color.text} group-hover:bg-gray-100`
+                      }`}>
+                        {getCategoryIcon(cat.icon)}
+                      </div>
+
+                      <h3 className={`font-bold text-base leading-tight transition-colors ${isSelected ? 'text-gray-900' : 'text-gray-700'}`}>
+                        {cat.name_ar}
+                      </h3>
+                      <p className="text-xs text-gray-400 mt-1">{cat.name_en}</p>
+
+                      <div className={`flex items-center gap-1 mt-3 transition-all duration-300 ${isSelected ? 'opacity-100' : 'opacity-0 group-hover:opacity-60'}`}>
+                        <span className={`text-xs font-semibold ${color.text}`}>اختر هذه الفئة</span>
+                        <ChevronLeft className={`w-3 h-3 ${color.text}`} />
+                      </div>
+                    </div>
+
+                    <div className={`absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r ${color.bg} transition-all duration-300 ${isSelected ? 'opacity-100' : 'opacity-0 group-hover:opacity-40'}`} />
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 px-4 py-3 z-40 shadow-lg">
+            <button
+              onClick={() => setStep(2)}
+              disabled={!formData.category_id}
+              className={`w-full py-4 rounded-2xl font-bold text-lg transition-all duration-300 flex items-center justify-center gap-2 ${
+                formData.category_id
+                  ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-lg shadow-orange-500/30 hover:shadow-orange-500/50 active:scale-98'
+                  : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+              }`}
+            >
+              {formData.category_id ? (
+                <>
+                  <span>التالي</span>
+                  <div className="w-7 h-7 bg-white/20 rounded-full flex items-center justify-center">
+                    <ChevronLeft className="w-4 h-4" />
+                  </div>
+                </>
+              ) : (
+                'اختر فئة للمتابعة'
+              )}
+            </button>
+            {formData.category_id && (
+              <p className="text-center text-xs text-gray-400 mt-2">
+                تم اختيار: <span className="font-semibold text-gray-700">{categories.find(c => c.id === formData.category_id)?.name_ar}</span>
+              </p>
+            )}
+          </div>
+        </div>
+      ) : (
+      <div className="flex flex-col min-h-screen">
       <div className="sticky top-0 z-50 bg-white shadow-md">
         <div className="flex items-center justify-between px-4 py-3">
           <button
-            onClick={step === 1 ? (onBack || (() => navigate('/'))) : () => setStep(step - 1)}
+            onClick={() => setStep(step - 1)}
             className="w-10 h-10 flex items-center justify-center bg-gray-100 rounded-full hover:bg-gray-200 active:scale-95 transition-all"
           >
             <ArrowRight className="w-5 h-5 text-gray-700" />
@@ -332,7 +493,6 @@ export default function AddListing({ onBack, onSuccess }: AddListingProps) {
             <div className="space-y-6 animate-fade-in">
               <div className="text-center mb-8">
                 <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-amber-100 to-orange-100 rounded-2xl mb-4">
-                  <Package className="w-8 h-8 text-amber-600" />
                 </div>
                 <h2 className="text-2xl font-bold text-gray-900 mb-2">ما نوع المواد؟</h2>
                 <p className="text-gray-500">اختر الفئة المناسبة لمادتك الخردة</p>
@@ -828,6 +988,8 @@ export default function AddListing({ onBack, onSuccess }: AddListingProps) {
             </div>
           </div>
         </div>
+      )}
+      </div>
       )}
     </div>
   );
