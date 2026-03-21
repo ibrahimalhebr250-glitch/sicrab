@@ -13,6 +13,13 @@ interface Category {
   icon: string;
 }
 
+interface Subcategory {
+  id: string;
+  category_id: string;
+  name_ar: string;
+  name_en: string;
+}
+
 interface City {
   id: string;
   name_ar: string;
@@ -26,6 +33,7 @@ interface CategoryField {
   field_key: string;
   field_type: 'text' | 'number' | 'select' | 'textarea';
   field_options: string[];
+  use_subcategories: boolean;
   is_required: boolean;
   placeholder: string;
   order_index: number;
@@ -41,6 +49,7 @@ export default function AddListing({ onBack, onSuccess }: AddListingProps) {
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [subcategories, setSubcategories] = useState<Subcategory[]>([]);
   const [categoryFields, setCategoryFields] = useState<CategoryField[]>([]);
   const [cities, setCities] = useState<City[]>([]);
   const [loading, setLoading] = useState(false);
@@ -71,6 +80,7 @@ export default function AddListing({ onBack, onSuccess }: AddListingProps) {
 
   useEffect(() => {
     if (formData.category_id) {
+      loadSubcategories(formData.category_id);
       loadCategoryFields(formData.category_id);
       setCustomFieldsData({});
     }
@@ -82,6 +92,15 @@ export default function AddListing({ onBack, onSuccess }: AddListingProps) {
       .select('*')
       .order('order_index');
     if (data) setCategories(data);
+  }
+
+  async function loadSubcategories(categoryId: string) {
+    const { data } = await supabase
+      .from('subcategories')
+      .select('*')
+      .eq('category_id', categoryId)
+      .order('order_index');
+    if (data) setSubcategories(data);
   }
 
   async function loadCategoryFields(categoryId: string) {
@@ -359,11 +378,19 @@ export default function AddListing({ onBack, onSuccess }: AddListingProps) {
                           required={field.is_required}
                         >
                           <option value="">{field.placeholder}</option>
-                          {field.field_options.map((option) => (
-                            <option key={option} value={option}>
-                              {option}
-                            </option>
-                          ))}
+                          {field.use_subcategories ? (
+                            subcategories.map((sub) => (
+                              <option key={sub.id} value={sub.name_ar}>
+                                {sub.name_ar}
+                              </option>
+                            ))
+                          ) : (
+                            field.field_options.map((option) => (
+                              <option key={option} value={option}>
+                                {option}
+                              </option>
+                            ))
+                          )}
                         </select>
                       )}
 
