@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Upload, X, Loader } from 'lucide-react';
 import { uploadImage, validateImageFile } from '../lib/imageUpload';
+import { supabase } from '../lib/supabase';
 
 interface ImageUploadProps {
   images: string[];
@@ -14,6 +15,12 @@ export default function ImageUpload({ images, onChange, maxImages = 6 }: ImageUp
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
+
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      setError('يجب تسجيل الدخول أولاً لرفع الصور');
+      return;
+    }
 
     if (images.length + files.length > maxImages) {
       setError(`يمكنك إضافة ${maxImages} صور كحد أقصى`);
@@ -39,9 +46,10 @@ export default function ImageUpload({ images, onChange, maxImages = 6 }: ImageUp
 
       onChange([...images, ...uploadedUrls]);
     } catch (err) {
-      setError('فشل في رفع بعض الصور. حاول مرة أخرى.');
+      setError('فشل في رفع الصورة. تأكد من تسجيل الدخول وحاول مرة أخرى.');
     } finally {
       setUploading(false);
+      e.target.value = '';
     }
   };
 
