@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <title>Fix Listings - User ID</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: 50px auto;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    .container {
+      background: white;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    button {
+      background: #10b981;
+      color: white;
+      padding: 12px 24px;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      cursor: pointer;
+      margin: 10px 5px;
+    }
+    button:hover {
+      background: #059669;
+    }
+    button:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+    .info {
+      background: #fef3c7;
+      border: 2px solid #f59e0b;
+      padding: 15px;
+      border-radius: 8px;
+      margin: 20px 0;
+    }
+    .success {
+      background: #d1fae5;
+      border: 2px solid #10b981;
+      padding: 15px;
+      border-radius: 8px;
+      margin: 20px 0;
+    }
+    .error {
+      background: #fee2e2;
+      border: 2px solid #ef4444;
+      padding: 15px;
+      border-radius: 8px;
+      margin: 20px 0;
+    }
+    #log {
+      background: #1f2937;
+      color: #10b981;
+      padding: 15px;
+      border-radius: 8px;
+      font-family: monospace;
+      max-height: 400px;
+      overflow-y: auto;
+      margin: 20px 0;
+      white-space: pre-wrap;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🔧 إصلاح user_id للإعلانات</h1>
+
+    <div class="info">
+      <h3>⚠️ تنبيه مهم</h3>
+      <p>هذه الصفحة ستقوم بتحديث جميع الإعلانات التي user_id = null</p>
+      <p>وتعيينها للمستخدم الحالي المسجل دخول</p>
+    </div>
+
+    <div id="status"></div>
+
+    <button onclick="checkListings()" id="checkBtn">1️⃣ فحص الإعلانات</button>
+    <button onclick="fixListings()" id="fixBtn" disabled>2️⃣ إصلاح الإعلانات</button>
+
+    <div id="log"></div>
+  </div>
+
+  <script type="module">
+    const SUPABASE_URL = 'https://zrjtbszjgjepzjnwwdgz.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpyanRic3pqZ2plcHpqbnd3ZGd6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzYwMzA2NzMsImV4cCI6MjA1MTYwNjY3M30.SYbCfUtLFBPHM4DkuB4pGIwQeC8w98gP3mUxdEWxVYI';
+
+    const { createClient } = supabase;
+    const client = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    let nullListings = [];
+
+    function log(message, type = 'info') {
+      const logDiv = document.getElementById('log');
+      const time = new Date().toLocaleTimeString('ar-SA');
+      const icon = type === 'success' ? '✅' : type === 'error' ? '❌' : 'ℹ️';
+      logDiv.textContent += `[${time}] ${icon} ${message}\n`;
+      logDiv.scrollTop = logDiv.scrollHeight;
+    }
+
+    async function checkListings() {
+      const statusDiv = document.getElementById('status');
+      const checkBtn = document.getElementById('checkBtn');
+
+      checkBtn.disabled = true;
+      statusDiv.innerHTML = '<div class="info">جاري الفحص...</div>';
+
+      try {
+        log('بدء فحص الإعلانات...');
+
+        const { data: session } = await client.auth.getSession();
+        if (!session?.session?.user) {
+          throw new Error('يجب تسجيل الدخول أولاً! اذهب للموقع وسجل دخول ثم عد لهذه الصفحة');
+        }
+
+        log(`المستخدم الحالي: ${session.session.user.id}`);
+
+        const { data, error } = await client
+          .from('listings')
+          .select('id, title, user_id, created_at')
+          .is('user_id', null);
+
+        if (error) throw error;
+
+        nullListings = data || [];
+        log(`تم العثور على ${nullListings.length} إعلان بدون user_id`);
+
+        if (nullListings.length > 0) {
+          statusDiv.innerHTML = `
+            <div class="info">
+              <h3>📊 نتيجة الفحص</h3>
+              <p>عدد الإعلانات التي تحتاج إصلاح: <strong>${nullListings.length}</strong></p>
+              <p>سيتم تعيينها للمستخدم: <code>${session.session.user.email}</code></p>
+            </div>
+          `;
+          document.getElementById('fixBtn').disabled = false;
+
+          nullListings.forEach((listing, i) => {
+            log(`${i + 1}. ${listing.title} (${listing.id})`);
+          });
+        } else {
+          statusDiv.innerHTML = '<div class="success"><h3>✅ لا توجد مشاكل!</h3><p>جميع الإعلانات لديها user_id صحيح</p></div>';
+        }
+
+      } catch (error) {
+        log(error.message, 'error');
+        statusDiv.innerHTML = `<div class="error"><h3>❌ خطأ</h3><p>${error.message}</p></div>`;
+      } finally {
+        checkBtn.disabled = false;
+      }
+    }
+
+    async function fixListings() {
+      const statusDiv = document.getElementById('status');
+      const fixBtn = document.getElementById('fixBtn');
+
+      if (!confirm(`هل أنت متأكد من تحديث ${nullListings.length} إعلان؟`)) {
+        return;
+      }
+
+      fixBtn.disabled = true;
+      statusDiv.innerHTML = '<div class="info">جاري الإصلاح...</div>';
+
+      try {
+        log('بدء عملية الإصلاح...');
+
+        const { data: session } = await client.auth.getSession();
+        if (!session?.session?.user) {
+          throw new Error('انتهت الجلسة! سجل دخول مرة أخرى');
+        }
+
+        const userId = session.session.user.id;
+        log(`سيتم التحديث للمستخدم: ${userId}`);
+
+        let successCount = 0;
+        let errorCount = 0;
+
+        for (const listing of nullListings) {
+          try {
+            log(`تحديث: ${listing.title}...`);
+
+            const { error } = await client
+              .from('listings')
+              .update({ user_id: userId })
+              .eq('id', listing.id);
+
+            if (error) throw error;
+
+            successCount++;
+            log(`✓ تم تحديث: ${listing.title}`, 'success');
+
+          } catch (err) {
+            errorCount++;
+            log(`✗ فشل تحديث ${listing.title}: ${err.message}`, 'error');
+          }
+        }
+
+        statusDiv.innerHTML = `
+          <div class="success">
+            <h3>🎉 تمت عملية الإصلاح!</h3>
+            <p>نجح: ${successCount} | فشل: ${errorCount}</p>
+          </div>
+        `;
+
+        log(`============================================`);
+        log(`اكتملت العملية! نجح: ${successCount}, فشل: ${errorCount}`, 'success');
+
+      } catch (error) {
+        log(error.message, 'error');
+        statusDiv.innerHTML = `<div class="error"><h3>❌ خطأ</h3><p>${error.message}</p></div>`;
+      } finally {
+        fixBtn.disabled = false;
+      }
+    }
+
+    window.checkListings = checkListings;
+    window.fixListings = fixListings;
+
+    log('الصفحة جاهزة! اضغط على "فحص الإعلانات" للبدء');
+  </script>
+</body>
+</html>
