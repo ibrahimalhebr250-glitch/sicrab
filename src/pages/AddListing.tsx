@@ -13,13 +13,6 @@ interface Category {
   icon: string;
 }
 
-interface Subcategory {
-  id: string;
-  category_id: string;
-  name_ar: string;
-  name_en: string;
-}
-
 interface City {
   id: string;
   name_ar: string;
@@ -48,7 +41,6 @@ export default function AddListing({ onBack, onSuccess }: AddListingProps) {
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
   const [categories, setCategories] = useState<Category[]>([]);
-  const [subcategories, setSubcategories] = useState<Subcategory[]>([]);
   const [categoryFields, setCategoryFields] = useState<CategoryField[]>([]);
   const [cities, setCities] = useState<City[]>([]);
   const [loading, setLoading] = useState(false);
@@ -79,7 +71,6 @@ export default function AddListing({ onBack, onSuccess }: AddListingProps) {
 
   useEffect(() => {
     if (formData.category_id) {
-      loadSubcategories(formData.category_id);
       loadCategoryFields(formData.category_id);
       setCustomFieldsData({});
     }
@@ -91,15 +82,6 @@ export default function AddListing({ onBack, onSuccess }: AddListingProps) {
       .select('*')
       .order('order_index');
     if (data) setCategories(data);
-  }
-
-  async function loadSubcategories(categoryId: string) {
-    const { data } = await supabase
-      .from('subcategories')
-      .select('*')
-      .eq('category_id', categoryId)
-      .order('order_index');
-    if (data) setSubcategories(data);
   }
 
   async function loadCategoryFields(categoryId: string) {
@@ -272,31 +254,6 @@ export default function AddListing({ onBack, onSuccess }: AddListingProps) {
                   </button>
                 ))}
               </div>
-
-              {formData.category_id && subcategories.length > 0 && (
-                <div className="mt-8 p-6 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl border-2 border-blue-100 animate-fade-in">
-                  <div className="flex items-center gap-2 mb-4">
-                    <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
-                    <h3 className="text-lg font-bold text-gray-900">تحديد أكثر دقة</h3>
-                  </div>
-                  <p className="text-sm text-gray-600 mb-4">اختر نوع المادة بالتحديد (اختياري)</p>
-                  <div className="grid grid-cols-2 gap-3">
-                    {subcategories.map((sub) => (
-                      <button
-                        key={sub.id}
-                        onClick={() => handleInputChange('subcategory_id', sub.id)}
-                        className={`p-4 rounded-xl text-sm font-medium transition-all duration-200 ${
-                          formData.subcategory_id === sub.id
-                            ? 'bg-gradient-to-r from-blue-500 to-indigo-500 text-white shadow-md scale-105'
-                            : 'bg-white text-gray-700 hover:bg-blue-100 hover:scale-105 active:scale-95'
-                        }`}
-                      >
-                        {sub.name_ar}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
             </div>
           )}
 
