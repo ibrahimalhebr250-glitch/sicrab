@@ -3,7 +3,7 @@ import { User, Phone, Mail, Calendar, CreditCard as Edit2, ArrowRight, TrendingU
 import { useState, useEffect } from 'react';
 
 export default function Profile() {
-  const { user, profile, updateProfile } = useAuth();
+  const { user, profile, updateProfile, loading: authLoading } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [fullName, setFullName] = useState(profile?.full_name || '');
   const [phone, setPhone] = useState(profile?.phone || '');
@@ -12,10 +12,19 @@ export default function Profile() {
   const [message, setMessage] = useState('');
 
   useEffect(() => {
+    if (authLoading) return;
     if (!user || !profile) {
       window.location.href = '/login';
     }
-  }, [user, profile]);
+  }, [user, profile, authLoading]);
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="w-12 h-12 border-4 border-amber-500 border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    );
+  }
 
   if (!user || !profile) {
     return null;

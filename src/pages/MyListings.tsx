@@ -16,18 +16,19 @@ interface Listing {
 }
 
 export default function MyListings() {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [listings, setListings] = useState<Listing[]>([]);
   const [loading, setLoading] = useState(true);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
   useEffect(() => {
+    if (authLoading) return;
     if (!user) {
       window.location.href = '/login';
       return;
     }
     fetchMyListings();
-  }, [user]);
+  }, [user, authLoading]);
 
   const fetchMyListings = async () => {
     try {
@@ -78,8 +79,15 @@ export default function MyListings() {
     }
   };
 
-  if (!user) {
-    return null;
+  if (authLoading || (!user && loading)) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-amber-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600">جاري التحميل...</p>
+        </div>
+      </div>
+    );
   }
 
   if (loading) {
