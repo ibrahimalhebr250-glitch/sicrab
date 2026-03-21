@@ -44,43 +44,81 @@ interface AddListingProps {
   onSuccess?: () => void;
 }
 
+const DRAFT_KEY = 'addListingDraft';
+
+function loadDraft() {
+  try {
+    const raw = localStorage.getItem(DRAFT_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
+}
+
+function saveDraft(data: object) {
+  try {
+    localStorage.setItem(DRAFT_KEY, JSON.stringify(data));
+  } catch {}
+}
+
+function clearDraft() {
+  localStorage.removeItem(DRAFT_KEY);
+}
+
 export default function AddListing({ onBack, onSuccess }: AddListingProps) {
   const { user, profile } = useAuth();
   const navigate = useNavigate();
   const { id: editId } = useParams<{ id: string }>();
-  const [step, setStep] = useState(1);
   const [isEditMode, setIsEditMode] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
   const [subcategories, setSubcategories] = useState<Subcategory[]>([]);
   const [categoryFields, setCategoryFields] = useState<CategoryField[]>([]);
   const [cities, setCities] = useState<City[]>([]);
   const [loading, setLoading] = useState(false);
-  const [imageUrls, setImageUrls] = useState<string[]>([]);
-  const [newImageUrl, setNewImageUrl] = useState('');
   const [showPhoneVerification, setShowPhoneVerification] = useState(false);
   const [showLoginPrompt, setShowLoginPrompt] = useState(false);
 
+  const draft = !editId ? loadDraft() : null;
+
+  const [step, setStep] = useState<number>(draft?.step ?? 1);
+  const [imageUrls, setImageUrls] = useState<string[]>(draft?.imageUrls ?? []);
+  const [newImageUrl, setNewImageUrl] = useState('');
+
   const [formData, setFormData] = useState({
-    category_id: '',
-    subcategory_id: '',
-    city_id: '',
-    title: '',
-    description: '',
-    price: '',
-    price_type: 'fixed',
-    contact_name: '',
-    phone: '',
-    whatsapp_number: '',
+    category_id: draft?.formData?.category_id ?? '',
+    subcategory_id: draft?.formData?.subcategory_id ?? '',
+    city_id: draft?.formData?.city_id ?? '',
+    title: draft?.formData?.title ?? '',
+    description: draft?.formData?.description ?? '',
+    price: draft?.formData?.price ?? '',
+    price_type: draft?.formData?.price_type ?? 'fixed',
+    contact_name: draft?.formData?.contact_name ?? '',
+    phone: draft?.formData?.phone ?? '',
+    whatsapp_number: draft?.formData?.whatsapp_number ?? '',
   });
 
-  const [customFieldsData, setCustomFieldsData] = useState<Record<string, string>>({});
+  const [customFieldsData, setCustomFieldsData] = useState<Record<string, string>>(draft?.customFieldsData ?? {});
+  const [showDraftBanner, setShowDraftBanner] = useState<boolean>(!editId && !!draft);
+
+  useEffect(() => {
+    if (!editId) {
+      saveDraft({ step, formData, imageUrls, customFieldsData });
+    }
+  }, [step, formData, imageUrls, customFieldsData, editId]);
+
+  useEffect(() => {
+    if (showDraftBanner) {
+      const timer = setTimeout(() => setShowDraftBanner(false), 4000);
+      return () => clearTimeout(timer);
+    }
+  }, [showDraftBanner]);
 
   useEffect(() => {
     loadCategories();
     loadCities();
 
     if (editId) {
-      console.log('📝 [AddListing] Edit mode - Loading listing:', editId);
       setIsEditMode(true);
       loadListingData(editId);
     }
@@ -290,6 +328,7 @@ export default function AddListing({ onBack, onSuccess }: AddListingProps) {
     }
 
     console.log('✅ [AddListing] Listing saved successfully');
+    clearDraft();
     alert(isEditMode ? 'تم تحديث الإعلان بنجاح!' : 'تم إضافة الإعلان بنجاح!');
 
     if (onSuccess) {
@@ -326,6 +365,27 @@ export default function AddListing({ onBack, onSuccess }: AddListingProps) {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
+      {showDraftBanner && !editId && (
+        <div className="fixed top-0 left-0 right-0 z-50 bg-amber-500 text-white px-4 py-3 flex items-center justify-between shadow-lg">
+          <div className="flex items-center gap-2 text-sm font-medium">
+            <div className="w-2 h-2 bg-white rounded-full animate-pulse" />
+            تم استعادة مسودتك المحفوظة
+          </div>
+          <button
+            onClick={() => {
+              clearDraft();
+              setStep(1);
+              setFormData({ category_id: '', subcategory_id: '', city_id: '', title: '', description: '', price: '', price_type: 'fixed', contact_name: '', phone: '', whatsapp_number: '' });
+              setImageUrls([]);
+              setCustomFieldsData({});
+              setShowDraftBanner(false);
+            }}
+            className="text-xs bg-white/20 hover:bg-white/30 px-3 py-1 rounded-full transition-all"
+          >
+            بدء جديد
+          </button>
+        </div>
+      )}
       {step === 1 ? (
         <div className="flex-1 flex flex-col overflow-hidden">
           <div className="relative bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 px-6 pt-12 pb-8 overflow-hidden">
