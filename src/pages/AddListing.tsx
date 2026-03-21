@@ -110,6 +110,7 @@ export default function AddListing({ onBack, onSuccess }: AddListingProps) {
   const [customFieldsData, setCustomFieldsData] = useState<Record<string, string>>(draft?.customFieldsData ?? {});
   const [showDraftBanner, setShowDraftBanner] = useState<boolean>(!editId && !!draft);
   const [phoneWarning, setPhoneWarning] = useState<string | null>(null);
+  const [commissionAccepted, setCommissionAccepted] = useState(false);
 
   useEffect(() => {
     if (!editId) {
@@ -921,7 +922,7 @@ export default function AddListing({ onBack, onSuccess }: AddListingProps) {
                   <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0">
                     <Check className="w-5 h-5 text-white" />
                   </div>
-                  <div>
+                  <div className="flex-1">
                     <h3 className="font-bold text-gray-900 mb-2">جاهز للنشر!</h3>
                     <p className="text-sm text-gray-600 mb-3">تأكد من صحة المعلومات قبل النشر. يمكنك التعديل لاحقاً من "إعلاناتي"</p>
                     <div className="bg-white/80 rounded-lg p-3 space-y-1.5 text-xs">
@@ -947,6 +948,38 @@ export default function AddListing({ onBack, onSuccess }: AddListingProps) {
                   </div>
                 </div>
               </div>
+
+              <div
+                onClick={() => setCommissionAccepted(!commissionAccepted)}
+                className={`cursor-pointer rounded-2xl p-5 border-2 transition-all duration-200 ${
+                  commissionAccepted
+                    ? 'bg-amber-50 border-amber-400 shadow-md'
+                    : 'bg-white border-gray-200 hover:border-amber-300'
+                }`}
+              >
+                <div className="flex items-start gap-4">
+                  <div className={`flex-shrink-0 w-6 h-6 rounded-md border-2 flex items-center justify-center transition-all duration-200 mt-0.5 ${
+                    commissionAccepted
+                      ? 'bg-amber-500 border-amber-500 shadow-sm'
+                      : 'border-gray-300 bg-white'
+                  }`}>
+                    {commissionAccepted && <Check className="w-4 h-4 text-white" strokeWidth={3} />}
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm font-bold text-gray-900 leading-snug mb-1">
+                      أتعهد بتسديد العمولة المستحقة
+                    </p>
+                    <p className="text-xs text-gray-500 leading-relaxed">
+                      أقر بأن عمولة المنصة واجبة السداد عند إتمام أي صفقة عبر هذا الإعلان، وأن ذلك دين في ذمتي.
+                    </p>
+                    {!commissionAccepted && (
+                      <p className="text-xs text-amber-600 font-semibold mt-2">
+                        يجب الموافقة على هذا التعهد قبل النشر
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
             </div>
           )}
         </div>
@@ -965,7 +998,7 @@ export default function AddListing({ onBack, onSuccess }: AddListingProps) {
         ) : (
           <button
             onClick={handleSubmit}
-            disabled={!formData.phone || loading}
+            disabled={!formData.phone || loading || !commissionAccepted}
             className="w-full py-4 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-xl font-bold text-lg hover:from-green-600 hover:to-emerald-600 active:scale-98 transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
             {loading ? (
