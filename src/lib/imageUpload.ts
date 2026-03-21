@@ -1,7 +1,4 @@
-import axios from 'axios';
-
-const CLOUDINARY_CLOUD_NAME = 'demo';
-const CLOUDINARY_UPLOAD_PRESET = 'ml_default';
+import { supabase } from './supabase';
 
 export interface UploadedImage {
   url: string;
@@ -9,19 +6,30 @@ export interface UploadedImage {
 }
 
 export const uploadImage = async (file: File): Promise<UploadedImage> => {
-  const formData = new FormData();
-  formData.append('file', file);
-  formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
-
   try {
-    const response = await axios.post(
-      `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`,
-      formData
-    );
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${Math.random().toString(36).substring(2)}-${Date.now()}.${fileExt}`;
+    const filePath = `listings/${fileName}`;
+
+    const { data, error } = await supabase.storage
+      .from('images')
+      .upload(filePath, file, {
+        cacheControl: '3600',
+        upsert: false
+      });
+
+    if (error) {
+      console.error('Error uploading to Supabase:', error);
+      throw error;
+    }
+
+    const { data: { publicUrl } } = supabase.storage
+      .from('images')
+      .getPublicUrl(data.path);
 
     return {
-      url: response.data.secure_url,
-      publicId: response.data.public_id,
+      url: publicUrl,
+      publicId: data.path,
     };
   } catch (error) {
     console.error('Error uploading image:', error);
