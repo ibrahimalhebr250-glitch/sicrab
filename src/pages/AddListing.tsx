@@ -110,7 +110,7 @@ export default function AddListing({ onBack, onSuccess }: AddListingProps) {
   const [customFieldsData, setCustomFieldsData] = useState<Record<string, string>>(draft?.customFieldsData ?? {});
   const [showDraftBanner, setShowDraftBanner] = useState<boolean>(!editId && !!draft);
   const [phoneWarning, setPhoneWarning] = useState<string | null>(null);
-  const [commissionAccepted, setCommissionAccepted] = useState(false);
+  const [commissionAccepted, setCommissionAccepted] = useState(true);
 
   useEffect(() => {
     if (!editId) {
