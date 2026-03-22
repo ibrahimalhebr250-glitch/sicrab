@@ -512,7 +512,6 @@ function AwardPointsTab({ users, pointActions, onRefresh, showToast }: {
 
   const handleSelectUser = (u: UserRewardSummary) => {
     setSelectedUser(u);
-    setDropdownOpen(false);
     setStep(2);
   };
 
