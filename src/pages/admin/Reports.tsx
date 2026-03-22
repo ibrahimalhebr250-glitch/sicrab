@@ -7,7 +7,7 @@ interface Report {
   listing_id: string;
   reporter_id: string;
   reason: string;
-  details: string;
+  description: string;
   status: string;
   created_at: string;
   listings: {
@@ -221,8 +221,8 @@ function ReportCard({ report, onHandle }: {
 
       <div className="bg-gray-50 rounded-xl p-4 mb-4">
         <p className="text-sm font-bold text-gray-900 mb-2">السبب: {report.reason}</p>
-        {report.details && (
-          <p className="text-sm text-gray-700 leading-relaxed">{report.details}</p>
+        {report.description && (
+          <p className="text-sm text-gray-700 leading-relaxed">{report.description}</p>
         )}
       </div>
 
