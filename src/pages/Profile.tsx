@@ -98,7 +98,6 @@ export default function Profile() {
     const { data } = await supabase
       .from('platform_bank_account')
       .select('*')
-      .eq('is_active', true)
       .maybeSingle();
     setBankAccount(data);
   };
