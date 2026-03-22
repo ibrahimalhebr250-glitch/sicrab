@@ -28,14 +28,6 @@ function OffersGridNew({ categoryId, subcategoryId, filters, onViewListing, sear
   async function loadListings() {
     setLoading(true);
 
-    const { data: settingsData } = await supabase
-      .from('site_settings')
-      .select('platform_mode')
-      .maybeSingle();
-    const platformMode = settingsData?.platform_mode ?? 'free';
-
-    const { data: { user } } = await supabase.auth.getUser();
-
     let query = supabase
       .from('listings')
       .select('*, cities(*), categories(*), subcategories(*)')
@@ -62,7 +54,21 @@ function OffersGridNew({ categoryId, subcategoryId, filters, onViewListing, sear
       query = query.or(`title.ilike.%${searchQuery}%,description.ilike.%${searchQuery}%`);
     }
 
-    const { data, error } = await query;
+    const [
+      { data, error },
+      { data: settingsData },
+      { data: activePromotions }
+    ] = await Promise.all([
+      query,
+      supabase.from('site_settings').select('platform_mode').maybeSingle(),
+      supabase
+        .from('promotions')
+        .select('listing_id, type')
+        .eq('status', 'active')
+        .gte('end_date', new Date().toISOString()),
+    ]);
+
+    const platformMode = settingsData?.platform_mode ?? 'free';
 
     if (error) {
       console.error('Error loading listings:', error);
@@ -71,21 +77,19 @@ function OffersGridNew({ categoryId, subcategoryId, filters, onViewListing, sear
     }
 
     if (data) {
-      const listingsWithPromotions = await Promise.all(
-        data.map(async (listing) => {
-          const { data: promotions } = await supabase
-            .from('promotions')
-            .select('type')
-            .eq('listing_id', listing.id)
-            .eq('status', 'active')
-            .gte('end_date', new Date().toISOString());
+      const promotionMap = new Map<string, { is_featured: boolean; is_pinned: boolean }>();
+      for (const promo of activePromotions || []) {
+        const existing = promotionMap.get(promo.listing_id) ?? { is_featured: false, is_pinned: false };
+        if (promo.type === 'featured' || promo.type === 'featured_pinned') existing.is_featured = true;
+        if (promo.type === 'pinned' || promo.type === 'featured_pinned') existing.is_pinned = true;
+        promotionMap.set(promo.listing_id, existing);
+      }
 
-          const is_featured = promotions?.some(p => p.type === 'featured' || p.type === 'featured_pinned') || false;
-          const is_pinned = promotions?.some(p => p.type === 'pinned' || p.type === 'featured_pinned') || false;
-
-          return { ...listing, is_featured, is_pinned };
-        })
-      );
+      const listingsWithPromotions = data.map(listing => ({
+        ...listing,
+        is_featured: promotionMap.get(listing.id)?.is_featured ?? false,
+        is_pinned: promotionMap.get(listing.id)?.is_pinned ?? false,
+      }));
 
       const sortedListings = listingsWithPromotions.sort((a, b) => {
         if (platformMode === 'packages') {
