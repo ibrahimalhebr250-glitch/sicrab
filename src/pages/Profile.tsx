@@ -1,6 +1,6 @@
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
-import { User, Phone, Calendar, CreditCard as Edit3, ArrowRight, TrendingUp, Package, Eye, MessageSquare, CheckCircle, LogOut, ChevronRight, BarChart2, Plus, Settings } from 'lucide-react';
+import { User, Phone, Calendar, CreditCard as Edit3, ArrowRight, TrendingUp, Package, Eye, MessageSquare, CheckCircle, LogOut, ChevronRight, BarChart2, Plus, Settings, Building2, CreditCard, Clock, XCircle, Upload, Copy, Check } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 
@@ -9,6 +9,32 @@ interface ListingStats {
   active: number;
   totalViews: number;
   totalWhatsapp: number;
+}
+
+interface PlatformBankAccount {
+  id: string;
+  bank_name: string;
+  account_name: string;
+  account_number: string;
+  iban: string;
+  notes: string;
+}
+
+interface MyCommission {
+  id: string;
+  deal_amount: number;
+  commission_amount: number;
+  commission_percentage: number;
+  status: 'pending' | 'paid' | 'cancelled';
+  created_at: string;
+  listing_title: string;
+  transfer?: {
+    id: string;
+    status: 'pending' | 'confirmed' | 'rejected';
+    transfer_amount: number;
+    transfer_reference: string;
+    transfer_date: string;
+  } | null;
 }
 
 export default function Profile() {
@@ -21,6 +47,11 @@ export default function Profile() {
   const [message, setMessage] = useState('');
   const [listingStats, setListingStats] = useState<ListingStats>({ total: 0, active: 0, totalViews: 0, totalWhatsapp: 0 });
   const [statsLoading, setStatsLoading] = useState(true);
+  const [showBankSection, setShowBankSection] = useState(false);
+  const [bankAccount, setBankAccount] = useState<PlatformBankAccount | null>(null);
+  const [myCommissions, setMyCommissions] = useState<MyCommission[]>([]);
+  const [commissionsLoading, setCommissionsLoading] = useState(false);
+  const [copiedIban, setCopiedIban] = useState(false);
 
   useEffect(() => {
     if (authLoading) return;
@@ -29,6 +60,8 @@ export default function Profile() {
       return;
     }
     fetchStats();
+    fetchBankAccount();
+    fetchMyCommissions();
   }, [user, profile, authLoading]);
 
   useEffect(() => {
@@ -60,6 +93,45 @@ export default function Profile() {
     } finally {
       setStatsLoading(false);
     }
+  };
+
+  const fetchBankAccount = async () => {
+    const { data } = await supabase
+      .from('platform_bank_account')
+      .select('*')
+      .eq('is_active', true)
+      .maybeSingle();
+    setBankAccount(data);
+  };
+
+  const fetchMyCommissions = async () => {
+    if (!user) return;
+    setCommissionsLoading(true);
+    const { data } = await supabase
+      .from('commissions')
+      .select(`*, listings(title), commission_transfers(id, status, transfer_amount, transfer_reference, transfer_date)`)
+      .eq('seller_id', user.id)
+      .order('created_at', { ascending: false });
+
+    const formatted = (data || []).map((c: any) => ({
+      id: c.id,
+      deal_amount: c.deal_amount,
+      commission_amount: c.commission_amount,
+      commission_percentage: c.commission_percentage,
+      status: c.status,
+      created_at: c.created_at,
+      listing_title: c.listings?.title || 'إعلان محذوف',
+      transfer: c.commission_transfers?.[0] || null,
+    }));
+    setMyCommissions(formatted);
+    setCommissionsLoading(false);
+  };
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text).then(() => {
+      setCopiedIban(true);
+      setTimeout(() => setCopiedIban(false), 2000);
+    });
   };
 
   const handleSave = async () => {
@@ -304,6 +376,102 @@ export default function Profile() {
         </div>
 
         <button
+          onClick={() => setShowBankSection(!showBankSection)}
+          className="w-full flex items-center gap-4 px-5 py-4 bg-white border border-gray-100 rounded-2xl hover:bg-gray-50 transition-colors group"
+        >
+          <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center flex-shrink-0">
+            <CreditCard className="w-5 h-5 text-emerald-600" />
+          </div>
+          <div className="flex-1 text-right">
+            <p className="font-semibold text-gray-900 text-sm">تحويل العمولات</p>
+            <p className="text-xs text-gray-400">
+              {myCommissions.filter(c => c.status === 'pending').length > 0
+                ? `${myCommissions.filter(c => c.status === 'pending').length} عمولة بانتظار التحويل`
+                : 'عرض بيانات الحساب البنكي للمنصة'}
+            </p>
+          </div>
+          <ChevronRight className={`w-4 h-4 text-gray-300 transition-transform flex-shrink-0 ${showBankSection ? 'rotate-90' : 'rotate-180'}`} />
+        </button>
+
+        {showBankSection && (
+          <div className="space-y-3">
+            {bankAccount ? (
+              <div className="bg-gradient-to-br from-emerald-50 to-teal-50 border-2 border-emerald-200 rounded-2xl p-5">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center">
+                    <Building2 className="w-5 h-5 text-white" />
+                  </div>
+                  <div>
+                    <p className="font-black text-gray-900 text-sm">الحساب البنكي للمنصة</p>
+                    <p className="text-gray-500 text-xs">حوّل العمولة المستحقة إلى هذا الحساب</p>
+                  </div>
+                </div>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between gap-2 bg-white rounded-xl p-3 border border-emerald-100">
+                    <span className="text-xs text-gray-500 flex-shrink-0">البنك</span>
+                    <span className="font-bold text-gray-900 text-sm">{bankAccount.bank_name}</span>
+                  </div>
+                  <div className="flex items-center justify-between gap-2 bg-white rounded-xl p-3 border border-emerald-100">
+                    <span className="text-xs text-gray-500 flex-shrink-0">اسم الحساب</span>
+                    <span className="font-bold text-gray-900 text-sm">{bankAccount.account_name}</span>
+                  </div>
+                  <div className="flex items-center justify-between gap-2 bg-white rounded-xl p-3 border border-emerald-100">
+                    <span className="text-xs text-gray-500 flex-shrink-0">آيبان</span>
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono text-sm text-gray-900 text-left">{bankAccount.iban}</span>
+                      <button
+                        onClick={() => copyToClipboard(bankAccount.iban)}
+                        className="p-1.5 hover:bg-emerald-50 rounded-lg transition-colors"
+                      >
+                        {copiedIban ? <Check className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4 text-gray-400" />}
+                      </button>
+                    </div>
+                  </div>
+                  {bankAccount.notes && (
+                    <div className="bg-amber-50 border border-amber-200 rounded-xl p-3">
+                      <p className="text-amber-700 text-xs">{bankAccount.notes}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <div className="bg-gray-50 rounded-2xl p-6 text-center">
+                <Building2 className="w-10 h-10 text-gray-300 mx-auto mb-2" />
+                <p className="text-gray-500 text-sm">لم يتم تحديد حساب بنكي من قِبل المنصة بعد</p>
+              </div>
+            )}
+
+            <div className="bg-white border border-gray-100 rounded-2xl overflow-hidden">
+              <div className="px-5 py-4 border-b border-gray-100">
+                <h4 className="font-black text-gray-900 text-sm">عمولاتي</h4>
+              </div>
+              {commissionsLoading ? (
+                <div className="p-4 space-y-2">
+                  {[1, 2].map(i => <div key={i} className="h-16 bg-gray-100 rounded-xl animate-pulse" />)}
+                </div>
+              ) : myCommissions.length === 0 ? (
+                <div className="p-8 text-center">
+                  <CreditCard className="w-8 h-8 text-gray-200 mx-auto mb-2" />
+                  <p className="text-gray-400 text-sm">لا توجد عمولات مسجّلة</p>
+                </div>
+              ) : (
+                <div className="divide-y divide-gray-50">
+                  {myCommissions.map(c => (
+                    <CommissionRow
+                      key={c.id}
+                      commission={c}
+                      bankAccount={bankAccount}
+                      onTransferSubmitted={fetchMyCommissions}
+                      userId={user!.id}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        <button
           onClick={handleSignOut}
           className="w-full flex items-center justify-center gap-2 py-3.5 bg-white border border-gray-100 rounded-2xl text-red-500 hover:bg-red-50 hover:border-red-100 transition-colors font-semibold text-sm"
         >
@@ -311,6 +479,128 @@ export default function Profile() {
           تسجيل الخروج
         </button>
       </div>
+    </div>
+  );
+}
+
+function CommissionRow({ commission, bankAccount, onTransferSubmitted, userId }: {
+  commission: MyCommission;
+  bankAccount: PlatformBankAccount | null;
+  onTransferSubmitted: () => void;
+  userId: string;
+}) {
+  const [showForm, setShowForm] = useState(false);
+  const [transferRef, setTransferRef] = useState('');
+  const [transferDate, setTransferDate] = useState(new Date().toISOString().split('T')[0]);
+  const [submitting, setSubmitting] = useState(false);
+
+  const statusConfig = {
+    pending: { label: 'بانتظار التحويل', className: 'bg-amber-100 text-amber-700', icon: <Clock className="w-3 h-3" /> },
+    paid: { label: 'مدفوعة', className: 'bg-green-100 text-green-700', icon: <CheckCircle className="w-3 h-3" /> },
+    cancelled: { label: 'ملغاة', className: 'bg-gray-100 text-gray-500', icon: <XCircle className="w-3 h-3" /> },
+  };
+  const sc = statusConfig[commission.status];
+
+  const transferStatusConfig = {
+    pending: { label: 'قيد المراجعة', className: 'text-amber-600' },
+    confirmed: { label: 'تم التأكيد', className: 'text-green-600' },
+    rejected: { label: 'مرفوض', className: 'text-red-600' },
+  };
+
+  async function handleSubmitTransfer() {
+    if (!transferRef.trim()) return;
+    setSubmitting(true);
+    await supabase.from('commission_transfers').insert({
+      commission_id: commission.id,
+      seller_id: userId,
+      bank_account_id: bankAccount?.id || null,
+      transfer_amount: commission.commission_amount,
+      transfer_reference: transferRef,
+      transfer_date: transferDate,
+    });
+    setShowForm(false);
+    setTransferRef('');
+    await onTransferSubmitted();
+    setSubmitting(false);
+  }
+
+  return (
+    <div className="p-4">
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex-1 min-w-0">
+          <p className="text-gray-900 font-semibold text-sm line-clamp-1">{commission.listing_title}</p>
+          <div className="flex items-center gap-2 mt-1 flex-wrap">
+            <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-xs font-bold ${sc.className}`}>
+              {sc.icon}
+              {sc.label}
+            </span>
+            <span className="text-gray-400 text-xs">
+              {new Date(commission.created_at).toLocaleDateString('ar-SA', { month: 'short', day: 'numeric' })}
+            </span>
+          </div>
+          {commission.transfer && (
+            <p className={`text-xs mt-1 font-medium ${transferStatusConfig[commission.transfer.status].className}`}>
+              التحويل: {transferStatusConfig[commission.transfer.status].label}
+              {commission.transfer.transfer_reference && ` — ${commission.transfer.transfer_reference}`}
+            </p>
+          )}
+        </div>
+        <div className="text-left flex-shrink-0">
+          <p className="text-gray-900 font-black text-sm">{Number(commission.commission_amount).toFixed(2)} ر.س</p>
+          <p className="text-gray-400 text-xs">{commission.commission_percentage}% من {Number(commission.deal_amount).toFixed(0)} ر.س</p>
+        </div>
+      </div>
+
+      {commission.status === 'pending' && !commission.transfer && bankAccount && (
+        <div className="mt-3">
+          {!showForm ? (
+            <button
+              onClick={() => setShowForm(true)}
+              className="flex items-center gap-1.5 px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl text-xs font-bold transition-all w-full justify-center"
+            >
+              <Upload className="w-3.5 h-3.5" />
+              تسجيل التحويل
+            </button>
+          ) : (
+            <div className="space-y-2 pt-2 border-t border-gray-100">
+              <div>
+                <label className="block text-xs font-bold text-gray-600 mb-1">رقم المرجع / رقم العملية</label>
+                <input
+                  type="text"
+                  value={transferRef}
+                  onChange={e => setTransferRef(e.target.value)}
+                  placeholder="أدخل رقم مرجع التحويل..."
+                  className="w-full px-3 py-2 border border-gray-200 rounded-xl text-xs focus:outline-none focus:border-emerald-400 text-right"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-600 mb-1">تاريخ التحويل</label>
+                <input
+                  type="date"
+                  value={transferDate}
+                  onChange={e => setTransferDate(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-200 rounded-xl text-xs focus:outline-none focus:border-emerald-400"
+                />
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={handleSubmitTransfer}
+                  disabled={submitting || !transferRef.trim()}
+                  className="flex-1 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl text-xs font-bold transition-all disabled:opacity-50"
+                >
+                  {submitting ? 'جاري الإرسال...' : 'إرسال'}
+                </button>
+                <button
+                  onClick={() => setShowForm(false)}
+                  className="flex-1 py-2 bg-gray-100 text-gray-600 rounded-xl text-xs font-bold hover:bg-gray-200 transition-all"
+                >
+                  إلغاء
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
