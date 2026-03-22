@@ -43,30 +43,48 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
   const checkSession = async () => {
     try {
       const sessionData = localStorage.getItem('admin_session');
-      if (sessionData) {
-        const { staffId, expiry } = JSON.parse(sessionData);
+      if (!sessionData) {
+        setLoading(false);
+        return;
+      }
 
-        if (Date.now() < expiry) {
-          const { data: staffData, error } = await supabase
-            .from('admin_staff')
-            .select('*')
-            .eq('id', staffId)
-            .eq('is_active', true)
-            .maybeSingle();
+      const { staffId, expiry, cachedStaff } = JSON.parse(sessionData);
 
-          if (staffData && !error) {
-            setStaff(staffData);
-            await loadPermissions(staffData.id, staffData.role);
-          } else {
-            localStorage.removeItem('admin_session');
-          }
-        } else {
-          localStorage.removeItem('admin_session');
-        }
+      if (Date.now() >= expiry) {
+        localStorage.removeItem('admin_session');
+        setLoading(false);
+        return;
+      }
+
+      if (cachedStaff) {
+        setStaff(cachedStaff);
+        await loadPermissions(cachedStaff.id, cachedStaff.role);
+        setLoading(false);
+      }
+
+      const { data: staffData, error } = await supabase
+        .from('admin_staff')
+        .select('*')
+        .eq('id', staffId)
+        .eq('is_active', true)
+        .maybeSingle();
+
+      if (staffData && !error) {
+        setStaff(staffData);
+        await loadPermissions(staffData.id, staffData.role);
+        const updated = JSON.parse(localStorage.getItem('admin_session') || '{}');
+        localStorage.setItem('admin_session', JSON.stringify({ ...updated, cachedStaff: staffData }));
+      } else {
+        localStorage.removeItem('admin_session');
+        setStaff(null);
+        setPermissions([]);
+      }
+
+      if (!cachedStaff) {
+        setLoading(false);
       }
     } catch (error) {
       console.error('Session check error:', error);
-    } finally {
       setLoading(false);
     }
   };
@@ -115,7 +133,8 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
 
       const sessionData = {
         staffId: staffData.id,
-        expiry: Date.now() + (24 * 60 * 60 * 1000)
+        expiry: Date.now() + (24 * 60 * 60 * 1000),
+        cachedStaff: staffData,
       };
       localStorage.setItem('admin_session', JSON.stringify(sessionData));
 
