@@ -79,21 +79,21 @@ export default function Header({ onSearch, searchQuery = '' }: HeaderProps) {
   return (
     <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
       isScrolled
-        ? 'bg-slate-900/95 backdrop-blur-md shadow-xl'
+        ? 'bg-slate-900/97 backdrop-blur-md shadow-xl'
         : 'bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 shadow-lg'
     }`}>
-      <div className="max-w-7xl mx-auto px-4 py-4">
+      <div className="max-w-7xl mx-auto px-4 py-3 sm:py-4">
         <div className="flex items-center justify-between">
-          <a href="/" className="flex items-center gap-3">
+          <a href="/" className="flex items-center gap-2.5">
             <div className="relative">
-              <div className="w-14 h-14 bg-gradient-to-br from-amber-500 via-orange-500 to-red-500 rounded-xl flex items-center justify-center shadow-lg transform hover:scale-105 transition-transform">
-                <TrendingUp className="w-8 h-8 text-white" strokeWidth={2.5} />
+              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-amber-500 via-orange-500 to-red-500 rounded-xl flex items-center justify-center shadow-lg transform hover:scale-105 transition-transform">
+                <TrendingUp className="w-5 h-5 sm:w-6 sm:h-6 text-white" strokeWidth={2.5} />
               </div>
-              <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-slate-900"></div>
+              <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 rounded-full border-2 border-slate-900"></div>
             </div>
             <div>
-              <h1 className="text-xl font-black text-white tracking-tight">سوق المواد</h1>
-              <p className="text-xs text-amber-400 font-medium">منصة المواد الصناعية</p>
+              <h1 className="text-base sm:text-lg font-black text-white tracking-tight leading-none">سوق المواد</h1>
+              <p className="text-[10px] sm:text-xs text-amber-400 font-medium leading-none mt-0.5">منصة المواد الصناعية</p>
             </div>
           </a>
 

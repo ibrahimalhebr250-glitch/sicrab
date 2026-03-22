@@ -43,7 +43,7 @@ export default function HomePage() {
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <Header onSearch={setSearchQuery} searchQuery={searchQuery} />
 
-      <main className="flex-1 pb-20">
+      <main className="flex-1 pb-20 pt-16 sm:pt-20">
         <CategoriesSlider
           selectedCategory={selectedCategory}
           onSelectCategory={handleSelectCategory}
