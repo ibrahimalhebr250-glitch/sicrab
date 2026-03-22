@@ -3,6 +3,8 @@ import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import SellerBadge from './SellerBadge';
+import SafeDealBadge from './SafeDealBadge';
+import ReputationBadge from './ReputationBadge';
 
 interface SellerCardProps {
   sellerId: string;
@@ -22,16 +24,38 @@ interface SellerProfile {
   last_active_at: string;
 }
 
+interface SellerRewards {
+  level: 'bronze' | 'silver' | 'gold' | 'platinum';
+  total_points: number;
+  hasSafeDeal: boolean;
+}
+
 export default function SellerCard({ sellerId, sellerName }: SellerCardProps) {
   const { user } = useAuth();
   const [profile, setProfile] = useState<SellerProfile | null>(null);
   const [isFollowing, setIsFollowing] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [rewards, setRewards] = useState<SellerRewards | null>(null);
 
   useEffect(() => {
     loadSellerProfile();
     checkIfFollowing();
+    loadSellerRewards();
   }, [sellerId]);
+
+  async function loadSellerRewards() {
+    const [{ data: repData }, { data: sdData }] = await Promise.all([
+      supabase.from('reputation_scores').select('level, total_points').eq('user_id', sellerId).maybeSingle(),
+      supabase.from('safedeal_certifications').select('is_active').eq('user_id', sellerId).eq('is_active', true).maybeSingle(),
+    ]);
+    if (repData) {
+      setRewards({
+        level: repData.level,
+        total_points: repData.total_points,
+        hasSafeDeal: !!sdData,
+      });
+    }
+  }
 
   async function loadSellerProfile() {
     const { data, error } = await supabase
@@ -175,8 +199,10 @@ export default function SellerCard({ sellerId, sellerName }: SellerCardProps) {
             )}
           </div>
 
-          <div className="mb-2">
+          <div className="mb-2 flex flex-wrap items-center gap-1.5">
             <SellerBadge badge={getBadgeType()} size="sm" />
+            {rewards && <ReputationBadge level={rewards.level} points={rewards.total_points} size="sm" />}
+            {rewards?.hasSafeDeal && <SafeDealBadge size="sm" />}
           </div>
 
           <div className="flex items-center gap-4 text-sm text-gray-600 mb-2">

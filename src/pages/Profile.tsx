@@ -1,6 +1,6 @@
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
-import { User, Phone, Calendar, CreditCard as Edit3, ArrowRight, TrendingUp, Package, Eye, MessageSquare, CheckCircle, LogOut, ChevronRight, BarChart2, Plus, Settings, Building2, CreditCard, Clock, XCircle, Upload, Copy, Check, MessageCircle, Headphones as HeadphonesIcon } from 'lucide-react';
+import { User, Phone, Calendar, CreditCard as Edit3, ArrowRight, TrendingUp, Package, Eye, MessageSquare, CheckCircle, LogOut, ChevronRight, BarChart2, Plus, Settings, Building2, CreditCard, Clock, XCircle, Upload, Copy, Check, MessageCircle, Headphones as HeadphonesIcon, Gift } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 
@@ -370,6 +370,14 @@ export default function Profile() {
               iconColor: 'text-emerald-600',
               label: 'الرسائل',
               desc: 'تواصل مع المشترين والبائعين',
+            },
+            {
+              to: '/rewards',
+              icon: Gift,
+              iconBg: 'bg-amber-50',
+              iconColor: 'text-amber-600',
+              label: 'مركز المكافآت',
+              desc: 'السمعة، الكاش باك، الإحالة، والصفقة المضمونة',
             },
           ].map((item, i) => (
             <Link

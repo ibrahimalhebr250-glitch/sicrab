@@ -1,6 +1,7 @@
 import { AuthProvider } from './contexts/AuthContext';
 import { AdminProvider } from './contexts/AdminContext';
 import { AdminAuthProvider } from './contexts/AdminAuthContext';
+import { RewardsProvider } from './contexts/RewardsContext';
 import Router from './Router';
 
 function AppContent() {
@@ -10,11 +11,13 @@ function AppContent() {
 function App() {
   return (
     <AuthProvider>
-      <AdminProvider>
-        <AdminAuthProvider>
-          <AppContent />
-        </AdminAuthProvider>
-      </AdminProvider>
+      <RewardsProvider>
+        <AdminProvider>
+          <AdminAuthProvider>
+            <AppContent />
+          </AdminAuthProvider>
+        </AdminProvider>
+      </RewardsProvider>
     </AuthProvider>
   );
 }

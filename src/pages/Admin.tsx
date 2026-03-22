@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Package, Users, AlertCircle, Star, MapPin, BarChart3, Settings, Menu, X, DollarSign, FileText, Activity, Shield, LogOut, TrendingUp, Wallet } from 'lucide-react';
+import { LayoutDashboard, Package, Users, AlertCircle, Star, MapPin, BarChart3, Settings, Menu, X, DollarSign, FileText, Activity, Shield, LogOut, TrendingUp, Wallet, Gift } from 'lucide-react';
 import { useAdminAuth } from '../contexts/AdminAuthContext';
 import AdminDashboard from './admin/Dashboard';
 import AdminCategories from './admin/Categories';
@@ -17,8 +17,9 @@ import AdminLiveActivity from './admin/LiveActivity';
 import AdminStaff from './admin/Staff';
 import ActivityLogs from './admin/ActivityLogs';
 import AdminPerformance from './admin/Performance';
+import AdminRewards from './admin/Rewards';
 
-type AdminPage = 'dashboard' | 'categories' | 'listings' | 'users' | 'reports' | 'promotions' | 'cities' | 'analytics' | 'settings' | 'commission' | 'content' | 'activity' | 'staff' | 'logs' | 'performance';
+type AdminPage = 'dashboard' | 'categories' | 'listings' | 'users' | 'reports' | 'promotions' | 'cities' | 'analytics' | 'settings' | 'commission' | 'content' | 'activity' | 'staff' | 'logs' | 'performance' | 'rewards';
 
 export default function Admin() {
   const { staff, loading, signOut, hasPermission } = useAdminAuth();
@@ -59,6 +60,7 @@ export default function Admin() {
     { id: 'analytics' as AdminPage, label: 'التحليلات', icon: <BarChart3 className="w-5 h-5" />, section: 'analytics' },
     { id: 'staff' as AdminPage, label: 'إدارة الموظفين', icon: <Shield className="w-5 h-5" />, section: 'staff' },
     { id: 'performance' as AdminPage, label: 'تقييم الأداء', icon: <TrendingUp className="w-5 h-5" />, section: 'staff' },
+    { id: 'rewards' as AdminPage, label: 'المكافآت', icon: <Gift className="w-5 h-5" />, section: 'analytics' },
     { id: 'settings' as AdminPage, label: 'الإعدادات', icon: <Settings className="w-5 h-5" />, section: 'settings' },
   ];
 
@@ -137,6 +139,7 @@ export default function Admin() {
         {currentPage === 'analytics' && <AdminAnalytics />}
         {currentPage === 'staff' && <AdminStaff />}
         {currentPage === 'performance' && <AdminPerformance />}
+        {currentPage === 'rewards' && <AdminRewards />}
         {currentPage === 'settings' && <AdminSettings />}
       </div>
 
