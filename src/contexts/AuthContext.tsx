@@ -6,6 +6,7 @@ interface Profile {
   id: string;
   full_name: string;
   phone: string | null;
+  whatsapp_number: string | null;
   avatar_url: string | null;
   bio: string | null;
   phone_verified?: boolean;

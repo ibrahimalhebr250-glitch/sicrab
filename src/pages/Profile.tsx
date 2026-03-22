@@ -42,6 +42,7 @@ export default function Profile() {
   const [isEditing, setIsEditing] = useState(false);
   const [fullName, setFullName] = useState(profile?.full_name || '');
   const [phone, setPhone] = useState(profile?.phone || '');
+  const [whatsappNumber, setWhatsappNumber] = useState(profile?.whatsapp_number || '');
   const [bio, setBio] = useState(profile?.bio || '');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
@@ -69,6 +70,7 @@ export default function Profile() {
     if (profile) {
       setFullName(profile.full_name || '');
       setPhone(profile.phone || '');
+      setWhatsappNumber(profile.whatsapp_number || '');
       setBio(profile.bio || '');
     }
   }, [profile]);
@@ -155,12 +157,24 @@ export default function Profile() {
     const { error } = await updateProfile({
       full_name: fullName,
       phone: phone || null,
+      whatsapp_number: whatsappNumber || null,
       bio: bio || null,
     });
 
     if (error) {
       setMessage('error');
     } else {
+      if (user && (phone || whatsappNumber)) {
+        const listingUpdates: Record<string, string | null> = {};
+        if (phone) listingUpdates.contact_phone = phone;
+        if (whatsappNumber) listingUpdates.whatsapp_number = whatsappNumber;
+        else if (phone) listingUpdates.whatsapp_number = phone;
+
+        await supabase
+          .from('listings')
+          .update(listingUpdates)
+          .eq('user_id', user.id);
+      }
       setMessage('success');
       setIsEditing(false);
       setTimeout(() => setMessage(''), 3000);
@@ -249,6 +263,12 @@ export default function Profile() {
                       {profile.phone}
                     </span>
                   )}
+                  {profile.whatsapp_number && profile.whatsapp_number !== profile.phone && (
+                    <span className="flex items-center gap-1.5 text-sm text-gray-500">
+                      <MessageCircle className="w-4 h-4 text-green-500" />
+                      {profile.whatsapp_number}
+                    </span>
+                  )}
                   <span className="flex items-center gap-1.5 text-sm text-gray-500">
                     <Calendar className="w-4 h-4 text-amber-500" />
                     عضو منذ {formatDate(profile.created_at)}
@@ -279,7 +299,20 @@ export default function Profile() {
                     onChange={e => setPhone(e.target.value)}
                     className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
                     dir="ltr"
+                    placeholder="05XXXXXXXX"
                   />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-600 mb-1.5">رقم واتساب</label>
+                  <input
+                    type="tel"
+                    value={whatsappNumber}
+                    onChange={e => setWhatsappNumber(e.target.value)}
+                    className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
+                    dir="ltr"
+                    placeholder="05XXXXXXXX (اتركه فارغاً لاستخدام رقم الجوال)"
+                  />
+                  <p className="text-xs text-gray-400 mt-1 text-right">سيتم تحديث رقم التواصل في جميع إعلاناتك تلقائياً</p>
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-gray-600 mb-1.5">نبذة عني</label>
@@ -304,6 +337,7 @@ export default function Profile() {
                       setIsEditing(false);
                       setFullName(profile.full_name || '');
                       setPhone(profile.phone || '');
+                      setWhatsappNumber(profile.whatsapp_number || '');
                       setBio(profile.bio || '');
                       setMessage('');
                     }}
