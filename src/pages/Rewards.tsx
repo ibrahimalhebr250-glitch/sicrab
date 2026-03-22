@@ -136,7 +136,7 @@ export default function Rewards() {
         </div>
 
         {activeTab === 'overview' && <OverviewTab reputation={reputation} wallet={wallet} safeDeal={safeDeal} referralCode={referralCode} safeDealCount={safeDealCount} onTabChange={setActiveTab} />}
-        {activeTab === 'reputation' && <ReputationTab reputation={reputation} />}
+        {activeTab === 'reputation' && <ReputationTab reputation={reputation} userId={user.id} />}
         {activeTab === 'cashback' && <CashbackTab wallet={wallet} transactions={cashbackTransactions} />}
         {activeTab === 'referral' && <ReferralTab referralCode={referralCode} copied={copied} generating={generating} onCopy={handleCopyCode} onGenerate={handleGenerateCode} profile={profile} />}
         {activeTab === 'safedeal' && <SafeDealTab safeDeal={safeDeal} safeDealCount={safeDealCount} user={user} onRefresh={refreshAll} />}
@@ -244,20 +244,41 @@ function getLevelBadgeColor(level: string) {
   return map[level] || 'bg-amber-100 text-amber-700';
 }
 
-function ReputationTab({ reputation }: { reputation: ReputationScore | null }) {
-  const events = [
-    { type: 'fast_reply', label: 'رد سريع على رسالة (أقل من ساعة)', points: '+10', icon: Zap, color: 'text-blue-500', bg: 'bg-blue-50' },
-    { type: 'five_star_review', label: 'حصل على تقييم 5 نجوم', points: '+30', icon: Star, color: 'text-yellow-500', bg: 'bg-yellow-50' },
-    { type: 'deal_completed', label: 'أتمّ صفقة بدون شكاوى', points: '+25', icon: CheckCircle, color: 'text-green-500', bg: 'bg-green-50' },
-    { type: 'commission_paid_fast', label: 'دفع العمولة خلال 24 ساعة', points: '+50', icon: TrendingUp, color: 'text-emerald-500', bg: 'bg-emerald-50' },
-    { type: 'complaint_proven', label: 'شكوى مثبتة ضده', points: '-50', icon: AlertCircle, color: 'text-red-500', bg: 'bg-red-50' },
-  ];
+function ReputationTab({ reputation, userId }: { reputation: ReputationScore | null; userId: string }) {
+  const [pointActions, setPointActions] = useState<any[]>([]);
+  const [userEvents, setUserEvents] = useState<any[]>([]);
+  const [loadingEvents, setLoadingEvents] = useState(true);
+
+  useEffect(() => {
+    Promise.all([
+      supabase.from('reputation_point_actions').select('*').order('sort_order'),
+      supabase.rpc('get_user_reputation_events', { p_user_id: userId, p_limit: 20 }),
+    ]).then(([actionsRes, eventsRes]) => {
+      setPointActions(actionsRes.data || []);
+      setUserEvents(eventsRes.data || []);
+      setLoadingEvents(false);
+    });
+  }, [userId]);
+
+  const getActionInfo = (key: string) => {
+    const found = pointActions.find(a => a.action_key === key);
+    if (found) return { label: found.label_ar, category: found.category };
+    const fallback: Record<string, { label: string; category: string }> = {
+      admin_adjustment: { label: 'تعديل إداري', category: 'admin' },
+      complaint_proven: { label: 'شكوى مثبتة', category: 'negative' },
+      fast_reply:       { label: 'رد سريع', category: 'positive' },
+      five_star_review: { label: 'تقييم 5 نجوم', category: 'positive' },
+      deal_completed:   { label: 'صفقة مكتملة', category: 'positive' },
+      commission_paid_fast: { label: 'عمولة سريعة', category: 'positive' },
+    };
+    return fallback[key] || { label: key, category: 'positive' };
+  };
 
   const levels = [
-    { id: 'bronze', label: 'برونزي', range: '0 - 99', icon: Medal, gradient: 'from-amber-600 to-orange-700' },
-    { id: 'silver', label: 'فضي', range: '100 - 299', icon: Star, gradient: 'from-slate-400 to-gray-500' },
-    { id: 'gold', label: 'ذهبي', range: '300 - 599', icon: Trophy, gradient: 'from-yellow-400 to-amber-500' },
-    { id: 'platinum', label: 'بلاتيني', range: '600+', icon: Award, gradient: 'from-cyan-400 to-teal-500' },
+    { id: 'bronze',   label: 'برونزي',  range: '0 - 99',   icon: Medal,  gradient: 'from-amber-600 to-orange-700' },
+    { id: 'silver',   label: 'فضي',     range: '100 - 299', icon: Star,   gradient: 'from-slate-400 to-gray-500'  },
+    { id: 'gold',     label: 'ذهبي',    range: '300 - 599', icon: Trophy, gradient: 'from-yellow-400 to-amber-500' },
+    { id: 'platinum', label: 'بلاتيني', range: '600+',      icon: Award,  gradient: 'from-cyan-400 to-teal-500'   },
   ];
 
   return (
@@ -290,26 +311,75 @@ function ReputationTab({ reputation }: { reputation: ReputationScore | null }) {
       </div>
 
       <div className="bg-white border border-gray-100 rounded-2xl overflow-hidden">
-        <div className="px-4 py-3 border-b border-gray-100">
-          <h3 className="font-black text-gray-900 text-sm">كيف تكسب النقاط</h3>
+        <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
+          <h3 className="font-black text-gray-900 text-sm">سجل نقاطك</h3>
+          <span className="text-xs text-gray-400">آخر 20 حدث</span>
         </div>
-        <div className="divide-y divide-gray-50">
-          {events.map((e, i) => {
-            const Icon = e.icon;
-            return (
-              <div key={i} className="flex items-center gap-3 px-4 py-3">
-                <div className={`w-8 h-8 rounded-xl ${e.bg} flex items-center justify-center flex-shrink-0`}>
-                  <Icon className={`w-4 h-4 ${e.color}`} />
+        {loadingEvents ? (
+          <div className="p-6 flex justify-center">
+            <div className="w-6 h-6 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
+          </div>
+        ) : userEvents.length === 0 ? (
+          <div className="p-8 text-center">
+            <Trophy className="w-8 h-8 text-gray-200 mx-auto mb-2" />
+            <p className="text-gray-400 text-sm">لا توجد أحداث بعد</p>
+            <p className="text-gray-300 text-xs mt-1">أتمّ إجراءات إيجابية لكسب النقاط</p>
+          </div>
+        ) : (
+          <div className="divide-y divide-gray-50">
+            {userEvents.map((e: any) => {
+              const info = getActionInfo(e.event_type);
+              return (
+                <div key={e.id} className="flex items-center gap-3 px-4 py-3">
+                  <div className={`w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 ${
+                    e.points > 0 ? 'bg-green-100' : 'bg-red-50'
+                  }`}>
+                    {e.points > 0
+                      ? <Plus className="w-4 h-4 text-green-600" />
+                      : <Minus className="w-4 h-4 text-red-500" />
+                    }
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm text-gray-800 font-medium">{e.description || info.label}</p>
+                    <p className="text-xs text-gray-400">
+                      {new Date(e.created_at).toLocaleDateString('ar-SA', { month: 'short', day: 'numeric', year: 'numeric' })}
+                    </p>
+                  </div>
+                  <span className={`font-black text-sm ${e.points > 0 ? 'text-green-600' : 'text-red-500'}`}>
+                    {e.points > 0 ? '+' : ''}{e.points}
+                  </span>
                 </div>
-                <p className="flex-1 text-sm text-gray-700">{e.label}</p>
-                <span className={`font-black text-sm ${e.points.startsWith('+') ? 'text-green-600' : 'text-red-500'}`}>
-                  {e.points}
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {pointActions.filter(a => a.category !== 'admin' && a.is_active).length > 0 && (
+        <div className="bg-white border border-gray-100 rounded-2xl overflow-hidden">
+          <div className="px-4 py-3 border-b border-gray-100">
+            <h3 className="font-black text-gray-900 text-sm">كيف تكسب النقاط</h3>
+          </div>
+          <div className="divide-y divide-gray-50">
+            {pointActions.filter(a => a.is_active && a.category !== 'admin').map((a: any) => (
+              <div key={a.id} className="flex items-center gap-3 px-4 py-3">
+                <div className={`w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 ${
+                  a.category === 'negative' ? 'bg-red-50' : 'bg-green-50'
+                }`}>
+                  {a.category === 'negative'
+                    ? <AlertCircle className="w-4 h-4 text-red-500" />
+                    : <CheckCircle className="w-4 h-4 text-green-500" />
+                  }
+                </div>
+                <p className="flex-1 text-sm text-gray-700">{a.label_ar}</p>
+                <span className={`font-black text-sm ${a.category === 'negative' ? 'text-red-500' : 'text-green-600'}`}>
+                  {a.category === 'negative' ? '-' : '+'}{Math.abs(a.points)}
                 </span>
               </div>
-            );
-          })}
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
       <div className="bg-white border border-gray-100 rounded-2xl overflow-hidden">
         <div className="px-4 py-3 border-b border-gray-100">
