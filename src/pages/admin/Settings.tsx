@@ -289,6 +289,21 @@ export default function AdminSettings() {
                 placeholder="افصل الكلمات بفاصلة"
               />
             </div>
+            <div>
+              <label className="block text-sm font-bold text-gray-700 mb-2">رقم واتساب الدعم والتواصل</label>
+              <div className="relative">
+                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-mono select-none">+</span>
+                <input
+                  type="text"
+                  value={settings.support_whatsapp || ''}
+                  onChange={e => setSettings({ ...settings, support_whatsapp: e.target.value })}
+                  className="w-full pl-4 pr-10 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-green-500 text-left direction-ltr"
+                  placeholder="966501234567"
+                  dir="ltr"
+                />
+              </div>
+              <p className="text-xs text-gray-400 mt-1.5">أدخل الرقم بالصيغة الدولية بدون علامة + (مثال: 966501234567)</p>
+            </div>
             <button
               onClick={handleSaveSettings}
               disabled={saving}

@@ -1,6 +1,6 @@
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
-import { User, Phone, Calendar, CreditCard as Edit3, ArrowRight, TrendingUp, Package, Eye, MessageSquare, CheckCircle, LogOut, ChevronRight, BarChart2, Plus, Settings, Building2, CreditCard, Clock, XCircle, Upload, Copy, Check } from 'lucide-react';
+import { User, Phone, Calendar, CreditCard as Edit3, ArrowRight, TrendingUp, Package, Eye, MessageSquare, CheckCircle, LogOut, ChevronRight, BarChart2, Plus, Settings, Building2, CreditCard, Clock, XCircle, Upload, Copy, Check, MessageCircle, Headphones as HeadphonesIcon } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 
@@ -51,6 +51,7 @@ export default function Profile() {
   const [myCommissions, setMyCommissions] = useState<MyCommission[]>([]);
   const [commissionsLoading, setCommissionsLoading] = useState(false);
   const [copiedIban, setCopiedIban] = useState(false);
+  const [supportWhatsapp, setSupportWhatsapp] = useState<string>('');
 
   useEffect(() => {
     if (authLoading) return;
@@ -61,6 +62,7 @@ export default function Profile() {
     fetchStats();
     fetchBankAccount();
     fetchMyCommissions();
+    fetchSupportWhatsapp();
   }, [user, profile, authLoading]);
 
   useEffect(() => {
@@ -100,6 +102,20 @@ export default function Profile() {
       .select('*')
       .maybeSingle();
     setBankAccount(data);
+  };
+
+  const fetchSupportWhatsapp = async () => {
+    const { data } = await supabase
+      .from('platform_settings')
+      .select('setting_value')
+      .eq('setting_key', 'support_whatsapp')
+      .maybeSingle();
+    if (data?.setting_value) {
+      const val = typeof data.setting_value === 'string'
+        ? data.setting_value.replace(/^"|"$/g, '')
+        : data.setting_value.toString();
+      setSupportWhatsapp(val);
+    }
   };
 
   const fetchMyCommissions = async () => {
@@ -458,6 +474,51 @@ export default function Profile() {
             )}
           </div>
         </div>
+
+        {supportWhatsapp && (
+          <div className="bg-gradient-to-br from-green-50 to-emerald-50 border-2 border-green-200 rounded-2xl p-5">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center">
+                <HeadphonesIcon className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <p className="font-black text-gray-900 text-sm">التواصل مع الإدارة</p>
+                <p className="text-gray-500 text-xs">تواصل معنا عبر واتساب لرفع إيصال السداد أو أي استفسار</p>
+              </div>
+            </div>
+            <div className="space-y-3">
+              <div className="bg-white rounded-xl p-3 border border-green-100">
+                <p className="text-xs text-gray-500 mb-2">يمكنك التواصل معنا عبر واتساب لـ:</p>
+                <ul className="space-y-1.5">
+                  {['رفع إيصال سداد العمولة', 'الاستفسار عن حالة التحويل', 'أي دعم أو مساعدة'].map((item, i) => (
+                    <li key={i} className="flex items-center gap-2 text-xs text-gray-600">
+                      <CheckCircle className="w-3.5 h-3.5 text-green-500 flex-shrink-0" />
+                      {item}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <a
+                href={`https://wa.me/${supportWhatsapp}?text=${encodeURIComponent(`مرحباً، أنا ${profile?.full_name || ''} - أريد التواصل مع الإدارة بخصوص حسابي في المنصة`)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full flex items-center justify-center gap-3 py-3.5 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-xl font-bold text-sm hover:shadow-lg hover:shadow-green-200 active:scale-95 transition-all"
+              >
+                <MessageCircle className="w-5 h-5" />
+                تواصل عبر واتساب
+              </a>
+              <a
+                href={`https://wa.me/${supportWhatsapp}?text=${encodeURIComponent(`مرحباً، أنا ${profile?.full_name || ''} - أرغب في إرسال إيصال سداد العمولة`)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full flex items-center justify-center gap-3 py-3 bg-white border-2 border-green-200 text-green-700 rounded-xl font-bold text-sm hover:bg-green-50 active:scale-95 transition-all"
+              >
+                <Upload className="w-4 h-4" />
+                رفع إيصال السداد
+              </a>
+            </div>
+          </div>
+        )}
 
         <button
           onClick={handleSignOut}
