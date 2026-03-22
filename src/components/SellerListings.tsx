@@ -17,12 +17,22 @@ export default function SellerListings({ sellerId, currentListingId, onViewListi
   }, [sellerId, currentListingId]);
 
   async function loadSellerListings() {
-    const { data, error } = await supabase
+    if (!sellerId || sellerId === 'null') {
+      setLoading(false);
+      return;
+    }
+
+    let query = supabase
       .from('listings')
       .select('*, cities(*), categories(*)')
       .eq('is_active', true)
-      .eq('user_id', sellerId)
-      .neq('id', currentListingId)
+      .eq('user_id', sellerId);
+
+    if (currentListingId && currentListingId !== 'null') {
+      query = query.neq('id', currentListingId);
+    }
+
+    const { data, error } = await query
       .order('created_at', { ascending: false })
       .limit(6);
 
