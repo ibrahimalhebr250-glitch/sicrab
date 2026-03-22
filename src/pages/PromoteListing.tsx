@@ -25,27 +25,31 @@ export default function PromoteListing() {
   const [packages, setPackages] = useState<PromotionPackage[]>([]);
   const [selectedPackage, setSelectedPackage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [pageLoading, setPageLoading] = useState(true);
   const [error, setError] = useState('');
+  const [promotionsEnabled, setPromotionsEnabled] = useState(true);
+  const [platformMode, setPlatformMode] = useState('free');
 
   useEffect(() => {
     loadPackages();
   }, []);
 
   async function loadPackages() {
-    const { data, error } = await supabase
-      .from('promotion_packages')
-      .select('*')
-      .eq('is_active', true)
-      .order('display_order', { ascending: true });
+    setPageLoading(true);
+    const [settingsRes, packagesRes] = await Promise.all([
+      supabase.from('site_settings').select('promotions_enabled, platform_mode').maybeSingle(),
+      supabase.from('promotion_packages').select('*').eq('is_active', true).order('display_order', { ascending: true }),
+    ]);
 
-    if (error) {
-      console.error('Error loading packages:', error);
-      return;
+    if (settingsRes.data) {
+      setPromotionsEnabled(settingsRes.data.promotions_enabled ?? true);
+      setPlatformMode(settingsRes.data.platform_mode ?? 'free');
     }
 
-    if (data) {
-      setPackages(data);
+    if (!packagesRes.error && packagesRes.data) {
+      setPackages(packagesRes.data);
     }
+    setPageLoading(false);
   }
 
   async function handlePromote() {
@@ -110,6 +114,17 @@ export default function PromoteListing() {
     }
   };
 
+  if (pageLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-gray-300 border-t-amber-500 mb-4"></div>
+          <p className="text-gray-600 font-medium">جاري التحميل...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
       <div className="sticky top-0 z-10 bg-white border-b border-gray-200 shadow-sm">
@@ -129,12 +144,38 @@ export default function PromoteListing() {
       </div>
 
       <div className="max-w-4xl mx-auto px-4 py-8">
+        {!promotionsEnabled && (
+          <div className="mb-6 p-6 bg-gradient-to-br from-slate-100 to-gray-100 border-2 border-gray-300 rounded-2xl text-center">
+            <div className="w-14 h-14 bg-gray-200 rounded-2xl flex items-center justify-center mx-auto mb-3">
+              <Star className="w-7 h-7 text-gray-400" />
+            </div>
+            <h3 className="font-black text-gray-700 text-lg mb-1">الباقات غير متاحة حالياً</h3>
+            <p className="text-gray-500 text-sm">
+              المنصة في وضع الإطلاق المجاني — جميع الإعلانات تظهر بنفس الأولوية للجميع بدون قيود.
+            </p>
+            <p className="text-gray-400 text-xs mt-2">ستُتاح خيارات الترقية لاحقاً</p>
+          </div>
+        )}
+
+        {promotionsEnabled && platformMode === 'free' && (
+          <div className="mb-6 p-4 bg-emerald-50 border-2 border-emerald-200 rounded-2xl flex items-start gap-3">
+            <CheckCircle className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" />
+            <div>
+              <p className="text-emerald-800 font-bold text-sm">المنصة في الوضع المجاني</p>
+              <p className="text-emerald-700 text-xs mt-0.5">
+                ترقيتك ستحمل شارة التمييز لكن جميع الإعلانات تظهر بنفس الأولوية حالياً. عند تفعيل وضع الباقات ستحصل على أولوية الظهور.
+              </p>
+            </div>
+          </div>
+        )}
+
         {error && (
           <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 text-center">
             {error}
           </div>
         )}
 
+        {promotionsEnabled && <>
         <div className="space-y-4">
           {packages.map((pkg) => (
             <div
@@ -198,6 +239,7 @@ export default function PromoteListing() {
         >
           {loading ? 'جاري الترقية...' : 'تفعيل الترقية الآن'}
         </button>
+        </>}
       </div>
     </div>
   );

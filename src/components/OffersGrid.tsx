@@ -28,6 +28,12 @@ function OffersGridNew({ categoryId, subcategoryId, filters, onViewListing, sear
   async function loadListings() {
     setLoading(true);
 
+    const { data: settingsData } = await supabase
+      .from('site_settings')
+      .select('platform_mode')
+      .maybeSingle();
+    const platformMode = settingsData?.platform_mode ?? 'free';
+
     const { data: { user } } = await supabase.auth.getUser();
     console.log('Current user:', user?.id);
 
@@ -103,11 +109,12 @@ function OffersGridNew({ categoryId, subcategoryId, filters, onViewListing, sear
       );
 
       const sortedListings = listingsWithPromotions.sort((a, b) => {
-        if (a.is_pinned && !b.is_pinned) return -1;
-        if (!a.is_pinned && b.is_pinned) return 1;
-
-        if (a.is_featured && !b.is_featured) return -1;
-        if (!a.is_featured && b.is_featured) return 1;
+        if (platformMode === 'packages') {
+          if (a.is_pinned && !b.is_pinned) return -1;
+          if (!a.is_pinned && b.is_pinned) return 1;
+          if (a.is_featured && !b.is_featured) return -1;
+          if (!a.is_featured && b.is_featured) return 1;
+        }
 
         if (sortBy === 'views') {
           return (b.views_count || 0) - (a.views_count || 0);
