@@ -47,7 +47,6 @@ export default function Profile() {
   const [message, setMessage] = useState('');
   const [listingStats, setListingStats] = useState<ListingStats>({ total: 0, active: 0, totalViews: 0, totalWhatsapp: 0 });
   const [statsLoading, setStatsLoading] = useState(true);
-  const [showBankSection, setShowBankSection] = useState(false);
   const [bankAccount, setBankAccount] = useState<PlatformBankAccount | null>(null);
   const [myCommissions, setMyCommissions] = useState<MyCommission[]>([]);
   const [commissionsLoading, setCommissionsLoading] = useState(false);
@@ -375,101 +374,91 @@ export default function Profile() {
           ))}
         </div>
 
-        <button
-          onClick={() => setShowBankSection(!showBankSection)}
-          className="w-full flex items-center gap-4 px-5 py-4 bg-white border border-gray-100 rounded-2xl hover:bg-gray-50 transition-colors group"
-        >
-          <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center flex-shrink-0">
-            <CreditCard className="w-5 h-5 text-emerald-600" />
-          </div>
-          <div className="flex-1 text-right">
-            <p className="font-semibold text-gray-900 text-sm">تحويل العمولات</p>
-            <p className="text-xs text-gray-400">
-              {myCommissions.filter(c => c.status === 'pending').length > 0
-                ? `${myCommissions.filter(c => c.status === 'pending').length} عمولة بانتظار التحويل`
-                : 'عرض بيانات الحساب البنكي للمنصة'}
-            </p>
-          </div>
-          <ChevronRight className={`w-4 h-4 text-gray-300 transition-transform flex-shrink-0 ${showBankSection ? 'rotate-90' : 'rotate-180'}`} />
-        </button>
+        <div className="space-y-3">
+          {bankAccount ? (
+            <div className="bg-gradient-to-br from-emerald-50 to-teal-50 border-2 border-emerald-200 rounded-2xl p-5">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center">
+                  <Building2 className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <p className="font-black text-gray-900 text-sm">الحساب البنكي للمنصة</p>
+                  <p className="text-gray-500 text-xs">حوّل العمولة المستحقة إلى هذا الحساب</p>
+                </div>
+              </div>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between gap-2 bg-white rounded-xl p-3 border border-emerald-100">
+                  <span className="text-xs text-gray-500 flex-shrink-0">البنك</span>
+                  <span className="font-bold text-gray-900 text-sm">{bankAccount.bank_name}</span>
+                </div>
+                <div className="flex items-center justify-between gap-2 bg-white rounded-xl p-3 border border-emerald-100">
+                  <span className="text-xs text-gray-500 flex-shrink-0">اسم الحساب</span>
+                  <span className="font-bold text-gray-900 text-sm">{bankAccount.account_name}</span>
+                </div>
+                <div className="flex items-center justify-between gap-2 bg-white rounded-xl p-3 border border-emerald-100">
+                  <span className="text-xs text-gray-500 flex-shrink-0">آيبان</span>
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono text-sm text-gray-900 text-left">{bankAccount.iban}</span>
+                    <button
+                      onClick={() => copyToClipboard(bankAccount.iban)}
+                      className="p-1.5 hover:bg-emerald-50 rounded-lg transition-colors"
+                    >
+                      {copiedIban ? <Check className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4 text-gray-400" />}
+                    </button>
+                  </div>
+                </div>
+                {bankAccount.notes && (
+                  <div className="bg-amber-50 border border-amber-200 rounded-xl p-3">
+                    <p className="text-amber-700 text-xs">{bankAccount.notes}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          ) : (
+            <div className="bg-gray-50 border border-gray-200 rounded-2xl p-6 flex items-center gap-4">
+              <div className="w-10 h-10 rounded-xl bg-gray-200 flex items-center justify-center flex-shrink-0">
+                <Building2 className="w-5 h-5 text-gray-400" />
+              </div>
+              <div>
+                <p className="font-semibold text-gray-700 text-sm">الحساب البنكي للمنصة</p>
+                <p className="text-gray-400 text-xs mt-0.5">لم يتم تحديد حساب بنكي من قِبل المنصة بعد</p>
+              </div>
+            </div>
+          )}
 
-        {showBankSection && (
-          <div className="space-y-3">
-            {bankAccount ? (
-              <div className="bg-gradient-to-br from-emerald-50 to-teal-50 border-2 border-emerald-200 rounded-2xl p-5">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center">
-                    <Building2 className="w-5 h-5 text-white" />
-                  </div>
-                  <div>
-                    <p className="font-black text-gray-900 text-sm">الحساب البنكي للمنصة</p>
-                    <p className="text-gray-500 text-xs">حوّل العمولة المستحقة إلى هذا الحساب</p>
-                  </div>
-                </div>
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between gap-2 bg-white rounded-xl p-3 border border-emerald-100">
-                    <span className="text-xs text-gray-500 flex-shrink-0">البنك</span>
-                    <span className="font-bold text-gray-900 text-sm">{bankAccount.bank_name}</span>
-                  </div>
-                  <div className="flex items-center justify-between gap-2 bg-white rounded-xl p-3 border border-emerald-100">
-                    <span className="text-xs text-gray-500 flex-shrink-0">اسم الحساب</span>
-                    <span className="font-bold text-gray-900 text-sm">{bankAccount.account_name}</span>
-                  </div>
-                  <div className="flex items-center justify-between gap-2 bg-white rounded-xl p-3 border border-emerald-100">
-                    <span className="text-xs text-gray-500 flex-shrink-0">آيبان</span>
-                    <div className="flex items-center gap-2">
-                      <span className="font-mono text-sm text-gray-900 text-left">{bankAccount.iban}</span>
-                      <button
-                        onClick={() => copyToClipboard(bankAccount.iban)}
-                        className="p-1.5 hover:bg-emerald-50 rounded-lg transition-colors"
-                      >
-                        {copiedIban ? <Check className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4 text-gray-400" />}
-                      </button>
-                    </div>
-                  </div>
-                  {bankAccount.notes && (
-                    <div className="bg-amber-50 border border-amber-200 rounded-xl p-3">
-                      <p className="text-amber-700 text-xs">{bankAccount.notes}</p>
-                    </div>
-                  )}
-                </div>
-              </div>
-            ) : (
-              <div className="bg-gray-50 rounded-2xl p-6 text-center">
-                <Building2 className="w-10 h-10 text-gray-300 mx-auto mb-2" />
-                <p className="text-gray-500 text-sm">لم يتم تحديد حساب بنكي من قِبل المنصة بعد</p>
-              </div>
-            )}
-
-            <div className="bg-white border border-gray-100 rounded-2xl overflow-hidden">
-              <div className="px-5 py-4 border-b border-gray-100">
-                <h4 className="font-black text-gray-900 text-sm">عمولاتي</h4>
-              </div>
-              {commissionsLoading ? (
-                <div className="p-4 space-y-2">
-                  {[1, 2].map(i => <div key={i} className="h-16 bg-gray-100 rounded-xl animate-pulse" />)}
-                </div>
-              ) : myCommissions.length === 0 ? (
-                <div className="p-8 text-center">
-                  <CreditCard className="w-8 h-8 text-gray-200 mx-auto mb-2" />
-                  <p className="text-gray-400 text-sm">لا توجد عمولات مسجّلة</p>
-                </div>
-              ) : (
-                <div className="divide-y divide-gray-50">
-                  {myCommissions.map(c => (
-                    <CommissionRow
-                      key={c.id}
-                      commission={c}
-                      bankAccount={bankAccount}
-                      onTransferSubmitted={fetchMyCommissions}
-                      userId={user!.id}
-                    />
-                  ))}
-                </div>
+          <div className="bg-white border border-gray-100 rounded-2xl overflow-hidden">
+            <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+              <h4 className="font-black text-gray-900 text-sm">سجل العمولات والتحويلات</h4>
+              {myCommissions.filter(c => c.status === 'pending').length > 0 && (
+                <span className="px-2 py-0.5 bg-amber-100 text-amber-700 text-xs font-bold rounded-lg">
+                  {myCommissions.filter(c => c.status === 'pending').length} بانتظار التحويل
+                </span>
               )}
             </div>
+            {commissionsLoading ? (
+              <div className="p-4 space-y-2">
+                {[1, 2].map(i => <div key={i} className="h-16 bg-gray-100 rounded-xl animate-pulse" />)}
+              </div>
+            ) : myCommissions.length === 0 ? (
+              <div className="p-8 text-center">
+                <CreditCard className="w-8 h-8 text-gray-200 mx-auto mb-2" />
+                <p className="text-gray-400 text-sm">لا توجد عمولات مسجّلة حتى الآن</p>
+              </div>
+            ) : (
+              <div className="divide-y divide-gray-50">
+                {myCommissions.map(c => (
+                  <CommissionRow
+                    key={c.id}
+                    commission={c}
+                    bankAccount={bankAccount}
+                    onTransferSubmitted={fetchMyCommissions}
+                    userId={user!.id}
+                  />
+                ))}
+              </div>
+            )}
           </div>
-        )}
+        </div>
 
         <button
           onClick={handleSignOut}
