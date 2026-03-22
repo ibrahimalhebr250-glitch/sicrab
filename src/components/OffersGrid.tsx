@@ -1,5 +1,6 @@
 import { MapPin, Eye, Heart, Star, Pin, Clock, Package, Zap } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase, Listing } from '../lib/supabase';
 import { FilterState } from './Filters';
 
@@ -17,6 +18,7 @@ interface OffersGridProps {
 }
 
 function OffersGridNew({ categoryId, subcategoryId, filters, onViewListing, searchQuery = '' }: OffersGridProps) {
+  const navigate = useNavigate();
   const [listings, setListings] = useState<ListingWithPromotion[]>([]);
   const [loading, setLoading] = useState(true);
   const [sortBy, setSortBy] = useState('created_at');
@@ -157,7 +159,17 @@ function OffersGridNew({ categoryId, subcategoryId, filters, onViewListing, sear
         ) : (
           <div className="flex flex-col gap-2.5">
             {listings.map((listing) => (
-              <FreshListingCard key={listing.id} listing={listing} onClick={() => onViewListing?.(listing.id)} />
+              <FreshListingCard
+                key={listing.id}
+                listing={listing}
+                onClick={() => {
+                  if (onViewListing) {
+                    onViewListing(listing.id);
+                  } else {
+                    navigate(`/listing/${listing.slug || listing.id}`);
+                  }
+                }}
+              />
             ))}
           </div>
         )}
