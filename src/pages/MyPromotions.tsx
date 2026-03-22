@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { ArrowRight, Star, Pin, Zap, Clock, CheckCircle, XCircle } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
 
 interface Promotion {
   id: string;
@@ -18,12 +19,9 @@ interface Promotion {
   };
 }
 
-interface MyPromotionsProps {
-  onBack: () => void;
-}
-
-export default function MyPromotions({ onBack }: MyPromotionsProps) {
+export default function MyPromotions() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [promotions, setPromotions] = useState<Promotion[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'active' | 'expired'>('all');
@@ -62,40 +60,28 @@ export default function MyPromotions({ onBack }: MyPromotionsProps) {
 
   const getTypeLabel = (type: string) => {
     switch (type) {
-      case 'featured':
-        return 'إعلان مميز';
-      case 'pinned':
-        return 'إعلان مثبت';
-      case 'featured_pinned':
-        return 'باقة البائع السريع';
-      default:
-        return type;
+      case 'featured': return 'إعلان مميز';
+      case 'pinned': return 'إعلان مثبت';
+      case 'featured_pinned': return 'باقة البائع السريع';
+      default: return type;
     }
   };
 
   const getTypeIcon = (type: string) => {
     switch (type) {
-      case 'featured':
-        return <Star className="w-5 h-5" />;
-      case 'pinned':
-        return <Pin className="w-5 h-5" />;
-      case 'featured_pinned':
-        return <Zap className="w-5 h-5" />;
-      default:
-        return <Star className="w-5 h-5" />;
+      case 'featured': return <Star className="w-5 h-5" />;
+      case 'pinned': return <Pin className="w-5 h-5" />;
+      case 'featured_pinned': return <Zap className="w-5 h-5" />;
+      default: return <Star className="w-5 h-5" />;
     }
   };
 
   const getTypeColor = (type: string) => {
     switch (type) {
-      case 'featured':
-        return 'from-amber-500 to-yellow-500';
-      case 'pinned':
-        return 'from-blue-500 to-indigo-500';
-      case 'featured_pinned':
-        return 'from-emerald-500 to-green-500';
-      default:
-        return 'from-gray-500 to-gray-600';
+      case 'featured': return 'from-amber-500 to-yellow-500';
+      case 'pinned': return 'from-blue-500 to-blue-600';
+      case 'featured_pinned': return 'from-emerald-500 to-green-500';
+      default: return 'from-gray-500 to-gray-600';
     }
   };
 
@@ -155,10 +141,11 @@ export default function MyPromotions({ onBack }: MyPromotionsProps) {
       <div className="sticky top-0 z-10 bg-white border-b border-gray-200 shadow-sm">
         <div className="max-w-4xl mx-auto px-4 py-4 flex items-center gap-4">
           <button
-            onClick={onBack}
-            className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+            onClick={() => navigate('/profile')}
+            className="group flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 text-amber-700 rounded-xl hover:from-amber-100 hover:to-orange-100 hover:border-amber-300 hover:shadow-md active:scale-95 transition-all duration-200 font-semibold text-sm"
           >
-            <ArrowRight className="w-6 h-6 text-gray-700" />
+            <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
+            <span>رجوع لحسابي</span>
           </button>
           <div>
             <h1 className="text-xl font-bold text-gray-900">الترقيات الخاصة بك</h1>
@@ -172,7 +159,7 @@ export default function MyPromotions({ onBack }: MyPromotionsProps) {
               onClick={() => setFilter('all')}
               className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all ${
                 filter === 'all'
-                  ? 'bg-amber-500 text-white'
+                  ? 'bg-amber-500 text-white shadow-md'
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
             >
@@ -182,7 +169,7 @@ export default function MyPromotions({ onBack }: MyPromotionsProps) {
               onClick={() => setFilter('active')}
               className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all ${
                 filter === 'active'
-                  ? 'bg-amber-500 text-white'
+                  ? 'bg-amber-500 text-white shadow-md'
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
             >
@@ -192,7 +179,7 @@ export default function MyPromotions({ onBack }: MyPromotionsProps) {
               onClick={() => setFilter('expired')}
               className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all ${
                 filter === 'expired'
-                  ? 'bg-amber-500 text-white'
+                  ? 'bg-amber-500 text-white shadow-md'
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
             >

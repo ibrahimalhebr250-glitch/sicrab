@@ -116,9 +116,10 @@ export default function PromoteListing() {
         <div className="max-w-4xl mx-auto px-4 py-4 flex items-center gap-4">
           <button
             onClick={() => navigate(-1)}
-            className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+            className="group flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 text-amber-700 rounded-xl hover:from-amber-100 hover:to-orange-100 hover:border-amber-300 hover:shadow-md active:scale-95 transition-all duration-200 font-semibold text-sm"
           >
-            <ArrowRight className="w-6 h-6 text-gray-700" />
+            <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
+            <span>رجوع</span>
           </button>
           <div>
             <h1 className="text-xl font-bold text-gray-900">ترقية الإعلان</h1>

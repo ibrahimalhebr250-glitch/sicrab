@@ -4,12 +4,7 @@ import { supabase, Listing } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import ReviewsList from '../components/ReviewsList';
 import SellerBadge from '../components/SellerBadge';
-
-interface PublicProfileProps {
-  userId: string;
-  onBack: () => void;
-  onViewListing: (listingId: string) => void;
-}
+import { useParams, useNavigate } from 'react-router-dom';
 
 interface Profile {
   id: string;
@@ -20,7 +15,9 @@ interface Profile {
   listings_count: number;
 }
 
-export default function PublicProfile({ userId, onBack, onViewListing }: PublicProfileProps) {
+export default function PublicProfile() {
+  const { id: userId } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const { user } = useAuth();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [listings, setListings] = useState<Listing[]>([]);
@@ -142,10 +139,11 @@ export default function PublicProfile({ userId, onBack, onViewListing }: PublicP
         <div className="text-center p-4">
           <p className="text-gray-600 text-lg mb-4">الملف الشخصي غير موجود</p>
           <button
-            onClick={onBack}
-            className="px-6 py-3 bg-amber-500 text-white rounded-xl hover:bg-amber-600 font-bold"
+            onClick={() => navigate(-1)}
+            className="group flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 text-amber-700 rounded-xl hover:from-amber-100 hover:to-orange-100 hover:border-amber-300 hover:shadow-md active:scale-95 transition-all duration-200 font-semibold text-sm"
           >
-            العودة
+            <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
+            <span>رجوع</span>
           </button>
         </div>
       </div>
@@ -157,10 +155,11 @@ export default function PublicProfile({ userId, onBack, onViewListing }: PublicP
       <div className="sticky top-0 z-10 bg-white border-b border-gray-200 shadow-sm">
         <div className="max-w-4xl mx-auto px-4 py-4 flex items-center gap-4">
           <button
-            onClick={onBack}
-            className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+            onClick={() => navigate(-1)}
+            className="group flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 text-amber-700 rounded-xl hover:from-amber-100 hover:to-orange-100 hover:border-amber-300 hover:shadow-md active:scale-95 transition-all duration-200 font-semibold text-sm"
           >
-            <ArrowRight className="w-6 h-6 text-gray-700" />
+            <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
+            <span>رجوع</span>
           </button>
           <h1 className="text-xl font-bold text-gray-900">الملف الشخصي</h1>
         </div>
@@ -252,7 +251,7 @@ export default function PublicProfile({ userId, onBack, onViewListing }: PublicP
               <ListingCard
                 key={listing.id}
                 listing={listing}
-                onClick={() => onViewListing(listing.id)}
+                onClick={() => navigate(`/listing/${listing.slug || listing.id}`)}
               />
             ))}
           </div>

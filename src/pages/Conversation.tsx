@@ -2,6 +2,7 @@ import { useEffect, useState, useRef } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import { ArrowRight, Send, Package, User } from 'lucide-react';
+import { useParams, useNavigate } from 'react-router-dom';
 
 interface Message {
   id: string;
@@ -33,12 +34,9 @@ interface ConversationDetails {
   };
 }
 
-interface ConversationProps {
-  conversationId: string;
-  onBack: () => void;
-}
-
-export default function Conversation({ conversationId, onBack }: ConversationProps) {
+export default function Conversation() {
+  const { id: conversationId } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const { user, profile } = useAuth();
   const [conversation, setConversation] = useState<ConversationDetails | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -91,7 +89,7 @@ export default function Conversation({ conversationId, onBack }: ConversationPro
       if (data) {
         if (data.buyer_id !== user?.id && data.seller_id !== user?.id) {
           alert('ليس لديك صلاحية للوصول لهذه المحادثة');
-          onBack();
+          navigate('/messages');
           return;
         }
         setConversation(data);
@@ -209,10 +207,10 @@ export default function Conversation({ conversationId, onBack }: ConversationPro
         <div className="text-center">
           <h2 className="text-2xl font-bold text-gray-900 mb-4">المحادثة غير موجودة</h2>
           <button
-            onClick={onBack}
+            onClick={() => navigate('/messages')}
             className="inline-block bg-gradient-to-r from-amber-500 to-orange-500 text-white px-8 py-3 rounded-lg font-bold hover:from-amber-600 hover:to-orange-600 transition-all"
           >
-            العودة
+            العودة للرسائل
           </button>
         </div>
       </div>
@@ -227,10 +225,11 @@ export default function Conversation({ conversationId, onBack }: ConversationPro
         <div className="max-w-4xl mx-auto px-4 py-4">
           <div className="flex items-center gap-4">
             <button
-              onClick={onBack}
-              className="w-10 h-10 flex items-center justify-center bg-gray-100 rounded-full hover:bg-gray-200 transition-all"
+              onClick={() => navigate('/messages')}
+              className="group flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 text-amber-700 rounded-xl hover:from-amber-100 hover:to-orange-100 hover:border-amber-300 hover:shadow-md active:scale-95 transition-all duration-200 font-semibold text-sm"
             >
-              <ArrowRight className="w-5 h-5" />
+              <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
+              <span>رجوع</span>
             </button>
 
             <a

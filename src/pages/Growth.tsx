@@ -1,20 +1,19 @@
 import { ArrowRight, TrendingUp, Share2, Eye, Users, Target, Zap, Rocket, CheckCircle, UserPlus } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
-interface GrowthProps {
-  onBack: () => void;
-}
-
-export default function Growth({ onBack }: GrowthProps) {
+export default function Growth() {
+  const navigate = useNavigate();
   return (
     <div className="min-h-screen bg-slate-50 pb-8">
       <div className="bg-white shadow-sm sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 py-4">
           <div className="flex items-center gap-3">
             <button
-              onClick={onBack}
-              className="w-10 h-10 flex items-center justify-center bg-gray-100 rounded-full hover:bg-gray-200 active:scale-95 transition-all"
+              onClick={() => navigate(-1)}
+              className="group flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 text-amber-700 rounded-xl hover:from-amber-100 hover:to-orange-100 hover:border-amber-300 hover:shadow-md active:scale-95 transition-all duration-200 font-semibold text-sm"
             >
-              <ArrowRight className="w-5 h-5 text-gray-700" />
+              <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
+              <span>رجوع</span>
             </button>
             <div>
               <h1 className="text-xl font-bold text-gray-900">النمو وانتشار الإعلانات</h1>

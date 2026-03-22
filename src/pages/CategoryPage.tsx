@@ -1,12 +1,7 @@
 import { useEffect, useState } from 'react';
 import { ArrowRight, TrendingUp, MapPin, Eye, Package } from 'lucide-react';
 import { supabase, Listing } from '../lib/supabase';
-
-interface CategoryPageProps {
-  categorySlug: string;
-  onBack: () => void;
-  onViewListing: (listingId: string) => void;
-}
+import { useParams, useNavigate } from 'react-router-dom';
 
 interface Category {
   id: string;
@@ -16,7 +11,9 @@ interface Category {
   description_ar: string;
 }
 
-export default function CategoryPage({ categorySlug, onBack, onViewListing }: CategoryPageProps) {
+export default function CategoryPage() {
+  const { slug: categorySlug } = useParams<{ slug: string }>();
+  const navigate = useNavigate();
   const [category, setCategory] = useState<Category | null>(null);
   const [featuredListings, setFeaturedListings] = useState<Listing[]>([]);
   const [recentListings, setRecentListings] = useState<Listing[]>([]);
@@ -70,10 +67,11 @@ export default function CategoryPage({ categorySlug, onBack, onViewListing }: Ca
           <div className="max-w-7xl mx-auto px-4 py-4">
             <div className="flex items-center gap-3">
               <button
-                onClick={onBack}
-                className="w-10 h-10 flex items-center justify-center bg-gray-100 rounded-full"
+                onClick={() => navigate(-1)}
+                className="group flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 text-amber-700 rounded-xl hover:from-amber-100 hover:to-orange-100 hover:border-amber-300 hover:shadow-md active:scale-95 transition-all duration-200 font-semibold text-sm"
               >
-                <ArrowRight className="w-5 h-5" />
+                <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
+                <span>رجوع</span>
               </button>
               <div className="h-6 bg-gray-200 rounded w-48 animate-pulse"></div>
             </div>
@@ -101,10 +99,11 @@ export default function CategoryPage({ categorySlug, onBack, onViewListing }: Ca
         <div className="text-center">
           <h2 className="text-2xl font-bold text-gray-900 mb-2">القسم غير موجود</h2>
           <button
-            onClick={onBack}
-            className="text-amber-600 hover:text-amber-700 font-medium"
+            onClick={() => navigate('/')}
+            className="group flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 text-amber-700 rounded-xl hover:from-amber-100 hover:to-orange-100 hover:border-amber-300 hover:shadow-md active:scale-95 transition-all duration-200 font-semibold text-sm"
           >
-            العودة للرئيسية
+            <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
+            <span>العودة للرئيسية</span>
           </button>
         </div>
       </div>
@@ -117,10 +116,11 @@ export default function CategoryPage({ categorySlug, onBack, onViewListing }: Ca
         <div className="max-w-7xl mx-auto px-4 py-4">
           <div className="flex items-center gap-3">
             <button
-              onClick={onBack}
-              className="w-10 h-10 flex items-center justify-center bg-gray-100 rounded-full hover:bg-gray-200 active:scale-95 transition-all"
+              onClick={() => navigate(-1)}
+              className="group flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 text-amber-700 rounded-xl hover:from-amber-100 hover:to-orange-100 hover:border-amber-300 hover:shadow-md active:scale-95 transition-all duration-200 font-semibold text-sm"
             >
-              <ArrowRight className="w-5 h-5 text-gray-700" />
+              <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
+              <span>رجوع</span>
             </button>
             <div>
               <h1 className="text-xl font-bold text-gray-900">{category.name_ar}</h1>
@@ -156,7 +156,7 @@ export default function CategoryPage({ categorySlug, onBack, onViewListing }: Ca
                 <ListingCard
                   key={listing.id}
                   listing={listing}
-                  onClick={() => onViewListing(listing.id)}
+                  onClick={() => navigate(`/listing/${listing.slug || listing.id}`)}
                 />
               ))}
             </div>
@@ -171,7 +171,7 @@ export default function CategoryPage({ categorySlug, onBack, onViewListing }: Ca
                 <ListingCard
                   key={listing.id}
                   listing={listing}
-                  onClick={() => onViewListing(listing.id)}
+                  onClick={() => navigate(`/listing/${listing.slug || listing.id}`)}
                 />
               ))}
             </div>
