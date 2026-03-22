@@ -197,7 +197,7 @@ export default function PromoteListing() {
                     <div className="flex items-center justify-between mb-2">
                       <h3 className="text-xl font-bold text-gray-900">{pkg.name_ar}</h3>
                       <div className="text-right">
-                        <div className="text-3xl font-black text-gray-900">{pkg.price}$</div>
+                        <div className="text-3xl font-black text-gray-900">{pkg.price} ر.س</div>
                         <div className="text-sm text-gray-600">{pkg.duration_days} أيام</div>
                       </div>
                     </div>

@@ -248,7 +248,7 @@ export default function AdminPromotions() {
             { label: 'إجمالي الباقات', value: stats.total, icon: <Package className="w-5 h-5" />, color: 'from-blue-500 to-blue-600' },
             { label: 'نشطة الآن', value: stats.active, icon: <CheckCircle className="w-5 h-5" />, color: 'from-green-500 to-emerald-600' },
             { label: 'قيد الانتظار', value: stats.pending, icon: <Clock className="w-5 h-5" />, color: 'from-yellow-500 to-orange-500' },
-            { label: 'الإيرادات ($)', value: stats.revenue.toFixed(0), icon: <DollarSign className="w-5 h-5" />, color: 'from-teal-500 to-cyan-600' },
+            { label: 'الإيرادات (ر.س)', value: stats.revenue.toFixed(0), icon: <DollarSign className="w-5 h-5" />, color: 'from-teal-500 to-cyan-600' },
           ].map((s, i) => (
             <div key={i} className="bg-white/10 backdrop-blur-sm rounded-2xl p-4 border border-white/10">
               <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${s.color} flex items-center justify-center text-white mb-3`}>{s.icon}</div>
@@ -509,7 +509,7 @@ function UserPromotionRow({
                       {status.icon}
                       {status.label}
                     </span>
-                    <span className="text-gray-500 text-xs font-bold">${Number(promo.price).toFixed(2)}</span>
+                    <span className="text-gray-500 text-xs font-bold">{Number(promo.price).toFixed(2)} ر.س</span>
                   </div>
                 </div>
 
@@ -710,7 +710,7 @@ function PackageCard({ pkg, onEdit, onToggle, onDelete }: {
                   <p className="text-gray-500 text-sm mt-0.5">{pkg.description_ar}</p>
                 </div>
                 <div className="text-left flex-shrink-0">
-                  <div className="text-2xl font-black text-gray-900">${pkg.price}</div>
+                  <div className="text-2xl font-black text-gray-900">{pkg.price} ر.س</div>
                   <div className="text-gray-500 text-xs">{pkg.duration_days} يوم</div>
                 </div>
               </div>
@@ -849,7 +849,7 @@ function PackageForm({ pkg, onSave, onCancel, saving }: {
           />
         </div>
         <div>
-          <label className="block text-sm font-bold text-gray-700 mb-1">السعر ($)</label>
+          <label className="block text-sm font-bold text-gray-700 mb-1">السعر (ر.س)</label>
           <input
             type="number"
             value={form.price}
