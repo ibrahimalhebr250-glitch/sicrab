@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { LayoutDashboard, Package, Users, AlertCircle, Star, MapPin, BarChart3, Settings, Menu, X, DollarSign, FileText, Activity, Shield, LogOut, TrendingUp } from 'lucide-react';
+import { LayoutDashboard, Package, Users, AlertCircle, Star, MapPin, BarChart3, Settings, Menu, X, DollarSign, FileText, Activity, Shield, LogOut, TrendingUp, Wallet } from 'lucide-react';
 import { useAdminAuth } from '../contexts/AdminAuthContext';
 import AdminDashboard from './admin/Dashboard';
 import AdminCategories from './admin/Categories';
@@ -10,7 +10,7 @@ import AdminPromotions from './admin/Promotions';
 import AdminCities from './admin/Cities';
 import AdminAnalytics from './admin/Analytics';
 import AdminSettings from './admin/Settings';
-import AdminCommission from './admin/Commission';
+import PlatformWallet from './admin/PlatformWallet';
 import AdminContent from './admin/Content';
 import AdminLiveActivity from './admin/LiveActivity';
 import AdminStaff from './admin/Staff';
@@ -52,7 +52,7 @@ export default function Admin() {
     { id: 'cities' as AdminPage, label: 'المدن', icon: <MapPin className="w-5 h-5" />, section: 'cities' },
     { id: 'reports' as AdminPage, label: 'البلاغات', icon: <AlertCircle className="w-5 h-5" />, section: 'reports' },
     { id: 'promotions' as AdminPage, label: 'الترويج', icon: <Star className="w-5 h-5" />, section: 'promotions' },
-    { id: 'commission' as AdminPage, label: 'العمولات', icon: <DollarSign className="w-5 h-5" />, section: 'commission' },
+    { id: 'commission' as AdminPage, label: 'محفظة المنصة', icon: <Wallet className="w-5 h-5" />, section: 'commission' },
     { id: 'content' as AdminPage, label: 'المحتوى', icon: <FileText className="w-5 h-5" />, section: 'content' },
     { id: 'analytics' as AdminPage, label: 'التحليلات', icon: <BarChart3 className="w-5 h-5" />, section: 'analytics' },
     { id: 'staff' as AdminPage, label: 'إدارة الموظفين', icon: <Shield className="w-5 h-5" />, section: 'staff' },
@@ -130,7 +130,7 @@ export default function Admin() {
         {currentPage === 'reports' && <AdminReports />}
         {currentPage === 'promotions' && <AdminPromotions />}
         {currentPage === 'cities' && <AdminCities />}
-        {currentPage === 'commission' && <AdminCommission />}
+        {currentPage === 'commission' && <PlatformWallet />}
         {currentPage === 'content' && <AdminContent />}
         {currentPage === 'analytics' && <AdminAnalytics />}
         {currentPage === 'staff' && <AdminStaff />}
