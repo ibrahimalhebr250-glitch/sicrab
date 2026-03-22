@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
-import { Star, Pin, Zap, Calendar, Package, Search, CheckCircle, XCircle, Clock, CreditCard as Edit3, ToggleLeft, ToggleRight, Eye, TrendingUp, DollarSign, AlertCircle, RefreshCw, Settings2, Save, Plus } from 'lucide-react';
+import { Star, Pin, Zap, Calendar, Package, Search, CheckCircle, XCircle, Clock, ToggleLeft, ToggleRight, Eye, TrendingUp, DollarSign, AlertCircle, RefreshCw, Settings2, Save, Plus, Trash2, User, ChevronDown, CreditCard as Edit2 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 
 interface Promotion {
@@ -14,7 +14,9 @@ interface Promotion {
   payment_status: string;
   payment_method: string | null;
   created_at: string;
+  updated_at: string;
   listings: { title: string; price: number } | null;
+  profiles: { full_name: string | null; phone: string | null } | null;
 }
 
 interface PromotionPackage {
@@ -39,7 +41,7 @@ interface SiteSettings {
   promotions_enabled: boolean;
 }
 
-type Tab = 'promotions' | 'packages' | 'settings';
+type Tab = 'user_packages' | 'packages' | 'settings';
 type PromotionFilter = 'all' | 'active' | 'pending' | 'expired' | 'cancelled';
 
 const TYPE_LABELS: Record<string, string> = {
@@ -68,7 +70,7 @@ const STATUS_CONFIG: Record<string, { label: string; className: string; icon: JS
 };
 
 export default function AdminPromotions() {
-  const [tab, setTab] = useState<Tab>('promotions');
+  const [tab, setTab] = useState<Tab>('user_packages');
   const [promotions, setPromotions] = useState<Promotion[]>([]);
   const [packages, setPackages] = useState<PromotionPackage[]>([]);
   const [settings, setSettings] = useState<SiteSettings | null>(null);
@@ -78,8 +80,10 @@ export default function AdminPromotions() {
   const [editingPackage, setEditingPackage] = useState<PromotionPackage | null>(null);
   const [savingPackage, setSavingPackage] = useState(false);
   const [savingSettings, setSavingSettings] = useState(false);
-  const [togglingPromo, setTogglingPromo] = useState<string | null>(null);
+  const [processingPromo, setProcessingPromo] = useState<string | null>(null);
   const [showNewPackage, setShowNewPackage] = useState(false);
+  const [editingPromo, setEditingPromo] = useState<Promotion | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
 
   const loadAll = useCallback(async () => {
     setLoading(true);
@@ -92,7 +96,7 @@ export default function AdminPromotions() {
   async function loadPromotions() {
     const { data } = await supabase
       .from('promotions')
-      .select('*, listings(title, price)')
+      .select('*, listings(title, price), profiles(full_name, phone)')
       .order('created_at', { ascending: false });
     setPromotions(data || []);
   }
@@ -114,19 +118,48 @@ export default function AdminPromotions() {
   }
 
   async function updatePromotionStatus(id: string, status: string) {
-    setTogglingPromo(id);
+    setProcessingPromo(id);
     await supabase.from('promotions').update({ status, updated_at: new Date().toISOString() }).eq('id', id);
     setPromotions(prev => prev.map(p => p.id === id ? { ...p, status } : p));
-    setTogglingPromo(null);
+    setProcessingPromo(null);
   }
 
   async function extendPromotion(id: string, days: number) {
     const promo = promotions.find(p => p.id === id);
     if (!promo) return;
-    const newEnd = new Date(promo.end_date);
-    newEnd.setDate(newEnd.getDate() + days);
-    await supabase.from('promotions').update({ end_date: newEnd.toISOString(), updated_at: new Date().toISOString() }).eq('id', id);
-    setPromotions(prev => prev.map(p => p.id === id ? { ...p, end_date: newEnd.toISOString() } : p));
+    setProcessingPromo(id);
+    const base = promo.status === 'active' ? new Date(promo.end_date) : new Date();
+    base.setDate(base.getDate() + days);
+    await supabase.from('promotions').update({
+      end_date: base.toISOString(),
+      status: 'active',
+      updated_at: new Date().toISOString(),
+    }).eq('id', id);
+    setPromotions(prev => prev.map(p => p.id === id ? { ...p, end_date: base.toISOString(), status: 'active' } : p));
+    setProcessingPromo(null);
+  }
+
+  async function deletePromotion(id: string) {
+    setProcessingPromo(id);
+    await supabase.from('promotions').delete().eq('id', id);
+    setPromotions(prev => prev.filter(p => p.id !== id));
+    setConfirmDelete(null);
+    setProcessingPromo(null);
+  }
+
+  async function saveEditedPromotion(promo: Promotion, newEndDate: string, newStatus: string) {
+    setProcessingPromo(promo.id);
+    await supabase.from('promotions').update({
+      end_date: new Date(newEndDate).toISOString(),
+      status: newStatus,
+      updated_at: new Date().toISOString(),
+    }).eq('id', promo.id);
+    setPromotions(prev => prev.map(p => p.id === promo.id
+      ? { ...p, end_date: new Date(newEndDate).toISOString(), status: newStatus }
+      : p
+    ));
+    setEditingPromo(null);
+    setProcessingPromo(null);
   }
 
   async function savePackage(pkg: Partial<PromotionPackage> & { id?: string }) {
@@ -140,6 +173,11 @@ export default function AdminPromotions() {
     setEditingPackage(null);
     setShowNewPackage(false);
     setSavingPackage(false);
+  }
+
+  async function deletePackage(id: string) {
+    await supabase.from('promotion_packages').delete().eq('id', id);
+    setPackages(prev => prev.filter(p => p.id !== id));
   }
 
   async function togglePackage(id: string, is_active: boolean) {
@@ -157,14 +195,18 @@ export default function AdminPromotions() {
 
   const filteredPromotions = promotions.filter(p => {
     const matchFilter = filter === 'all' || p.status === filter;
-    const matchSearch = !search || p.listings?.title.toLowerCase().includes(search.toLowerCase());
+    const title = p.listings?.title ?? '';
+    const name = p.profiles?.full_name ?? '';
+    const matchSearch = !search ||
+      title.toLowerCase().includes(search.toLowerCase()) ||
+      name.toLowerCase().includes(search.toLowerCase());
     return matchFilter && matchSearch;
   });
 
   const stats = {
     total: promotions.length,
     active: promotions.filter(p => p.status === 'active').length,
-    revenue: promotions.filter(p => p.payment_status === 'completed').reduce((s, p) => s + p.price, 0),
+    revenue: promotions.filter(p => p.payment_status === 'completed').reduce((s, p) => s + Number(p.price), 0),
     pending: promotions.filter(p => p.status === 'pending').length,
   };
 
@@ -193,7 +235,7 @@ export default function AdminPromotions() {
         <div className="mb-6 flex items-start justify-between gap-4">
           <div>
             <h1 className="text-3xl font-black text-white mb-1">إدارة الترويج والباقات</h1>
-            <p className="text-slate-400">التحكم الكامل بالباقات والترقيات وإعدادات المنصة</p>
+            <p className="text-slate-400">التحكم الكامل بباقات المستخدمين وتعريف الباقات وإعدادات المنصة</p>
           </div>
           <button onClick={loadAll} className="flex items-center gap-2 px-4 py-2 bg-white/10 text-white rounded-xl hover:bg-white/20 transition-all text-sm font-medium">
             <RefreshCw className="w-4 h-4" />
@@ -203,7 +245,7 @@ export default function AdminPromotions() {
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
           {[
-            { label: 'إجمالي الترقيات', value: stats.total, icon: <Package className="w-5 h-5" />, color: 'from-blue-500 to-blue-600' },
+            { label: 'إجمالي الباقات', value: stats.total, icon: <Package className="w-5 h-5" />, color: 'from-blue-500 to-blue-600' },
             { label: 'نشطة الآن', value: stats.active, icon: <CheckCircle className="w-5 h-5" />, color: 'from-green-500 to-emerald-600' },
             { label: 'قيد الانتظار', value: stats.pending, icon: <Clock className="w-5 h-5" />, color: 'from-yellow-500 to-orange-500' },
             { label: 'الإيرادات ($)', value: stats.revenue.toFixed(0), icon: <DollarSign className="w-5 h-5" />, color: 'from-teal-500 to-cyan-600' },
@@ -250,9 +292,9 @@ export default function AdminPromotions() {
 
         <div className="flex gap-2 mb-6 bg-white/5 rounded-2xl p-1.5">
           {([
-            { id: 'promotions' as Tab, label: 'الترقيات', icon: <Star className="w-4 h-4" /> },
-            { id: 'packages' as Tab, label: 'الباقات', icon: <Package className="w-4 h-4" /> },
-            { id: 'settings' as Tab, label: 'الإعدادات', icon: <Settings2 className="w-4 h-4" /> },
+            { id: 'user_packages' as Tab, label: 'باقات المستخدمين', icon: <User className="w-4 h-4" />, count: stats.total },
+            { id: 'packages' as Tab, label: 'تعريف الباقات', icon: <Package className="w-4 h-4" />, count: packages.length },
+            { id: 'settings' as Tab, label: 'الإعدادات', icon: <Settings2 className="w-4 h-4" />, count: null },
           ]).map(t => (
             <button
               key={t.id}
@@ -263,18 +305,23 @@ export default function AdminPromotions() {
             >
               {t.icon}
               <span>{t.label}</span>
+              {t.count !== null && (
+                <span className={`px-1.5 py-0.5 rounded-md text-xs font-black ${
+                  tab === t.id ? 'bg-gray-900 text-white' : 'bg-white/20 text-white'
+                }`}>{t.count}</span>
+              )}
             </button>
           ))}
         </div>
 
-        {tab === 'promotions' && (
+        {tab === 'user_packages' && (
           <div className="space-y-4">
             <div className="bg-white/10 rounded-2xl p-4 flex flex-wrap gap-3 items-center">
               <div className="relative flex-1 min-w-[200px]">
                 <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                 <input
                   type="text"
-                  placeholder="بحث باسم الإعلان..."
+                  placeholder="بحث باسم الإعلان أو المستخدم..."
                   value={search}
                   onChange={e => setSearch(e.target.value)}
                   className="w-full bg-white/10 text-white placeholder-slate-400 rounded-xl pr-10 pl-4 py-2.5 text-sm border border-white/10 focus:outline-none focus:border-white/30"
@@ -302,18 +349,33 @@ export default function AdminPromotions() {
             <div className="space-y-3">
               {filteredPromotions.length === 0 ? (
                 <div className="bg-white/10 rounded-2xl p-12 text-center">
-                  <Star className="w-12 h-12 text-slate-500 mx-auto mb-3" />
-                  <p className="text-slate-400 font-medium">لا توجد ترقيات مطابقة</p>
+                  <Package className="w-12 h-12 text-slate-500 mx-auto mb-3" />
+                  <p className="text-slate-400 font-medium">لا توجد باقات مطابقة</p>
                 </div>
               ) : filteredPromotions.map(promo => (
-                <PromotionRow
-                  key={promo.id}
-                  promo={promo}
-                  toggling={togglingPromo === promo.id}
-                  getRemainingDays={getRemainingDays}
-                  onUpdateStatus={updatePromotionStatus}
-                  onExtend={extendPromotion}
-                />
+                editingPromo?.id === promo.id ? (
+                  <EditPromoForm
+                    key={promo.id}
+                    promo={promo}
+                    onSave={saveEditedPromotion}
+                    onCancel={() => setEditingPromo(null)}
+                    processing={processingPromo === promo.id}
+                  />
+                ) : (
+                  <UserPromotionRow
+                    key={promo.id}
+                    promo={promo}
+                    processing={processingPromo === promo.id}
+                    confirmingDelete={confirmDelete === promo.id}
+                    getRemainingDays={getRemainingDays}
+                    onUpdateStatus={updatePromotionStatus}
+                    onExtend={extendPromotion}
+                    onEdit={() => setEditingPromo(promo)}
+                    onDeleteRequest={() => setConfirmDelete(promo.id)}
+                    onDeleteConfirm={() => deletePromotion(promo.id)}
+                    onDeleteCancel={() => setConfirmDelete(null)}
+                  />
+                )
               ))}
             </div>
           </div>
@@ -322,7 +384,7 @@ export default function AdminPromotions() {
         {tab === 'packages' && (
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <p className="text-slate-300 text-sm">تفعيل أو تعطيل الباقات وتعديل أسعارها ومزاياها</p>
+              <p className="text-slate-300 text-sm">تفعيل أو تعطيل الباقات وتعديل أسعارها ومزاياها وحذفها</p>
               <button
                 onClick={() => { setShowNewPackage(true); setEditingPackage(null); }}
                 className="flex items-center gap-2 px-4 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-white rounded-xl font-bold text-sm transition-all shadow-lg"
@@ -357,6 +419,7 @@ export default function AdminPromotions() {
                     pkg={pkg}
                     onEdit={() => setEditingPackage(pkg)}
                     onToggle={togglePackage}
+                    onDelete={deletePackage}
                   />
                 )
               ))}
@@ -376,175 +439,335 @@ export default function AdminPromotions() {
   );
 }
 
-function PromotionRow({
-  promo, toggling, getRemainingDays, onUpdateStatus, onExtend
+function UserPromotionRow({
+  promo, processing, confirmingDelete, getRemainingDays,
+  onUpdateStatus, onExtend, onEdit, onDeleteRequest, onDeleteConfirm, onDeleteCancel
 }: {
   promo: Promotion;
-  toggling: boolean;
+  processing: boolean;
+  confirmingDelete: boolean;
   getRemainingDays: (d: string) => string;
   onUpdateStatus: (id: string, status: string) => void;
   onExtend: (id: string, days: number) => void;
+  onEdit: () => void;
+  onDeleteRequest: () => void;
+  onDeleteConfirm: () => void;
+  onDeleteCancel: () => void;
 }) {
   const status = STATUS_CONFIG[promo.status] ?? STATUS_CONFIG.expired;
+  const remaining = getRemainingDays(promo.end_date);
 
   return (
-    <div className={`bg-white rounded-2xl p-4 shadow-sm transition-all ${toggling ? 'opacity-60' : ''}`}>
-      <div className="flex items-start gap-4">
-        <div className={`w-11 h-11 rounded-xl bg-gradient-to-br ${TYPE_COLORS[promo.type] ?? 'from-gray-400 to-gray-500'} flex items-center justify-center text-white flex-shrink-0`}>
-          {TYPE_ICONS[promo.type] ?? <Star className="w-4 h-4" />}
-        </div>
-
-        <div className="flex-1 min-w-0">
-          <div className="flex items-start justify-between gap-2 flex-wrap">
-            <div>
-              <h3 className="font-bold text-gray-900 text-sm leading-tight line-clamp-1">
-                {promo.listings?.title ?? 'إعلان محذوف'}
-              </h3>
-              <div className="flex items-center gap-2 mt-1 flex-wrap">
-                <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-xs font-bold ${
-                  promo.type === 'featured' ? 'bg-amber-100 text-amber-700' :
-                  promo.type === 'pinned' ? 'bg-blue-100 text-blue-700' :
-                  'bg-emerald-100 text-emerald-700'
-                }`}>
-                  {TYPE_ICONS[promo.type]}
-                  {TYPE_LABELS[promo.type]}
-                </span>
-                <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-xs font-bold ${status.className}`}>
-                  {status.icon}
-                  {status.label}
-                </span>
-                <span className="text-gray-500 text-xs font-medium">${promo.price}</span>
-              </div>
-            </div>
-
-            <div className="text-left flex-shrink-0">
-              <div className={`text-xs font-bold ${promo.status === 'active' ? 'text-green-600' : 'text-gray-400'}`}>
-                {getRemainingDays(promo.end_date)}
-              </div>
-              <div className="text-gray-400 text-xs mt-0.5">
-                {new Date(promo.end_date).toLocaleDateString('ar-SA')}
-              </div>
-            </div>
+    <div className={`bg-white rounded-2xl shadow-sm transition-all ${processing ? 'opacity-60' : ''}`}>
+      {confirmingDelete && (
+        <div className="bg-red-50 border-2 border-red-200 rounded-2xl p-4 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0" />
+            <p className="text-red-800 font-bold text-sm">هل تريد حذف هذه الباقة نهائياً؟ لا يمكن التراجع.</p>
           </div>
+          <div className="flex gap-2">
+            <button onClick={onDeleteCancel} className="px-3 py-1.5 bg-gray-100 text-gray-700 hover:bg-gray-200 rounded-lg text-xs font-bold transition-all">
+              إلغاء
+            </button>
+            <button onClick={onDeleteConfirm} disabled={processing} className="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-bold transition-all">
+              حذف نهائي
+            </button>
+          </div>
+        </div>
+      )}
 
-          <div className="mt-3 flex items-center gap-2 flex-wrap">
-            {promo.status === 'active' && (
-              <>
+      {!confirmingDelete && (
+        <div className="p-4">
+          <div className="flex items-start gap-4">
+            <div className={`w-11 h-11 rounded-xl bg-gradient-to-br ${TYPE_COLORS[promo.type] ?? 'from-gray-400 to-gray-500'} flex items-center justify-center text-white flex-shrink-0`}>
+              {TYPE_ICONS[promo.type] ?? <Star className="w-4 h-4" />}
+            </div>
+
+            <div className="flex-1 min-w-0">
+              <div className="flex items-start justify-between gap-2 flex-wrap">
+                <div className="min-w-0">
+                  <h3 className="font-bold text-gray-900 text-sm leading-tight line-clamp-1">
+                    {promo.listings?.title ?? 'إعلان محذوف'}
+                  </h3>
+                  <div className="flex items-center gap-1.5 mt-1">
+                    <User className="w-3 h-3 text-gray-400" />
+                    <span className="text-gray-500 text-xs font-medium">
+                      {promo.profiles?.full_name ?? 'مستخدم غير معروف'}
+                      {promo.profiles?.phone && <span className="text-gray-400 mr-1">· {promo.profiles.phone}</span>}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-xs font-bold ${
+                      promo.type === 'featured' ? 'bg-amber-100 text-amber-700' :
+                      promo.type === 'pinned' ? 'bg-blue-100 text-blue-700' :
+                      'bg-emerald-100 text-emerald-700'
+                    }`}>
+                      {TYPE_ICONS[promo.type]}
+                      {TYPE_LABELS[promo.type] ?? promo.type}
+                    </span>
+                    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-xs font-bold ${status.className}`}>
+                      {status.icon}
+                      {status.label}
+                    </span>
+                    <span className="text-gray-500 text-xs font-bold">${Number(promo.price).toFixed(2)}</span>
+                  </div>
+                </div>
+
+                <div className="text-left flex-shrink-0">
+                  <div className={`text-xs font-bold ${promo.status === 'active' ? 'text-green-600' : 'text-gray-400'}`}>
+                    {remaining}
+                  </div>
+                  <div className="text-gray-400 text-xs mt-0.5">
+                    ينتهي: {new Date(promo.end_date).toLocaleDateString('ar-SA')}
+                  </div>
+                  <div className="text-gray-300 text-xs">
+                    بدأ: {new Date(promo.start_date).toLocaleDateString('ar-SA')}
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-3 flex items-center gap-2 flex-wrap">
                 <button
-                  onClick={() => onUpdateStatus(promo.id, 'cancelled')}
-                  disabled={toggling}
-                  className="flex items-center gap-1 px-3 py-1.5 bg-red-50 text-red-600 hover:bg-red-100 rounded-lg text-xs font-bold transition-all border border-red-200"
-                >
-                  <XCircle className="w-3.5 h-3.5" />
-                  إلغاء الترقية
-                </button>
-                <button
-                  onClick={() => onExtend(promo.id, 7)}
-                  disabled={toggling}
+                  onClick={onEdit}
+                  disabled={processing}
                   className="flex items-center gap-1 px-3 py-1.5 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg text-xs font-bold transition-all border border-blue-200"
                 >
-                  <Calendar className="w-3.5 h-3.5" />
-                  تمديد 7 أيام
+                  <Edit2 className="w-3.5 h-3.5" />
+                  تعديل
                 </button>
-              </>
-            )}
-            {promo.status === 'pending' && (
-              <button
-                onClick={() => onUpdateStatus(promo.id, 'active')}
-                disabled={toggling}
-                className="flex items-center gap-1 px-3 py-1.5 bg-green-50 text-green-600 hover:bg-green-100 rounded-lg text-xs font-bold transition-all border border-green-200"
-              >
-                <CheckCircle className="w-3.5 h-3.5" />
-                تفعيل الترقية
-              </button>
-            )}
-            {(promo.status === 'cancelled' || promo.status === 'expired') && (
-              <button
-                onClick={() => onUpdateStatus(promo.id, 'active')}
-                disabled={toggling}
-                className="flex items-center gap-1 px-3 py-1.5 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 rounded-lg text-xs font-bold transition-all border border-emerald-200"
-              >
-                <RefreshCw className="w-3.5 h-3.5" />
-                إعادة تفعيل
-              </button>
-            )}
+
+                {promo.status === 'active' && (
+                  <>
+                    <button
+                      onClick={() => onUpdateStatus(promo.id, 'cancelled')}
+                      disabled={processing}
+                      className="flex items-center gap-1 px-3 py-1.5 bg-orange-50 text-orange-600 hover:bg-orange-100 rounded-lg text-xs font-bold transition-all border border-orange-200"
+                    >
+                      <XCircle className="w-3.5 h-3.5" />
+                      إيقاف
+                    </button>
+                    <button
+                      onClick={() => onExtend(promo.id, 7)}
+                      disabled={processing}
+                      className="flex items-center gap-1 px-3 py-1.5 bg-teal-50 text-teal-600 hover:bg-teal-100 rounded-lg text-xs font-bold transition-all border border-teal-200"
+                    >
+                      <Calendar className="w-3.5 h-3.5" />
+                      تمديد 7 أيام
+                    </button>
+                  </>
+                )}
+                {promo.status === 'pending' && (
+                  <button
+                    onClick={() => onUpdateStatus(promo.id, 'active')}
+                    disabled={processing}
+                    className="flex items-center gap-1 px-3 py-1.5 bg-green-50 text-green-600 hover:bg-green-100 rounded-lg text-xs font-bold transition-all border border-green-200"
+                  >
+                    <CheckCircle className="w-3.5 h-3.5" />
+                    تفعيل
+                  </button>
+                )}
+                {(promo.status === 'cancelled' || promo.status === 'expired') && (
+                  <button
+                    onClick={() => onUpdateStatus(promo.id, 'active')}
+                    disabled={processing}
+                    className="flex items-center gap-1 px-3 py-1.5 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 rounded-lg text-xs font-bold transition-all border border-emerald-200"
+                  >
+                    <RefreshCw className="w-3.5 h-3.5" />
+                    إعادة تفعيل
+                  </button>
+                )}
+
+                <button
+                  onClick={onDeleteRequest}
+                  disabled={processing}
+                  className="flex items-center gap-1 px-3 py-1.5 bg-red-50 text-red-600 hover:bg-red-100 rounded-lg text-xs font-bold transition-all border border-red-200 mr-auto"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  حذف
+                </button>
+              </div>
+            </div>
           </div>
         </div>
+      )}
+    </div>
+  );
+}
+
+function EditPromoForm({ promo, onSave, onCancel, processing }: {
+  promo: Promotion;
+  onSave: (promo: Promotion, endDate: string, status: string) => void;
+  onCancel: () => void;
+  processing: boolean;
+}) {
+  const toDatetimeLocal = (iso: string) => {
+    const d = new Date(iso);
+    const pad = (n: number) => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  };
+
+  const [endDate, setEndDate] = useState(toDatetimeLocal(promo.end_date));
+  const [status, setStatus] = useState(promo.status);
+
+  return (
+    <div className="bg-white rounded-2xl p-5 border-2 border-blue-200 shadow-lg">
+      <div className="flex items-center gap-3 mb-4">
+        <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${TYPE_COLORS[promo.type] ?? 'from-gray-400 to-gray-500'} flex items-center justify-center text-white flex-shrink-0`}>
+          {TYPE_ICONS[promo.type] ?? <Star className="w-4 h-4" />}
+        </div>
+        <div>
+          <h3 className="font-black text-gray-900 text-base">تعديل الباقة</h3>
+          <p className="text-gray-500 text-sm">{promo.listings?.title ?? 'إعلان محذوف'} · {promo.profiles?.full_name ?? 'مستخدم غير معروف'}</p>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm font-bold text-gray-700 mb-1.5">تاريخ انتهاء الباقة</label>
+          <input
+            type="datetime-local"
+            value={endDate}
+            onChange={e => setEndDate(e.target.value)}
+            className="w-full border-2 border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-blue-400"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-bold text-gray-700 mb-1.5">حالة الباقة</label>
+          <div className="relative">
+            <select
+              value={status}
+              onChange={e => setStatus(e.target.value)}
+              className="w-full border-2 border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-blue-400 appearance-none"
+            >
+              <option value="active">نشط</option>
+              <option value="pending">قيد الانتظار</option>
+              <option value="cancelled">ملغي</option>
+              <option value="expired">منتهي</option>
+            </select>
+            <ChevronDown className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-4 flex items-center gap-3 justify-end">
+        <button
+          onClick={onCancel}
+          className="px-4 py-2.5 bg-gray-100 text-gray-700 hover:bg-gray-200 rounded-xl font-bold text-sm transition-all"
+        >
+          إلغاء
+        </button>
+        <button
+          onClick={() => onSave(promo, endDate, status)}
+          disabled={processing}
+          className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-sm transition-all shadow-lg disabled:opacity-50"
+        >
+          <Save className="w-4 h-4" />
+          {processing ? 'جاري الحفظ...' : 'حفظ التعديلات'}
+        </button>
       </div>
     </div>
   );
 }
 
-function PackageCard({ pkg, onEdit, onToggle }: {
+function PackageCard({ pkg, onEdit, onToggle, onDelete }: {
   pkg: PromotionPackage;
   onEdit: () => void;
   onToggle: (id: string, active: boolean) => void;
+  onDelete: (id: string) => void;
 }) {
+  const [confirmDel, setConfirmDel] = useState(false);
+
   return (
     <div className={`rounded-2xl p-5 border-2 transition-all ${
       pkg.is_active ? 'bg-white border-gray-200 shadow-sm' : 'bg-gray-50 border-gray-200 opacity-70'
     }`}>
-      <div className="flex items-start gap-4">
-        <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${TYPE_COLORS[pkg.type] ?? 'from-gray-400 to-gray-500'} flex items-center justify-center text-white flex-shrink-0`}>
-          {TYPE_ICONS[pkg.type] ?? <Package className="w-5 h-5" />}
+      {confirmDel ? (
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0" />
+            <p className="text-red-800 font-bold text-sm">حذف الباقة "{pkg.name_ar}" نهائياً؟</p>
+          </div>
+          <div className="flex gap-2">
+            <button onClick={() => setConfirmDel(false)} className="px-3 py-1.5 bg-gray-100 text-gray-700 hover:bg-gray-200 rounded-lg text-xs font-bold transition-all">
+              إلغاء
+            </button>
+            <button onClick={() => onDelete(pkg.id)} className="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-bold transition-all">
+              حذف
+            </button>
+          </div>
         </div>
-
-        <div className="flex-1 min-w-0">
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <h3 className="font-black text-gray-900 text-base">{pkg.name_ar}</h3>
-              <p className="text-gray-500 text-sm mt-0.5">{pkg.description_ar}</p>
+      ) : (
+        <>
+          <div className="flex items-start gap-4">
+            <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${TYPE_COLORS[pkg.type] ?? 'from-gray-400 to-gray-500'} flex items-center justify-center text-white flex-shrink-0`}>
+              {TYPE_ICONS[pkg.type] ?? <Package className="w-5 h-5" />}
             </div>
-            <div className="text-left flex-shrink-0">
-              <div className="text-2xl font-black text-gray-900">${pkg.price}</div>
-              <div className="text-gray-500 text-xs">{pkg.duration_days} يوم</div>
+
+            <div className="flex-1 min-w-0">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <h3 className="font-black text-gray-900 text-base">{pkg.name_ar}</h3>
+                  <p className="text-gray-500 text-sm mt-0.5">{pkg.description_ar}</p>
+                </div>
+                <div className="text-left flex-shrink-0">
+                  <div className="text-2xl font-black text-gray-900">${pkg.price}</div>
+                  <div className="text-gray-500 text-xs">{pkg.duration_days} يوم</div>
+                </div>
+              </div>
+
+              <div className="mt-3 flex items-center justify-between gap-3 flex-wrap">
+                <div className="flex items-center gap-2">
+                  <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold ${
+                    pkg.is_active ? 'bg-green-100 text-green-700 border border-green-200' : 'bg-gray-100 text-gray-500 border border-gray-200'
+                  }`}>
+                    {pkg.is_active ? <CheckCircle className="w-3 h-3" /> : <XCircle className="w-3 h-3" />}
+                    {pkg.is_active ? 'مفعّلة' : 'معطّلة'}
+                  </span>
+                  <span className="text-gray-400 text-xs">الترتيب: {pkg.display_order}</span>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => onToggle(pkg.id, !pkg.is_active)}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all border ${
+                      pkg.is_active
+                        ? 'bg-orange-50 text-orange-600 hover:bg-orange-100 border-orange-200'
+                        : 'bg-green-50 text-green-600 hover:bg-green-100 border-green-200'
+                    }`}
+                  >
+                    {pkg.is_active ? <ToggleRight className="w-4 h-4" /> : <ToggleLeft className="w-4 h-4" />}
+                    {pkg.is_active ? 'تعطيل' : 'تفعيل'}
+                  </button>
+                  <button
+                    onClick={onEdit}
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg text-xs font-bold transition-all border border-blue-200"
+                  >
+                    <Edit2 className="w-3.5 h-3.5" />
+                    تعديل
+                  </button>
+                  <button
+                    onClick={() => setConfirmDel(true)}
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-red-50 text-red-600 hover:bg-red-100 rounded-lg text-xs font-bold transition-all border border-red-200"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    حذف
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
 
-          <div className="mt-3 flex items-center justify-between gap-3 flex-wrap">
-            <div className="flex items-center gap-2">
-              <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold ${
-                pkg.is_active ? 'bg-green-100 text-green-700 border border-green-200' : 'bg-gray-100 text-gray-500 border border-gray-200'
-              }`}>
-                {pkg.is_active ? <CheckCircle className="w-3 h-3" /> : <XCircle className="w-3 h-3" />}
-                {pkg.is_active ? 'مفعّلة' : 'معطّلة'}
-              </span>
-              <span className="text-gray-400 text-xs">الترتيب: {pkg.display_order}</span>
+          {pkg.features_ar && pkg.features_ar.length > 0 && (
+            <div className="mt-4 pt-4 border-t border-gray-100 grid grid-cols-2 gap-1.5">
+              {pkg.features_ar.map((f, i) => (
+                <div key={i} className="flex items-center gap-1.5 text-xs text-gray-600">
+                  <CheckCircle className="w-3 h-3 text-green-500 flex-shrink-0" />
+                  {f}
+                </div>
+              ))}
             </div>
-
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => onToggle(pkg.id, !pkg.is_active)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all border ${
-                  pkg.is_active
-                    ? 'bg-red-50 text-red-600 hover:bg-red-100 border-red-200'
-                    : 'bg-green-50 text-green-600 hover:bg-green-100 border-green-200'
-                }`}
-              >
-                {pkg.is_active ? <ToggleRight className="w-4 h-4" /> : <ToggleLeft className="w-4 h-4" />}
-                {pkg.is_active ? 'تعطيل' : 'تفعيل'}
-              </button>
-              <button
-                onClick={onEdit}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg text-xs font-bold transition-all border border-blue-200"
-              >
-                <Edit3 className="w-3.5 h-3.5" />
-                تعديل
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {pkg.features_ar && pkg.features_ar.length > 0 && (
-        <div className="mt-4 pt-4 border-t border-gray-100 grid grid-cols-2 gap-1.5">
-          {pkg.features_ar.map((f, i) => (
-            <div key={i} className="flex items-center gap-1.5 text-xs text-gray-600">
-              <CheckCircle className="w-3 h-3 text-green-500 flex-shrink-0" />
-              {f}
-            </div>
-          ))}
-        </div>
+          )}
+        </>
       )}
     </div>
   );
