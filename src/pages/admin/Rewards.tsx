@@ -491,8 +491,7 @@ function AwardPointsTab({ users, pointActions, onRefresh, showToast }: {
 }) {
   const [search, setSearch] = useState('');
   const [selectedUser, setSelectedUser] = useState<UserRewardSummary | null>(null);
-  const [selectedAction, setSelectedAction] = useState<PointAction | null>(null);
-  const [customPoints, setCustomPoints] = useState('');
+  const [selectedActions, setSelectedActions] = useState<PointAction[]>([]);
   const [note, setNote] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [step, setStep] = useState<1 | 2 | 3>(1);
@@ -515,33 +514,32 @@ function AwardPointsTab({ users, pointActions, onRefresh, showToast }: {
     setStep(2);
   };
 
-  const handleSelectAction = (a: PointAction) => {
-    setSelectedAction(a);
-    setCustomPoints(String(Math.abs(a.points)));
-    setStep(3);
+  const handleToggleAction = (a: PointAction) => {
+    setSelectedActions(prev => {
+      const exists = prev.find(x => x.id === a.id);
+      const updated = exists ? prev.filter(x => x.id !== a.id) : [...prev, a];
+      if (updated.length > 0) setStep(3);
+      else setStep(2);
+      return updated;
+    });
   };
 
-  const finalPoints = selectedAction
-    ? (customPoints ? parseInt(customPoints) : Math.abs(selectedAction.points)) *
-      (selectedAction.category === 'negative' ? -1 : 1)
-    : 0;
+  const totalPoints = selectedActions.reduce((sum, a) => sum + a.points, 0);
 
   const handleSubmit = async () => {
-    if (!selectedUser || !selectedAction) return;
+    if (!selectedUser || selectedActions.length === 0) return;
     setSubmitting(true);
-    const { error } = await supabase.rpc('admin_award_points_by_action', {
+    const { error } = await supabase.rpc('admin_award_points_by_actions', {
       p_user_id: selectedUser.user_id,
-      p_action_key: selectedAction.action_key,
-      p_custom_points: finalPoints,
+      p_action_keys: selectedActions.map(a => a.action_key),
       p_note: note || null,
     });
     if (error) {
       showToast('حدث خطأ أثناء منح النقاط: ' + error.message, 'error');
     } else {
-      showToast(`تم ${finalPoints > 0 ? 'منح' : 'خصم'} ${Math.abs(finalPoints)} نقطة لـ ${selectedUser.full_name}`);
+      showToast(`تم ${totalPoints > 0 ? 'منح' : 'خصم'} ${Math.abs(totalPoints)} نقطة لـ ${selectedUser.full_name}`);
       setSelectedUser(null);
-      setSelectedAction(null);
-      setCustomPoints('');
+      setSelectedActions([]);
       setNote('');
       setStep(1);
       await onRefresh();
@@ -551,8 +549,7 @@ function AwardPointsTab({ users, pointActions, onRefresh, showToast }: {
 
   const handleReset = () => {
     setSelectedUser(null);
-    setSelectedAction(null);
-    setCustomPoints('');
+    setSelectedActions([]);
     setNote('');
     setStep(1);
   };
@@ -569,7 +566,7 @@ function AwardPointsTab({ users, pointActions, onRefresh, showToast }: {
           </div>
           <div>
             <h2 className="font-black text-emerald-900 text-base">منح نقاط السمعة</h2>
-            <p className="text-emerald-700 text-sm mt-0.5">اختر المستخدم ثم نوع الإجراء لمنح أو خصم النقاط تلقائياً بالقيمة الصحيحة</p>
+            <p className="text-emerald-700 text-sm mt-0.5">اختر المستخدم ثم نوع الإجراء (يمكن اختيار أكثر من إجراء) لمنح أو خصم النقاط تلقائياً</p>
           </div>
         </div>
       </div>
@@ -672,29 +669,40 @@ function AwardPointsTab({ users, pointActions, onRefresh, showToast }: {
             <div className={`px-4 py-3 border-b flex items-center gap-2 ${step === 2 ? 'border-amber-200 bg-amber-50' : 'border-gray-100'}`}>
               <div className={`w-5 h-5 rounded-full flex items-center justify-center text-xs font-black ${step >= 2 ? 'bg-amber-500 text-white' : 'bg-gray-200 text-gray-400'}`}>2</div>
               <h3 className="font-black text-gray-900 text-sm">نوع الإجراء</h3>
-              {selectedAction && <span className="mr-auto text-xs bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-lg font-bold">{selectedAction.label_ar}</span>}
+              {selectedActions.length > 0 && (
+                <span className="mr-auto text-xs bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-lg font-bold">
+                  {selectedActions.length} إجراء محدد
+                </span>
+              )}
             </div>
             <div className="p-4 space-y-3">
+              <p className="text-xs text-gray-400 bg-gray-50 rounded-lg px-3 py-2">يمكنك اختيار أكثر من إجراء في نفس الوقت</p>
               {[
-                { label: 'إجراءات إيجابية (منح نقاط)', actions: positiveActions, color: 'text-green-700', bg: 'bg-green-50', pointColor: 'text-green-600' },
-                { label: 'إجراءات سلبية (خصم نقاط)', actions: negativeActions, color: 'text-red-600', bg: 'bg-red-50', pointColor: 'text-red-500' },
-                { label: 'إجراءات إدارية', actions: adminActions, color: 'text-blue-700', bg: 'bg-blue-50', pointColor: 'text-blue-600' },
+                { label: 'إجراءات إيجابية (منح نقاط)', actions: positiveActions, color: 'text-green-700', bg: 'bg-green-50', pointColor: 'text-green-600', ring: 'ring-green-400' },
+                { label: 'إجراءات سلبية (خصم نقاط)', actions: negativeActions, color: 'text-red-600', bg: 'bg-red-50', pointColor: 'text-red-500', ring: 'ring-red-400' },
+                { label: 'إجراءات إدارية', actions: adminActions, color: 'text-blue-700', bg: 'bg-blue-50', pointColor: 'text-blue-600', ring: 'ring-blue-400' },
               ].map((group) => group.actions.length > 0 && (
                 <div key={group.label}>
                   <p className={`text-xs font-bold ${group.color} mb-1.5`}>{group.label}</p>
                   <div className="grid grid-cols-1 gap-1.5">
                     {group.actions.map(action => {
                       const Icon = actionIconMap[action.icon] || Star;
+                      const isSelected = selectedActions.some(x => x.id === action.id);
                       return (
                         <button
                           key={action.id}
-                          onClick={() => handleSelectAction(action)}
+                          onClick={() => handleToggleAction(action)}
                           className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-right transition-all border ${
-                            selectedAction?.id === action.id
-                              ? `${group.bg} border-current ${group.color}`
+                            isSelected
+                              ? `${group.bg} border-current ${group.color} ring-1 ${group.ring}`
                               : 'bg-gray-50 border-transparent hover:bg-gray-100'
                           }`}
                         >
+                          <div className={`w-5 h-5 rounded flex items-center justify-center flex-shrink-0 border-2 transition-all ${
+                            isSelected ? `${group.bg} border-current ${group.color}` : 'border-gray-300 bg-white'
+                          }`}>
+                            {isSelected && <Check className="w-3 h-3" />}
+                          </div>
                           <div className={`w-7 h-7 rounded-lg ${group.bg} flex items-center justify-center flex-shrink-0`}>
                             <Icon className={`w-3.5 h-3.5 ${group.color}`} />
                           </div>
@@ -702,7 +710,6 @@ function AwardPointsTab({ users, pointActions, onRefresh, showToast }: {
                           <span className={`text-xs font-black ${group.pointColor}`}>
                             {action.category === 'negative' ? '-' : '+'}{Math.abs(action.points)}
                           </span>
-                          {selectedAction?.id === action.id && <Check className={`w-3.5 h-3.5 ${group.color} flex-shrink-0`} />}
                         </button>
                       );
                     })}
@@ -718,7 +725,7 @@ function AwardPointsTab({ users, pointActions, onRefresh, showToast }: {
               <h3 className="font-black text-gray-900 text-sm">تأكيد ومنح النقاط</h3>
             </div>
             <div className="p-4 space-y-4">
-              {selectedUser && selectedAction && (
+              {selectedUser && selectedActions.length > 0 && (
                 <div className="bg-gray-50 rounded-xl p-3 space-y-2 text-sm">
                   <div className="flex items-center justify-between">
                     <span className="text-gray-500 text-xs">المستخدم</span>
@@ -734,30 +741,32 @@ function AwardPointsTab({ users, pointActions, onRefresh, showToast }: {
                     <span className="text-gray-500 text-xs">النقاط الحالية</span>
                     <span className="font-bold text-gray-900 text-xs">{selectedUser.total_points}</span>
                   </div>
+                  {selectedActions.length > 1 && (
+                    <div className="border-t border-gray-200 pt-2 space-y-1">
+                      {selectedActions.map(a => (
+                        <div key={a.id} className="flex items-center justify-between">
+                          <span className="text-gray-400 text-xs">{a.label_ar}</span>
+                          <span className={`text-xs font-bold ${a.points > 0 ? 'text-green-600' : 'text-red-500'}`}>
+                            {a.points > 0 ? '+' : ''}{a.points}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                   <div className="border-t border-gray-200 pt-2 flex items-center justify-between">
+                    <span className="text-gray-500 text-xs">إجمالي التغيير</span>
+                    <span className={`font-black text-sm ${totalPoints > 0 ? 'text-green-600' : 'text-red-500'}`}>
+                      {totalPoints > 0 ? '+' : ''}{totalPoints}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between">
                     <span className="text-gray-500 text-xs">بعد التعديل</span>
-                    <span className={`font-black text-sm ${finalPoints > 0 ? 'text-green-600' : 'text-red-500'}`}>
-                      {Math.max(0, selectedUser.total_points + finalPoints)}
+                    <span className="font-black text-sm text-gray-900">
+                      {Math.max(0, selectedUser.total_points + totalPoints)}
                     </span>
                   </div>
                 </div>
               )}
-
-              <div>
-                <label className="block text-xs font-bold text-gray-600 mb-1.5">
-                  النقاط (القيمة الافتراضية: {selectedAction ? Math.abs(selectedAction.points) : '-'})
-                </label>
-                <input
-                  type="number"
-                  value={customPoints}
-                  onChange={e => setCustomPoints(e.target.value)}
-                  min="1"
-                  placeholder="عدد النقاط..."
-                  className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
-                  dir="ltr"
-                />
-                <p className="text-xs text-gray-400 mt-1">اتركها فارغة لاستخدام القيمة الافتراضية</p>
-              </div>
 
               <div>
                 <label className="block text-xs font-bold text-gray-600 mb-1.5">ملاحظة إضافية (اختياري)</label>
@@ -770,15 +779,15 @@ function AwardPointsTab({ users, pointActions, onRefresh, showToast }: {
                 />
               </div>
 
-              {selectedUser && selectedAction && (
-                <div className={`p-3 rounded-xl text-sm font-bold ${finalPoints > 0 ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-600'}`}>
-                  سيتم {finalPoints > 0 ? 'إضافة' : 'خصم'} {Math.abs(finalPoints)} نقطة {finalPoints > 0 ? 'إلى' : 'من'} {selectedUser.full_name}
+              {selectedUser && selectedActions.length > 0 && (
+                <div className={`p-3 rounded-xl text-sm font-bold ${totalPoints > 0 ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-600'}`}>
+                  سيتم {totalPoints > 0 ? 'إضافة' : 'خصم'} {Math.abs(totalPoints)} نقطة {totalPoints > 0 ? 'إلى' : 'من'} {selectedUser.full_name}
                 </div>
               )}
 
               <button
                 onClick={handleSubmit}
-                disabled={submitting || !selectedUser || !selectedAction}
+                disabled={submitting || !selectedUser || selectedActions.length === 0}
                 className="w-full py-3 bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 text-white rounded-xl font-bold text-sm transition-colors flex items-center justify-center gap-2"
               >
                 {submitting ? (
@@ -786,7 +795,7 @@ function AwardPointsTab({ users, pointActions, onRefresh, showToast }: {
                 ) : (
                   <Sparkles className="w-4 h-4" />
                 )}
-                {submitting ? 'جاري المنح...' : 'تأكيد منح النقاط'}
+                {submitting ? 'جاري المنح...' : `تأكيد منح النقاط${selectedActions.length > 1 ? ` (${selectedActions.length} إجراءات)` : ''}`}
               </button>
             </div>
           </div>
