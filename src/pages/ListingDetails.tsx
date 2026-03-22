@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { MapPin, Eye, ChevronLeft, ChevronRight, MessageCircle, Calendar, Tag, Box, X, Share2, ArrowRight, Flag, Star } from 'lucide-react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { supabase, Listing } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import ShareSheet from '../components/ShareSheet';
@@ -11,12 +12,9 @@ import SafetyTips from '../components/SafetyTips';
 import ReportModal from '../components/ReportModal';
 import ReviewModal from '../components/ReviewModal';
 
-interface ListingDetailsProps {
-  listingId: string;
-  onBack: () => void;
-}
-
-export default function ListingDetails({ listingId, onBack }: ListingDetailsProps) {
+export default function ListingDetails() {
+  const { slug } = useParams<{ slug: string }>();
+  const navigate = useNavigate();
   const { user } = useAuth();
   const [listing, setListing] = useState<Listing | null>(null);
   const [loading, setLoading] = useState(true);
@@ -26,18 +24,40 @@ export default function ListingDetails({ listingId, onBack }: ListingDetailsProp
   const [showReportModal, setShowReportModal] = useState(false);
   const [showReviewModal, setShowReviewModal] = useState(false);
 
+  const listingId = listing?.id || '';
+
   useEffect(() => {
-    loadListing();
-    incrementViewCount();
-  }, [listingId]);
+    if (slug) {
+      loadListing();
+    }
+  }, [slug]);
 
   async function loadListing() {
+    if (!slug) return;
     setLoading(true);
-    const { data, error } = await supabase
+
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(slug);
+
+    let query = supabase
       .from('listings')
       .select('*, cities(*), categories(*), subcategories(*)')
-      .eq('id', listingId)
       .maybeSingle();
+
+    if (isUuid) {
+      query = supabase
+        .from('listings')
+        .select('*, cities(*), categories(*), subcategories(*)')
+        .eq('id', slug)
+        .maybeSingle();
+    } else {
+      query = supabase
+        .from('listings')
+        .select('*, cities(*), categories(*), subcategories(*)')
+        .eq('slug', slug)
+        .maybeSingle();
+    }
+
+    const { data, error } = await query;
 
     if (error) {
       console.error('Error loading listing:', error);
@@ -47,13 +67,14 @@ export default function ListingDetails({ listingId, onBack }: ListingDetailsProp
 
     if (data) {
       setListing(data);
+      incrementViewCount(data.id);
     }
     setLoading(false);
   }
 
-  async function incrementViewCount() {
+  async function incrementViewCount(id: string) {
     const { error } = await supabase.rpc('increment_listing_views', {
-      p_listing_id: listingId
+      p_listing_id: id
     });
 
     if (error) {
@@ -130,7 +151,7 @@ ${listingUrl}`;
         <div className="text-center p-4">
           <p className="text-gray-600 text-lg mb-4">الإعلان غير موجود</p>
           <button
-            onClick={onBack}
+            onClick={() => navigate('/')}
             className="px-6 py-3 bg-amber-500 text-white rounded-xl hover:bg-amber-600 font-bold"
           >
             العودة للرئيسية
@@ -149,7 +170,7 @@ ${listingUrl}`;
       <div className="sticky top-0 z-50 bg-white shadow-md">
         <div className="flex items-center justify-between px-4 py-3">
           <button
-            onClick={onBack}
+            onClick={() => navigate(-1)}
             className="w-10 h-10 flex items-center justify-center bg-gray-100 rounded-full hover:bg-gray-200 active:scale-95 transition-all"
           >
             <ArrowRight className="w-5 h-5 text-gray-700" />
@@ -338,9 +359,7 @@ ${listingUrl}`;
       <SellerListings
         sellerId={listing.user_id}
         currentListingId={listingId}
-        onViewListing={(id) => {
-          window.location.href = `/listing/${id}`;
-        }}
+        onViewListing={(id) => navigate(`/listing/${id}`)}
       />
 
       <div className="h-2 bg-gray-100"></div>
@@ -349,9 +368,7 @@ ${listingUrl}`;
         currentListingId={listingId}
         categoryId={listing.category_id}
         cityId={listing.city_id}
-        onViewListing={(id) => {
-          window.location.href = `/listing/${id}`;
-        }}
+        onViewListing={(id) => navigate(`/listing/${id}`)}
       />
 
       <div className="h-20"></div>
