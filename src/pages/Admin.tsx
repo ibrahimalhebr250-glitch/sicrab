@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { LayoutDashboard, Package, Users, AlertCircle, Star, MapPin, BarChart3, Settings, Menu, X, DollarSign, FileText, Activity, Shield, LogOut, TrendingUp, Wallet } from 'lucide-react';
 import { useAdminAuth } from '../contexts/AdminAuthContext';
 import AdminDashboard from './admin/Dashboard';
@@ -21,14 +22,15 @@ type AdminPage = 'dashboard' | 'categories' | 'listings' | 'users' | 'reports' |
 
 export default function Admin() {
   const { staff, loading, signOut, hasPermission } = useAdminAuth();
+  const navigate = useNavigate();
   const [currentPage, setCurrentPage] = useState<AdminPage>('dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
     if (!loading && !staff) {
-      window.location.href = '/admin/login';
+      navigate('/admin/login', { replace: true });
     }
-  }, [staff, loading]);
+  }, [staff, loading, navigate]);
 
   if (loading) {
     return (

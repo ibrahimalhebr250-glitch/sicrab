@@ -1,9 +1,11 @@
 import { useState, FormEvent } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Shield, Mail, Lock, AlertCircle, Loader2 } from 'lucide-react';
 import { useAdminAuth } from '../contexts/AdminAuthContext';
 
 export default function AdminLogin() {
   const { signIn } = useAdminAuth();
+  const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -17,7 +19,7 @@ export default function AdminLogin() {
     try {
       const result = await signIn(email, password);
       if (result.success) {
-        window.location.href = '/admin';
+        navigate('/admin', { replace: true });
       } else {
         setError(result.error || 'فشل تسجيل الدخول');
       }

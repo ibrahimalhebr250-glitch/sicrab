@@ -31,8 +31,20 @@ interface AdminAuthContextType {
 
 const AdminAuthContext = createContext<AdminAuthContextType | undefined>(undefined);
 
+function getInitialStaff(): AdminStaff | null {
+  try {
+    const sessionData = localStorage.getItem('admin_session');
+    if (!sessionData) return null;
+    const { expiry, cachedStaff } = JSON.parse(sessionData);
+    if (Date.now() >= expiry || !cachedStaff) return null;
+    return cachedStaff as AdminStaff;
+  } catch {
+    return null;
+  }
+}
+
 export function AdminAuthProvider({ children }: { children: ReactNode }) {
-  const [staff, setStaff] = useState<AdminStaff | null>(null);
+  const [staff, setStaff] = useState<AdminStaff | null>(getInitialStaff);
   const [permissions, setPermissions] = useState<Permission[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -74,7 +86,7 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
         await loadPermissions(staffData.id, staffData.role);
         const updated = JSON.parse(localStorage.getItem('admin_session') || '{}');
         localStorage.setItem('admin_session', JSON.stringify({ ...updated, cachedStaff: staffData }));
-      } else {
+      } else if (!error && staffData === null) {
         localStorage.removeItem('admin_session');
         setStaff(null);
         setPermissions([]);
