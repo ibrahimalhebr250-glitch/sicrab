@@ -36,7 +36,7 @@ export default function TermsOfService() {
               <div className="text-white">
                 <h2 className="text-xl font-bold mb-2">1. طبيعة المنصة</h2>
                 <p className="text-blue-50 leading-relaxed">
-                  المنصة هي سوق رقمي لعرض وبيع وشراء المواد والمعدات الصناعية المستعملة بين المستخدمين.
+                  المنصة هي سوق رقمي لعرض وبيع وشراء الأشجار والنباتات والمشاتل بين المستخدمين.
                 </p>
               </div>
             </div>

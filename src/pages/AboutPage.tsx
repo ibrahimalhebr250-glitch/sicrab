@@ -23,14 +23,14 @@ export default function AboutPage() {
               </div>
               <div>
                 <h1 className="text-3xl font-bold text-gray-900">من نحن</h1>
-                <p className="text-gray-600">منصة سوق المواد الصناعية</p>
+                <p className="text-gray-600">منصة سوق المشاتل والأشجار</p>
               </div>
             </div>
 
             <div className="prose prose-lg max-w-none text-right">
               <p className="text-gray-700 text-lg leading-relaxed mb-6">
-                نحن منصة رائدة في مجال بيع وشراء المواد الصناعية والسكراب في السعودية.
-                نهدف إلى ربط البائعين والمشترين في سوق واحد موثوق وآمن.
+                نحن منصة رائدة في مجال بيع وشراء الأشجار والنباتات والمشاتل في السعودية.
+                نهدف إلى ربط أصحاب المشاتل والمشترين في سوق واحد موثوق وآمن.
               </p>
 
               <div className="grid md:grid-cols-3 gap-6 my-8">
@@ -46,7 +46,7 @@ export default function AboutPage() {
                   <Users className="w-12 h-12 text-green-600 mb-4" />
                   <h3 className="font-bold text-gray-900 text-xl mb-2">مجتمع نشط</h3>
                   <p className="text-gray-600">
-                    آلاف المستخدمين النشطين من تجار ومصانع في جميع أنحاء المملكة
+                    آلاف المستخدمين النشطين من أصحاب مشاتل ومحبي الزراعة في جميع أنحاء المملكة
                   </p>
                 </div>
 
@@ -62,7 +62,7 @@ export default function AboutPage() {
               <h2 className="text-2xl font-bold text-gray-900 mt-8 mb-4">رؤيتنا</h2>
               <p className="text-gray-700 leading-relaxed mb-4">
                 نسعى لأن نكون المنصة الأولى والأكثر موثوقية في المملكة العربية السعودية
-                لتجارة المواد الصناعية والسكراب، مع توفير أفضل تجربة للمستخدمين.
+                لتجارة الأشجار والنباتات والمشاتل، مع توفير أفضل تجربة للمستخدمين.
               </p>
 
               <h2 className="text-2xl font-bold text-gray-900 mt-8 mb-4">قيمنا</h2>

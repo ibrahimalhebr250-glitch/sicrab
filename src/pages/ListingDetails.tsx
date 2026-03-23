@@ -116,7 +116,7 @@ export default function ListingDetails() {
     await supabase.rpc('increment_whatsapp_clicks', { listing_id: listingId });
 
     const whatsappNumber = (listing.whatsapp_number || listing.contact_phone).replace(/\D/g, '');
-    const platformName = 'سوق المواد والمعدات الصناعية';
+    const platformName = 'سوق المشاتل والأشجار';
     const listingUrl = window.location.href;
 
     const message = `السلام عليكم
@@ -163,7 +163,7 @@ ${listingUrl}`;
 
   const images = listing.images && listing.images.length > 0
     ? listing.images
-    : ['https://images.pexels.com/photos/1108101/pexels-photo-1108101.jpeg'];
+    : ['https://images.pexels.com/photos/1002703/pexels-photo-1002703.jpeg'];
 
   return (
     <div className="min-h-screen bg-gray-50">

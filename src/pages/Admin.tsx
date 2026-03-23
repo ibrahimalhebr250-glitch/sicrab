@@ -80,7 +80,7 @@ export default function Admin() {
       } lg:translate-x-0`}>
         <div className="p-6">
           <h1 className="text-2xl font-black text-white mb-2">لوحة الإدارة</h1>
-          <p className="text-sm text-slate-400">سوق السكراب</p>
+          <p className="text-sm text-slate-400">سوق المشاتل</p>
           <div className="mt-4 p-3 bg-white/10 rounded-xl">
             <p className="text-white font-medium text-sm">{staff.full_name}</p>
             <p className="text-slate-400 text-xs mt-1">{staff.email}</p>

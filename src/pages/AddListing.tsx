@@ -434,7 +434,7 @@ export default function AddListing({ onBack, onSuccess }: AddListingProps) {
                 </div>
                 <div>
                   <h1 className="text-2xl font-black text-white leading-tight">انشر إعلانك الآن</h1>
-                  <p className="text-white/60 text-sm mt-0.5">ابدأ باختيار فئة المادة</p>
+                  <p className="text-white/60 text-sm mt-0.5">ابدأ باختيار نوع المنتج</p>
                 </div>
               </div>
 
@@ -456,7 +456,7 @@ export default function AddListing({ onBack, onSuccess }: AddListingProps) {
           </div>
 
           <div className="flex-1 overflow-y-auto px-4 py-5 pb-28">
-            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4 text-center">اختر الفئة الأنسب لمادتك</p>
+            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4 text-center">اختر الفئة الأنسب لمنتجك</p>
 
             <div className="grid grid-cols-2 gap-3">
               {categories.map((cat, index) => {
@@ -579,8 +579,8 @@ export default function AddListing({ onBack, onSuccess }: AddListingProps) {
               <div className="text-center mb-8">
                 <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-amber-100 to-orange-100 rounded-2xl mb-4">
                 </div>
-                <h2 className="text-2xl font-bold text-gray-900 mb-2">ما نوع المواد؟</h2>
-                <p className="text-gray-500">اختر الفئة المناسبة لمادتك الخردة</p>
+                <h2 className="text-2xl font-bold text-gray-900 mb-2">ما نوع المنتج؟</h2>
+                <p className="text-gray-500">اختر الفئة المناسبة لمنتجك</p>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
@@ -631,7 +631,7 @@ export default function AddListing({ onBack, onSuccess }: AddListingProps) {
                   type="text"
                   value={formData.title}
                   onChange={(e) => handleInputChange('title', e.target.value)}
-                  placeholder="مثال: حديد سكراب نظيف جداً"
+                  placeholder="مثال: أشجار زيتون كبيرة للبيع"
                   className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all outline-none"
                 />
                 <p className="text-xs text-gray-400 mt-1.5 text-right">ممنوع ذكر أرقام الجوال هنا</p>
@@ -644,7 +644,7 @@ export default function AddListing({ onBack, onSuccess }: AddListingProps) {
                 <textarea
                   value={formData.description}
                   onChange={(e) => handleInputChange('description', e.target.value)}
-                  placeholder="أضف تفاصيل عن الحالة، المنشأ، أي معلومات مهمة..."
+                  placeholder="أضف تفاصيل عن الحجم، العمر، الصنف، أي معلومات مهمة..."
                   rows={4}
                   className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all outline-none resize-none"
                 />
@@ -691,7 +691,7 @@ export default function AddListing({ onBack, onSuccess }: AddListingProps) {
                 <div className="space-y-5">
                   <div className="flex items-center gap-2 mt-6">
                     <div className="h-1 flex-1 bg-gradient-to-r from-cyan-500 to-blue-500 rounded-full"></div>
-                    <h3 className="text-lg font-bold text-gray-900">مواصفات المادة</h3>
+                    <h3 className="text-lg font-bold text-gray-900">مواصفات المنتج</h3>
                     <div className="h-1 flex-1 bg-gradient-to-l from-cyan-500 to-blue-500 rounded-full"></div>
                   </div>
 
@@ -771,7 +771,7 @@ export default function AddListing({ onBack, onSuccess }: AddListingProps) {
                         <Check className="w-4 h-4 text-white" />
                       </div>
                       <div>
-                        <h4 className="font-bold text-gray-900 mb-1 text-sm">معلومات دقيقة = مبيعات أسرع</h4>
+                        <h4 className="font-bold text-gray-900 mb-1 text-sm">وصف دقيق = مبيعات أسرع</h4>
                         <p className="text-xs text-gray-600">هذه التفاصيل تساعد المشترين على اتخاذ قرار الشراء بسرعة</p>
                       </div>
                     </div>
@@ -804,7 +804,7 @@ export default function AddListing({ onBack, onSuccess }: AddListingProps) {
                   <MapPin className="w-8 h-8 text-red-600" />
                 </div>
                 <h2 className="text-2xl font-bold text-gray-900 mb-2">الموقع</h2>
-                <p className="text-gray-500">حدد موقع المادة لتسهيل التواصل</p>
+                <p className="text-gray-500">حدد موقع المشتل لتسهيل التواصل</p>
               </div>
 
               <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
@@ -832,7 +832,7 @@ export default function AddListing({ onBack, onSuccess }: AddListingProps) {
                   </div>
                   <div>
                     <h3 className="font-bold text-gray-900 mb-1">نصيحة</h3>
-                    <p className="text-sm text-gray-600">تحديد الموقع بدقة يساعد المشترين على التواصل معك بشكل أسرع</p>
+                    <p className="text-sm text-gray-600">تحديد الموقع بدقة يساعد المشترين على زيارة مشتلك والتواصل بشكل أسرع</p>
                   </div>
                 </div>
               </div>

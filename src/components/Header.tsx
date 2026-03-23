@@ -92,8 +92,8 @@ export default function Header({ onSearch, searchQuery = '' }: HeaderProps) {
               <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 rounded-full border-2 border-slate-900"></div>
             </div>
             <div>
-              <h1 className="text-base sm:text-lg font-black text-white tracking-tight leading-none">سوق المواد</h1>
-              <p className="text-[10px] sm:text-xs text-amber-400 font-medium leading-none mt-0.5">منصة المواد الصناعية</p>
+              <h1 className="text-base sm:text-lg font-black text-white tracking-tight leading-none">سوق المشاتل</h1>
+              <p className="text-[10px] sm:text-xs text-amber-400 font-medium leading-none mt-0.5">منصة الأشجار والنباتات</p>
             </div>
           </a>
 

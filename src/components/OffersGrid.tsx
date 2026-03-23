@@ -181,7 +181,7 @@ function OffersGridNew({ categoryId, subcategoryId, filters, onViewListing, sear
 function FreshListingCard({ listing, onClick }: { listing: ListingWithPromotion; onClick: () => void }) {
   const imageUrl = listing.images && listing.images.length > 0
     ? listing.images[0]
-    : 'https://images.pexels.com/photos/1108101/pexels-photo-1108101.jpeg';
+    : 'https://images.pexels.com/photos/1002703/pexels-photo-1002703.jpeg';
 
   function getTimeAgo(dateString: string) {
     const now = new Date();

@@ -502,7 +502,7 @@ function ReferralTab({ referralCode, copied, generating, onCopy, onGenerate, pro
   onGenerate: () => void;
   profile: any;
 }) {
-  const shareText = `انضم معي إلى منصة الخردة! استخدم كودي ${referralCode?.code || ''} واحصل على خصم 50% على أول عمولة`;
+  const shareText = `انضم معي إلى سوق المشاتل! استخدم كودي ${referralCode?.code || ''} واحصل على خصم 50% على أول عمولة`;
 
   return (
     <div className="space-y-4">

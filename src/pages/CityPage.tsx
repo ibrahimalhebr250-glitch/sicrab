@@ -126,7 +126,7 @@ export default function CityPage() {
             <div className="flex-1">
               <h2 className="text-2xl md:text-3xl font-black mb-2">إعلانات {city.name_ar}</h2>
               <p className="text-white/90 text-sm md:text-base leading-relaxed">
-                تصفح جميع المواد والمعدات الصناعية المعروضة للبيع في {city.name_ar}
+                تصفح جميع الأشجار والنباتات والمشاتل المعروضة للبيع في {city.name_ar}
               </p>
               <div className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-white/20 backdrop-blur-sm rounded-xl text-sm font-medium">
                 <Package className="w-4 h-4" />

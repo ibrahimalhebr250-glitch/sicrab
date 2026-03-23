@@ -30,7 +30,7 @@ export default function PrivacyPage() {
             <div className="prose prose-lg max-w-none text-right">
               <div className="bg-blue-50 border-2 border-blue-100 rounded-xl p-6 mb-8">
                 <p className="text-gray-700 mb-0">
-                  نحن في سوق المواد نلتزم بحماية خصوصيتك وأمان بياناتك. توضح هذه السياسة كيفية
+                  نحن في سوق المشاتل نلتزم بحماية خصوصيتك وأمان بياناتك. توضح هذه السياسة كيفية
                   جمع واستخدام وحماية معلوماتك الشخصية.
                 </p>
               </div>
@@ -53,7 +53,7 @@ export default function PrivacyPage() {
                 <div className="bg-gray-50 rounded-xl p-5 border-2 border-gray-100">
                   <h3 className="font-bold text-gray-900 text-lg mb-2">معلومات الإعلانات</h3>
                   <ul className="space-y-2 text-gray-700 mr-4">
-                    <li>• تفاصيل المواد المعروضة</li>
+                    <li>• تفاصيل المنتجات والنباتات المعروضة</li>
                     <li>• الأسعار والكميات</li>
                     <li>• الصور والوصف</li>
                     <li>• الموقع الجغرافي</li>

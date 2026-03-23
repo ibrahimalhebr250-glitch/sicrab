@@ -9,10 +9,10 @@ interface SEOProps {
 }
 
 export default function SEO({
-  title = 'سوق المواد - منصة بيع وشراء السكراب والمواد الصناعية',
-  description = 'منصة موثوقة لبيع وشراء السكراب والمواد الصناعية في السعودية. اشتري وبع بكل سهولة وأمان.',
-  keywords = 'سكراب, حديد, معادن, مواد صناعية, بيع سكراب, شراء سكراب, سوق السكراب, المواد المعاد تدويرها',
-  image = 'https://images.unsplash.com/photo-1565793298595-6a879b1d9492?w=1200&h=630',
+  title = 'سوق المشاتل - منصة بيع وشراء الأشجار والنباتات',
+  description = 'منصة موثوقة لبيع وشراء الأشجار والنباتات والمشاتل في السعودية. اشتري وبع بكل سهولة وأمان.',
+  keywords = 'مشاتل, أشجار, نباتات, زراعة, بيع أشجار, شراء نباتات, تشجير, مشتل',
+  image = 'https://images.pexels.com/photos/1002703/pexels-photo-1002703.jpeg?w=1200&h=630',
   url = typeof window !== 'undefined' ? window.location.href : '',
 }: SEOProps) {
   useEffect(() => {
@@ -36,7 +36,7 @@ export default function SEO({
 
       { name: 'robots', content: 'index, follow' },
       { name: 'language', content: 'Arabic' },
-      { name: 'author', content: 'سوق المواد' },
+      { name: 'author', content: 'سوق المشاتل' },
     ];
 
     metaTags.forEach(({ name, property, content }) => {

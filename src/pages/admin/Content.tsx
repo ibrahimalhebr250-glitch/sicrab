@@ -16,14 +16,14 @@ interface SiteContent {
 
 export default function AdminContent() {
   const [content, setContent] = useState<SiteContent>({
-    site_name: 'سوق السكراب',
+    site_name: 'سوق المشاتل',
     site_logo_url: '',
-    home_hero_title: 'اشتري وبع السكراب والحديد',
-    home_hero_subtitle: 'منصة موثوقة للبيع والشراء',
+    home_hero_title: 'اشتري وبع الأشجار والنباتات والمشاتل',
+    home_hero_subtitle: 'منصة موثوقة لبيع وشراء الأشجار والنباتات',
     commission_percentage: 1,
-    meta_title: 'سوق السكراب - منصة البيع والشراء',
-    meta_description: 'منصة موثوقة لبيع وشراء السكراب والحديد والمعادن',
-    meta_keywords: 'سكراب, حديد, معادن, بيع, شراء'
+    meta_title: 'سوق المشاتل - منصة الأشجار والنباتات',
+    meta_description: 'منصة موثوقة لبيع وشراء الأشجار والنباتات والمشاتل في السعودية',
+    meta_keywords: 'مشاتل, أشجار, نباتات, زراعة, بيع أشجار'
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -213,7 +213,7 @@ export default function AdminContent() {
                   type="text"
                   value={content.meta_keywords}
                   onChange={(e) => setContent({ ...content, meta_keywords: e.target.value })}
-                  placeholder="سكراب, حديد, معادن"
+                  placeholder="مشاتل, أشجار, نباتات"
                   className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:outline-none"
                 />
               </div>

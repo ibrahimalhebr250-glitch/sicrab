@@ -211,7 +211,7 @@ export default function Footer() {
         <div className="border-t border-slate-800 pt-6 sm:pt-8">
           <div className="flex flex-col items-center text-center gap-4 sm:gap-5 md:flex-row md:justify-between md:text-right">
             <p className="text-xs sm:text-sm text-gray-400 font-medium order-1 md:order-2">
-              © 2024 سوق المواد - جميع الحقوق محفوظة
+              © 2024 سوق المشاتل - جميع الحقوق محفوظة
             </p>
 
             <div className="flex flex-col items-center gap-3 sm:flex-row sm:gap-4 order-2 md:order-1">
