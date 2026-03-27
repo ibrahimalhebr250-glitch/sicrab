@@ -100,6 +100,20 @@ export default function AdminRewards() {
 
   useEffect(() => { fetchAll(); }, []);
 
+  useEffect(() => {
+    const channel = supabase
+      .channel('admin-rewards-live')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'reputation_scores' }, () => fetchUsers())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'reputation_events' }, () => { fetchUsers(); fetchRecentEvents(); })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'cashback_wallet' }, () => fetchUsers())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'cashback_transactions' }, () => { fetchUsers(); fetchRecentTx(); })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'referral_codes' }, () => fetchUsers())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'safedeal_certifications' }, () => fetchUsers())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'reputation_point_actions' }, () => fetchPointActions())
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, []);
+
   const fetchAll = useCallback(async () => {
     setLoading(true);
     await Promise.all([fetchUsers(), fetchRecentEvents(), fetchRecentTx(), fetchPointActions()]);
@@ -230,8 +244,15 @@ export default function AdminRewards() {
 
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-black text-gray-900">إدارة المكافآت</h1>
-          <p className="text-gray-500 text-sm mt-0.5">إدارة شاملة للسمعة، الكاش باك، الإحالات، والصفقة المضمونة</p>
+          <div className="flex items-center gap-2 mb-1">
+            <h1 className="text-2xl font-black text-gray-900">إدارة المكافآت</h1>
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+            </span>
+            <span className="text-xs text-green-600 font-semibold">مباشر</span>
+          </div>
+          <p className="text-gray-500 text-sm">إدارة شاملة للسمعة، الكاش باك، الإحالات، والصفقة المضمونة</p>
         </div>
         <button
           onClick={fetchAll}

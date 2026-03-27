@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   ArrowRight, Trophy, Wallet, Users, ShieldCheck, Copy, Check,
   Zap, TrendingUp, Star, Medal, Award, Gift, ChevronRight,
-  Clock, AlertCircle, CheckCircle, Plus, Minus, BarChart2
+  Clock, AlertCircle, CheckCircle, Plus, Minus, BarChart2,
+  Sparkles, RefreshCw
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useRewards, ReputationScore } from '../contexts/RewardsContext';
@@ -13,6 +14,15 @@ import { supabase } from '../lib/supabase';
 
 type Tab = 'overview' | 'reputation' | 'cashback' | 'referral' | 'safedeal';
 
+function LiveDot() {
+  return (
+    <span className="relative flex h-2 w-2">
+      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+      <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+    </span>
+  );
+}
+
 export default function Rewards() {
   const navigate = useNavigate();
   const { user, profile, loading: authLoading } = useAuth();
@@ -21,18 +31,41 @@ export default function Rewards() {
   const [copied, setCopied] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [safeDealCount, setSafeDealCount] = useState(0);
+  const [flashField, setFlashField] = useState<string | null>(null);
+  const prevReputation = useRef(reputation);
+  const prevWallet = useRef(wallet);
 
   useEffect(() => {
-    if (!authLoading && !user) {
-      navigate('/login');
-    }
+    if (!authLoading && !user) navigate('/login');
   }, [user, authLoading]);
 
   useEffect(() => {
-    if (user) {
-      fetchSafeDealCount();
-    }
+    if (user) fetchSafeDealCount();
   }, [user]);
+
+  useEffect(() => {
+    if (!reputation || !prevReputation.current) {
+      prevReputation.current = reputation;
+      return;
+    }
+    if (reputation.total_points !== prevReputation.current.total_points) {
+      setFlashField('points');
+      setTimeout(() => setFlashField(null), 2000);
+    }
+    prevReputation.current = reputation;
+  }, [reputation]);
+
+  useEffect(() => {
+    if (!wallet || !prevWallet.current) {
+      prevWallet.current = wallet;
+      return;
+    }
+    if (wallet.balance !== prevWallet.current.balance) {
+      setFlashField('cashback');
+      setTimeout(() => setFlashField(null), 2000);
+    }
+    prevWallet.current = wallet;
+  }, [wallet]);
 
   const fetchSafeDealCount = async () => {
     if (!user) return;
@@ -80,37 +113,60 @@ export default function Rewards() {
   return (
     <div className="min-h-screen bg-gray-50" dir="rtl">
       <div className="bg-white border-b border-gray-100 sticky top-0 z-30">
-        <div className="max-w-2xl mx-auto px-4 py-4 flex items-center gap-3">
-          <Link to="/profile" className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
-            <ArrowRight className="w-5 h-5 text-gray-600" />
-          </Link>
-          <h1 className="text-xl font-black text-gray-900">مركز المكافآت</h1>
+        <div className="max-w-2xl mx-auto px-4 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Link to="/profile" className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+              <ArrowRight className="w-5 h-5 text-gray-600" />
+            </Link>
+            <h1 className="text-xl font-black text-gray-900">مركز المكافآت</h1>
+          </div>
+          <div className="flex items-center gap-2">
+            <LiveDot />
+            <span className="text-xs text-green-600 font-semibold">مباشر</span>
+          </div>
         </div>
       </div>
 
       <div className="max-w-2xl mx-auto px-4 py-6 space-y-4">
-        <div className="bg-gradient-to-br from-amber-500 via-orange-500 to-red-500 rounded-2xl p-5 text-white">
-          <div className="flex items-start justify-between mb-4">
-            <div>
-              <p className="text-white/80 text-sm font-medium">مرحباً، {profile.full_name}</p>
-              <h2 className="text-2xl font-black mt-0.5">لوحة المكافآت</h2>
+        <div className="bg-gradient-to-br from-amber-500 via-orange-500 to-red-500 rounded-2xl p-5 text-white relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-40 h-40 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2" />
+          <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/5 rounded-full translate-y-1/2 -translate-x-1/2" />
+          <div className="relative">
+            <div className="flex items-start justify-between mb-4">
+              <div>
+                <p className="text-white/80 text-sm font-medium">مرحباً، {profile.full_name}</p>
+                <h2 className="text-2xl font-black mt-0.5">لوحة المكافآت</h2>
+              </div>
+              <div className="w-12 h-12 rounded-2xl bg-white/20 flex items-center justify-center">
+                <Gift className="w-6 h-6 text-white" />
+              </div>
             </div>
-            <div className="w-12 h-12 rounded-2xl bg-white/20 flex items-center justify-center">
-              <Gift className="w-6 h-6 text-white" />
-            </div>
-          </div>
-          <div className="grid grid-cols-3 gap-3">
-            <div className="bg-white/15 rounded-xl p-3 text-center">
-              <p className="text-2xl font-black">{reputation?.total_points?.toLocaleString('ar-SA') || '0'}</p>
-              <p className="text-white/80 text-xs font-medium mt-0.5">نقطة سمعة</p>
-            </div>
-            <div className="bg-white/15 rounded-xl p-3 text-center">
-              <p className="text-2xl font-black">{wallet?.balance?.toFixed(0) || '0'}</p>
-              <p className="text-white/80 text-xs font-medium mt-0.5">ر.س كاش باك</p>
-            </div>
-            <div className="bg-white/15 rounded-xl p-3 text-center">
-              <p className="text-2xl font-black">{referralCode?.uses_count || '0'}</p>
-              <p className="text-white/80 text-xs font-medium mt-0.5">إحالة ناجحة</p>
+            <div className="grid grid-cols-3 gap-3">
+              <button
+                onClick={() => setActiveTab('reputation')}
+                className={`bg-white/15 rounded-xl p-3 text-center hover:bg-white/25 transition-all cursor-pointer ${
+                  flashField === 'points' ? 'ring-2 ring-white animate-pulse' : ''
+                }`}
+              >
+                <p className="text-2xl font-black">{reputation?.total_points?.toLocaleString('ar-SA') || '0'}</p>
+                <p className="text-white/80 text-xs font-medium mt-0.5">نقطة سمعة</p>
+              </button>
+              <button
+                onClick={() => setActiveTab('cashback')}
+                className={`bg-white/15 rounded-xl p-3 text-center hover:bg-white/25 transition-all cursor-pointer ${
+                  flashField === 'cashback' ? 'ring-2 ring-white animate-pulse' : ''
+                }`}
+              >
+                <p className="text-2xl font-black">{wallet?.balance?.toFixed(0) || '0'}</p>
+                <p className="text-white/80 text-xs font-medium mt-0.5">ر.س كاش باك</p>
+              </button>
+              <button
+                onClick={() => setActiveTab('referral')}
+                className="bg-white/15 rounded-xl p-3 text-center hover:bg-white/25 transition-all cursor-pointer"
+              >
+                <p className="text-2xl font-black">{referralCode?.uses_count || '0'}</p>
+                <p className="text-white/80 text-xs font-medium mt-0.5">إحالة ناجحة</p>
+              </button>
             </div>
           </div>
         </div>
@@ -135,11 +191,43 @@ export default function Rewards() {
           })}
         </div>
 
-        {activeTab === 'overview' && <OverviewTab reputation={reputation} wallet={wallet} safeDeal={safeDeal} referralCode={referralCode} safeDealCount={safeDealCount} onTabChange={setActiveTab} />}
+        {loading && (
+          <div className="flex items-center justify-center gap-2 py-2 text-amber-600 text-xs font-semibold">
+            <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+            جاري التحديث...
+          </div>
+        )}
+
+        {activeTab === 'overview' && (
+          <OverviewTab
+            reputation={reputation}
+            wallet={wallet}
+            safeDeal={safeDeal}
+            referralCode={referralCode}
+            safeDealCount={safeDealCount}
+            onTabChange={setActiveTab}
+          />
+        )}
         {activeTab === 'reputation' && <ReputationTab reputation={reputation} userId={user.id} />}
         {activeTab === 'cashback' && <CashbackTab wallet={wallet} transactions={cashbackTransactions} />}
-        {activeTab === 'referral' && <ReferralTab referralCode={referralCode} copied={copied} generating={generating} onCopy={handleCopyCode} onGenerate={handleGenerateCode} profile={profile} />}
-        {activeTab === 'safedeal' && <SafeDealTab safeDeal={safeDeal} safeDealCount={safeDealCount} user={user} onRefresh={refreshAll} />}
+        {activeTab === 'referral' && (
+          <ReferralTab
+            referralCode={referralCode}
+            copied={copied}
+            generating={generating}
+            onCopy={handleCopyCode}
+            onGenerate={handleGenerateCode}
+            profile={profile}
+          />
+        )}
+        {activeTab === 'safedeal' && (
+          <SafeDealTab
+            safeDeal={safeDeal}
+            safeDealCount={safeDealCount}
+            user={user}
+            onRefresh={async () => { await refreshAll(); await fetchSafeDealCount(); }}
+          />
+        )}
       </div>
     </div>
   );
@@ -161,9 +249,11 @@ function OverviewTab({ reputation, wallet, safeDeal, referralCode, safeDealCount
       iconColor: 'text-amber-600',
       title: 'نظام السمعة الذكي',
       desc: 'اكسب نقاطاً بكل تصرف إيجابي في المنصة',
-      value: reputation?.total_points ? `${reputation.total_points} نقطة` : '0 نقطة',
+      value: reputation?.total_points ? `${reputation.total_points.toLocaleString('ar-SA')} نقطة` : '0 نقطة',
       badge: reputation?.level ? getLevelLabel(reputation.level) : 'برونزي',
       badgeColor: getLevelBadgeColor(reputation?.level || 'bronze'),
+      progressPercent: getNextLevelProgress(reputation?.total_points || 0, reputation?.level || 'bronze'),
+      progressColor: 'bg-amber-500',
     },
     {
       tab: 'cashback' as Tab,
@@ -175,6 +265,8 @@ function OverviewTab({ reputation, wallet, safeDeal, referralCode, safeDealCount
       value: `${wallet?.balance?.toFixed(2) || '0.00'} ر.س`,
       badge: `${wallet?.total_earned?.toFixed(0) || '0'} مكتسب`,
       badgeColor: 'bg-green-100 text-green-700',
+      progressPercent: null,
+      progressColor: 'bg-green-500',
     },
     {
       tab: 'safedeal' as Tab,
@@ -186,6 +278,8 @@ function OverviewTab({ reputation, wallet, safeDeal, referralCode, safeDealCount
       value: `${safeDealCount} / 3 صفقات`,
       badge: safeDeal?.is_active ? 'موثّق' : `${Math.max(0, 3 - safeDealCount)} متبقية`,
       badgeColor: safeDeal?.is_active ? 'bg-teal-100 text-teal-700' : 'bg-gray-100 text-gray-600',
+      progressPercent: safeDeal?.is_active ? 100 : Math.min(100, (safeDealCount / 3) * 100),
+      progressColor: 'bg-teal-500',
     },
     {
       tab: 'referral' as Tab,
@@ -197,6 +291,8 @@ function OverviewTab({ reputation, wallet, safeDeal, referralCode, safeDealCount
       value: `${referralCode?.uses_count || 0} إحالة`,
       badge: `${referralCode?.total_rewards_earned?.toFixed(0) || '0'} ر.س مكافآت`,
       badgeColor: 'bg-blue-100 text-blue-700',
+      progressPercent: null,
+      progressColor: 'bg-blue-500',
     },
   ];
 
@@ -208,25 +304,42 @@ function OverviewTab({ reputation, wallet, safeDeal, referralCode, safeDealCount
           <button
             key={i}
             onClick={() => onTabChange(item.tab)}
-            className="w-full bg-white border border-gray-100 rounded-2xl p-4 flex items-center gap-4 hover:border-amber-200 hover:shadow-sm transition-all text-right"
+            className="w-full bg-white border border-gray-100 rounded-2xl p-4 hover:border-amber-200 hover:shadow-md transition-all text-right group"
           >
-            <div className={`w-12 h-12 rounded-2xl ${item.iconBg} flex items-center justify-center flex-shrink-0`}>
-              <Icon className={`w-6 h-6 ${item.iconColor}`} />
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 mb-0.5">
-                <p className="font-black text-gray-900 text-sm">{item.title}</p>
-                <span className={`px-2 py-0.5 text-xs font-bold rounded-lg ${item.badgeColor}`}>{item.badge}</span>
+            <div className="flex items-center gap-4">
+              <div className={`w-12 h-12 rounded-2xl ${item.iconBg} flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform`}>
+                <Icon className={`w-6 h-6 ${item.iconColor}`} />
               </div>
-              <p className="text-xs text-gray-500">{item.desc}</p>
-              <p className="text-sm font-bold text-gray-700 mt-1">{item.value}</p>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-0.5">
+                  <p className="font-black text-gray-900 text-sm">{item.title}</p>
+                  <span className={`px-2 py-0.5 text-xs font-bold rounded-lg ${item.badgeColor}`}>{item.badge}</span>
+                </div>
+                <p className="text-xs text-gray-500 mb-1.5">{item.desc}</p>
+                <p className="text-sm font-bold text-gray-700">{item.value}</p>
+                {item.progressPercent !== null && (
+                  <div className="mt-2 w-full bg-gray-100 rounded-full h-1.5 overflow-hidden">
+                    <div
+                      className={`h-full ${item.progressColor} rounded-full transition-all duration-700`}
+                      style={{ width: `${item.progressPercent}%` }}
+                    />
+                  </div>
+                )}
+              </div>
+              <ChevronRight className="w-4 h-4 text-gray-300 flex-shrink-0 rotate-180 group-hover:text-amber-400 transition-colors" />
             </div>
-            <ChevronRight className="w-4 h-4 text-gray-300 flex-shrink-0 rotate-180" />
           </button>
         );
       })}
     </div>
   );
+}
+
+function getNextLevelProgress(points: number, level: string): number {
+  if (level === 'bronze') return Math.min(100, (points / 100) * 100);
+  if (level === 'silver') return Math.min(100, ((points - 100) / 200) * 100);
+  if (level === 'gold') return Math.min(100, ((points - 300) / 300) * 100);
+  return 100;
 }
 
 function getLevelLabel(level: string) {
@@ -248,16 +361,42 @@ function ReputationTab({ reputation, userId }: { reputation: ReputationScore | n
   const [pointActions, setPointActions] = useState<any[]>([]);
   const [userEvents, setUserEvents] = useState<any[]>([]);
   const [loadingEvents, setLoadingEvents] = useState(true);
+  const [newEventIds, setNewEventIds] = useState<Set<string>>(new Set());
+  const prevEventCount = useRef(0);
 
-  useEffect(() => {
-    Promise.all([
+  const loadData = async () => {
+    const [actionsRes, eventsRes] = await Promise.all([
       supabase.from('reputation_point_actions').select('*').order('sort_order'),
       supabase.rpc('get_user_reputation_events', { p_user_id: userId, p_limit: 20 }),
-    ]).then(([actionsRes, eventsRes]) => {
-      setPointActions(actionsRes.data || []);
-      setUserEvents(eventsRes.data || []);
-      setLoadingEvents(false);
-    });
+    ]);
+    setPointActions(actionsRes.data || []);
+    const events = eventsRes.data || [];
+    if (prevEventCount.current > 0 && events.length > prevEventCount.current) {
+      const oldIds = new Set(userEvents.map((e: any) => e.id));
+      const newIds = new Set(events.filter((e: any) => !oldIds.has(e.id)).map((e: any) => e.id));
+      setNewEventIds(newIds);
+      setTimeout(() => setNewEventIds(new Set()), 3000);
+    }
+    prevEventCount.current = events.length;
+    setUserEvents(events);
+    setLoadingEvents(false);
+  };
+
+  useEffect(() => {
+    loadData();
+  }, [userId]);
+
+  useEffect(() => {
+    if (!userId) return;
+    const channel = supabase
+      .channel(`rep-events:${userId}`)
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'reputation_events', filter: `user_id=eq.${userId}` },
+        () => loadData()
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
   }, [userId]);
 
   const getActionInfo = (key: string) => {
@@ -266,26 +405,24 @@ function ReputationTab({ reputation, userId }: { reputation: ReputationScore | n
     const fallback: Record<string, { label: string; category: string }> = {
       admin_adjustment: { label: 'تعديل إداري', category: 'admin' },
       complaint_proven: { label: 'شكوى مثبتة', category: 'negative' },
-      fast_reply:       { label: 'رد سريع', category: 'positive' },
+      fast_reply: { label: 'رد سريع', category: 'positive' },
       five_star_review: { label: 'تقييم 5 نجوم', category: 'positive' },
-      deal_completed:   { label: 'صفقة مكتملة', category: 'positive' },
+      deal_completed: { label: 'صفقة مكتملة', category: 'positive' },
       commission_paid_fast: { label: 'عمولة سريعة', category: 'positive' },
     };
     return fallback[key] || { label: key, category: 'positive' };
   };
 
   const levels = [
-    { id: 'bronze',   label: 'برونزي',  range: '0 - 99',   icon: Medal,  gradient: 'from-amber-600 to-orange-700' },
-    { id: 'silver',   label: 'فضي',     range: '100 - 299', icon: Star,   gradient: 'from-slate-400 to-gray-500'  },
-    { id: 'gold',     label: 'ذهبي',    range: '300 - 599', icon: Trophy, gradient: 'from-yellow-400 to-amber-500' },
-    { id: 'platinum', label: 'بلاتيني', range: '600+',      icon: Award,  gradient: 'from-cyan-400 to-teal-500'   },
+    { id: 'bronze', label: 'برونزي', range: '0 - 99', icon: Medal, gradient: 'from-amber-600 to-orange-700' },
+    { id: 'silver', label: 'فضي', range: '100 - 299', icon: Star, gradient: 'from-slate-400 to-gray-500' },
+    { id: 'gold', label: 'ذهبي', range: '300 - 599', icon: Trophy, gradient: 'from-yellow-400 to-amber-500' },
+    { id: 'platinum', label: 'بلاتيني', range: '600+', icon: Award, gradient: 'from-cyan-400 to-teal-500' },
   ];
 
   return (
     <div className="space-y-4">
-      {reputation && (
-        <ReputationProgress level={reputation.level} points={reputation.total_points} />
-      )}
+      {reputation && <ReputationProgress level={reputation.level} points={reputation.total_points} />}
 
       <div className="bg-white border border-gray-100 rounded-2xl overflow-hidden">
         <div className="px-4 py-3 border-b border-gray-100">
@@ -313,7 +450,10 @@ function ReputationTab({ reputation, userId }: { reputation: ReputationScore | n
       <div className="bg-white border border-gray-100 rounded-2xl overflow-hidden">
         <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
           <h3 className="font-black text-gray-900 text-sm">سجل نقاطك</h3>
-          <span className="text-xs text-gray-400">آخر 20 حدث</span>
+          <div className="flex items-center gap-1.5">
+            <LiveDot />
+            <span className="text-xs text-gray-400">آخر 20 حدث</span>
+          </div>
         </div>
         {loadingEvents ? (
           <div className="p-6 flex justify-center">
@@ -329,8 +469,15 @@ function ReputationTab({ reputation, userId }: { reputation: ReputationScore | n
           <div className="divide-y divide-gray-50">
             {userEvents.map((e: any) => {
               const info = getActionInfo(e.event_type);
+              const isNew = newEventIds.has(e.id);
               return (
-                <div key={e.id} className="flex items-center gap-3 px-4 py-3">
+                <div
+                  key={e.id}
+                  className={`flex items-center gap-3 px-4 py-3 transition-all duration-500 ${isNew ? 'bg-green-50' : ''}`}
+                >
+                  {isNew && (
+                    <span className="absolute right-0 w-1 h-full bg-green-500 rounded-r" />
+                  )}
                   <div className={`w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 ${
                     e.points > 0 ? 'bg-green-100' : 'bg-red-50'
                   }`}>
@@ -345,9 +492,14 @@ function ReputationTab({ reputation, userId }: { reputation: ReputationScore | n
                       {new Date(e.created_at).toLocaleDateString('ar-SA', { month: 'short', day: 'numeric', year: 'numeric' })}
                     </p>
                   </div>
-                  <span className={`font-black text-sm ${e.points > 0 ? 'text-green-600' : 'text-red-500'}`}>
-                    {e.points > 0 ? '+' : ''}{e.points}
-                  </span>
+                  <div className="flex flex-col items-end gap-1">
+                    <span className={`font-black text-sm ${e.points > 0 ? 'text-green-600' : 'text-red-500'}`}>
+                      {e.points > 0 ? '+' : ''}{e.points}
+                    </span>
+                    {isNew && (
+                      <span className="text-xs bg-green-100 text-green-700 px-1.5 py-0.5 rounded font-bold">جديد</span>
+                    )}
+                  </div>
                 </div>
               );
             })}
@@ -357,7 +509,8 @@ function ReputationTab({ reputation, userId }: { reputation: ReputationScore | n
 
       {pointActions.filter(a => a.category !== 'admin' && a.is_active).length > 0 && (
         <div className="bg-white border border-gray-100 rounded-2xl overflow-hidden">
-          <div className="px-4 py-3 border-b border-gray-100">
+          <div className="px-4 py-3 border-b border-gray-100 flex items-center gap-2">
+            <Sparkles className="w-4 h-4 text-amber-500" />
             <h3 className="font-black text-gray-900 text-sm">كيف تكسب النقاط</h3>
           </div>
           <div className="divide-y divide-gray-50">
@@ -411,26 +564,45 @@ function ReputationTab({ reputation, userId }: { reputation: ReputationScore | n
 }
 
 function CashbackTab({ wallet, transactions }: { wallet: any; transactions: any[] }) {
+  const [newTxIds, setNewTxIds] = useState<Set<string>>(new Set());
+  const prevTxCount = useRef(transactions.length);
+
+  useEffect(() => {
+    if (transactions.length > prevTxCount.current) {
+      const newIds = new Set(transactions.slice(0, transactions.length - prevTxCount.current).map((t: any) => t.id));
+      setNewTxIds(newIds);
+      setTimeout(() => setNewTxIds(new Set()), 3000);
+    }
+    prevTxCount.current = transactions.length;
+  }, [transactions]);
+
+  const isEarned = (type: string) => type === 'earned' || type === 'referral_bonus' || type === 'admin_adjustment' && true;
+  const isPositive = (type: string, amount: number) =>
+    type === 'earned' || type === 'referral_bonus' || (type === 'admin_adjustment' && amount > 0);
+
   return (
     <div className="space-y-4">
-      <div className="bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl p-5 text-white">
-        <div className="flex items-center gap-3 mb-4">
-          <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
-            <Wallet className="w-5 h-5 text-white" />
+      <div className="bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl p-5 text-white relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2" />
+        <div className="relative">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
+              <Wallet className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <p className="text-white/80 text-sm">رصيد الكاش باك</p>
+              <p className="text-3xl font-black">{wallet?.balance?.toFixed(2) || '0.00'} ر.س</p>
+            </div>
           </div>
-          <div>
-            <p className="text-white/80 text-sm">رصيد الكاش باك</p>
-            <p className="text-3xl font-black">{wallet?.balance?.toFixed(2) || '0.00'} ر.س</p>
-          </div>
-        </div>
-        <div className="grid grid-cols-2 gap-3">
-          <div className="bg-white/15 rounded-xl p-3 text-center">
-            <p className="text-lg font-black">{wallet?.total_earned?.toFixed(2) || '0.00'}</p>
-            <p className="text-white/70 text-xs">إجمالي مكتسب (ر.س)</p>
-          </div>
-          <div className="bg-white/15 rounded-xl p-3 text-center">
-            <p className="text-lg font-black">{wallet?.total_redeemed?.toFixed(2) || '0.00'}</p>
-            <p className="text-white/70 text-xs">إجمالي مُستخدم (ر.س)</p>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="bg-white/15 rounded-xl p-3 text-center">
+              <p className="text-lg font-black">{wallet?.total_earned?.toFixed(2) || '0.00'}</p>
+              <p className="text-white/70 text-xs">إجمالي مكتسب (ر.س)</p>
+            </div>
+            <div className="bg-white/15 rounded-xl p-3 text-center">
+              <p className="text-lg font-black">{wallet?.total_redeemed?.toFixed(2) || '0.00'}</p>
+              <p className="text-white/70 text-xs">إجمالي مُستخدم (ر.س)</p>
+            </div>
           </div>
         </div>
       </div>
@@ -453,8 +625,12 @@ function CashbackTab({ wallet, transactions }: { wallet: any; transactions: any[
       </div>
 
       <div className="bg-white border border-gray-100 rounded-2xl overflow-hidden">
-        <div className="px-4 py-3 border-b border-gray-100">
+        <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
           <h3 className="font-black text-gray-900 text-sm">سجل المعاملات</h3>
+          <div className="flex items-center gap-1.5">
+            <LiveDot />
+            <span className="text-xs text-gray-400">مباشر</span>
+          </div>
         </div>
         {transactions.length === 0 ? (
           <div className="p-8 text-center">
@@ -464,29 +640,39 @@ function CashbackTab({ wallet, transactions }: { wallet: any; transactions: any[
           </div>
         ) : (
           <div className="divide-y divide-gray-50">
-            {transactions.map(tx => (
-              <div key={tx.id} className="flex items-center gap-3 px-4 py-3">
-                <div className={`w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 ${
-                  tx.type === 'earned' || tx.type === 'referral_bonus' ? 'bg-green-100' : 'bg-red-50'
-                }`}>
-                  {tx.type === 'earned' || tx.type === 'referral_bonus'
-                    ? <Plus className="w-4 h-4 text-green-600" />
-                    : <Minus className="w-4 h-4 text-red-500" />
-                  }
+            {transactions.map((tx: any) => {
+              const positive = isPositive(tx.type, tx.amount);
+              const isNew = newTxIds.has(tx.id);
+              return (
+                <div
+                  key={tx.id}
+                  className={`flex items-center gap-3 px-4 py-3 transition-all duration-500 ${isNew ? 'bg-green-50' : ''}`}
+                >
+                  <div className={`w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 ${
+                    positive ? 'bg-green-100' : 'bg-red-50'
+                  }`}>
+                    {positive
+                      ? <Plus className="w-4 h-4 text-green-600" />
+                      : <Minus className="w-4 h-4 text-red-500" />
+                    }
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm text-gray-800 font-medium">{tx.description_ar || tx.type}</p>
+                    <p className="text-xs text-gray-400">
+                      {new Date(tx.created_at).toLocaleDateString('ar-SA', { month: 'short', day: 'numeric', year: 'numeric' })}
+                    </p>
+                  </div>
+                  <div className="flex flex-col items-end gap-1">
+                    <span className={`font-black text-sm ${positive ? 'text-green-600' : 'text-red-500'}`}>
+                      {positive ? '+' : '-'}{Number(tx.amount).toFixed(2)} ر.س
+                    </span>
+                    {isNew && (
+                      <span className="text-xs bg-green-100 text-green-700 px-1.5 py-0.5 rounded font-bold">جديد</span>
+                    )}
+                  </div>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm text-gray-800 font-medium">{tx.description_ar || tx.type}</p>
-                  <p className="text-xs text-gray-400">
-                    {new Date(tx.created_at).toLocaleDateString('ar-SA', { month: 'short', day: 'numeric', year: 'numeric' })}
-                  </p>
-                </div>
-                <span className={`font-black text-sm ${
-                  tx.type === 'earned' || tx.type === 'referral_bonus' ? 'text-green-600' : 'text-red-500'
-                }`}>
-                  {tx.type === 'earned' || tx.type === 'referral_bonus' ? '+' : '-'}{Number(tx.amount).toFixed(2)} ر.س
-                </span>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
@@ -506,30 +692,39 @@ function ReferralTab({ referralCode, copied, generating, onCopy, onGenerate, pro
 
   return (
     <div className="space-y-4">
-      <div className="bg-gradient-to-br from-blue-500 to-blue-700 rounded-2xl p-5 text-white">
-        <div className="flex items-center gap-3 mb-4">
-          <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
-            <Users className="w-5 h-5 text-white" />
+      <div className="bg-gradient-to-br from-blue-500 to-blue-700 rounded-2xl p-5 text-white relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2" />
+        <div className="relative">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
+              <Users className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <p className="text-white/80 text-sm">نظام الإحالة المزدوجة</p>
+              <p className="text-2xl font-black">{referralCode?.uses_count || 0} إحالة ناجحة</p>
+            </div>
           </div>
-          <div>
-            <p className="text-white/80 text-sm">نظام الإحالة المزدوجة</p>
-            <p className="text-2xl font-black">{referralCode?.uses_count || 0} إحالة ناجحة</p>
-          </div>
-        </div>
-        <div className="grid grid-cols-2 gap-3">
-          <div className="bg-white/15 rounded-xl p-3 text-center">
-            <p className="text-lg font-black">{referralCode?.total_rewards_earned?.toFixed(0) || '0'}</p>
-            <p className="text-white/70 text-xs">ر.س مكافآت مكتسبة</p>
-          </div>
-          <div className="bg-white/15 rounded-xl p-3 text-center">
-            <p className="text-lg font-black">20%</p>
-            <p className="text-white/70 text-xs">خصمك على العمولة</p>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="bg-white/15 rounded-xl p-3 text-center">
+              <p className="text-lg font-black">{referralCode?.total_rewards_earned?.toFixed(0) || '0'}</p>
+              <p className="text-white/70 text-xs">ر.س مكافآت مكتسبة</p>
+            </div>
+            <div className="bg-white/15 rounded-xl p-3 text-center">
+              <p className="text-lg font-black">20%</p>
+              <p className="text-white/70 text-xs">خصمك على العمولة</p>
+            </div>
           </div>
         </div>
       </div>
 
       <div className="bg-white border border-gray-100 rounded-2xl p-4 space-y-4">
-        <h3 className="font-black text-gray-900 text-sm">كود الإحالة الخاص بك</h3>
+        <div className="flex items-center justify-between">
+          <h3 className="font-black text-gray-900 text-sm">كود الإحالة الخاص بك</h3>
+          <div className="flex items-center gap-1.5">
+            <LiveDot />
+            <span className="text-xs text-green-600 font-semibold">يتحدث تلقائياً</span>
+          </div>
+        </div>
         {referralCode ? (
           <div className="space-y-3">
             <div className="flex items-center gap-3 bg-gray-50 border-2 border-dashed border-gray-200 rounded-xl p-4">
@@ -576,9 +771,9 @@ function ReferralTab({ referralCode, copied, generating, onCopy, onGenerate, pro
         </div>
         <div className="divide-y divide-gray-50">
           {[
-            { step: '1', title: 'شارك كودك', desc: 'أرسل كودك لبائع تعرفه يريد الانضمام', icon: Users, color: 'text-blue-500', bg: 'bg-blue-50' },
-            { step: '2', title: 'يسجّل ويستخدم الكود', desc: 'البائع الجديد يسجّل في المنصة ويدخل كودك', icon: CheckCircle, color: 'text-green-500', bg: 'bg-green-50' },
-            { step: '3', title: 'كلاكما يكافأ', desc: 'أنت: خصم 20% على عمولتك القادمة | هو: أول عمولة بخصم 50%', icon: Gift, color: 'text-amber-500', bg: 'bg-amber-50' },
+            { title: 'شارك كودك', desc: 'أرسل كودك لبائع تعرفه يريد الانضمام', icon: Users, color: 'text-blue-500', bg: 'bg-blue-50' },
+            { title: 'يسجّل ويستخدم الكود', desc: 'البائع الجديد يسجّل في المنصة ويدخل كودك', icon: CheckCircle, color: 'text-green-500', bg: 'bg-green-50' },
+            { title: 'كلاكما يكافأ', desc: 'أنت: خصم 20% على عمولتك القادمة | هو: أول عمولة بخصم 50%', icon: Gift, color: 'text-amber-500', bg: 'bg-amber-50' },
           ].map((step, i) => {
             const Icon = step.icon;
             return (
@@ -599,9 +794,13 @@ function ReferralTab({ referralCode, copied, generating, onCopy, onGenerate, pro
   );
 }
 
-function SafeDealTab({ safeDeal, safeDealCount, user, onRefresh }: { safeDeal: any; safeDealCount: number; user: any; onRefresh: () => void }) {
+function SafeDealTab({ safeDeal, safeDealCount, user, onRefresh }: {
+  safeDeal: any;
+  safeDealCount: number;
+  user: any;
+  onRefresh: () => void;
+}) {
   const [listingId, setListingId] = useState('');
-  const [buyerPhone, setBuyerPhone] = useState('');
   const [dealAmount, setDealAmount] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -636,10 +835,10 @@ function SafeDealTab({ safeDeal, safeDealCount, user, onRefresh }: { safeDeal: a
     await supabase.rpc('check_safedeal_certification', { p_seller_id: user.id });
     setSubmitted(true);
     setListingId('');
-    setBuyerPhone('');
     setDealAmount('');
     await onRefresh();
     setSubmitting(false);
+    setTimeout(() => setSubmitted(false), 4000);
   };
 
   const progress = Math.min(100, (safeDealCount / 3) * 100);

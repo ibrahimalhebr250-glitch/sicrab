@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, useCallback, ReactNode } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from './AuthContext';
 
@@ -19,7 +19,7 @@ export interface CashbackWallet {
 
 export interface CashbackTransaction {
   id: string;
-  type: 'earned' | 'redeemed' | 'expired' | 'referral_bonus';
+  type: 'earned' | 'redeemed' | 'expired' | 'referral_bonus' | 'admin_adjustment';
   amount: number;
   source: string | null;
   description_ar: string | null;
@@ -60,6 +60,86 @@ export function RewardsProvider({ children }: { children: ReactNode }) {
   const [safeDeal, setSafeDeal] = useState<SafeDealCert | null>(null);
   const [loading, setLoading] = useState(false);
 
+  const fetchReputation = useCallback(async (uid: string) => {
+    const { data } = await supabase
+      .from('reputation_scores')
+      .select('*')
+      .eq('user_id', uid)
+      .maybeSingle();
+    if (data) {
+      setReputation({
+        total_points: data.total_points,
+        level: data.level,
+        fast_replies: data.fast_replies,
+        five_star_reviews: data.five_star_reviews,
+        deals_completed: data.deals_completed,
+        complaints_received: data.complaints_received,
+      });
+    } else {
+      setReputation(null);
+    }
+  }, []);
+
+  const fetchWallet = useCallback(async (uid: string) => {
+    const { data } = await supabase
+      .from('cashback_wallet')
+      .select('*')
+      .eq('user_id', uid)
+      .maybeSingle();
+    if (data) {
+      setWallet({
+        balance: Number(data.balance),
+        total_earned: Number(data.total_earned),
+        total_redeemed: Number(data.total_redeemed),
+      });
+    } else {
+      setWallet(null);
+    }
+  }, []);
+
+  const fetchCashbackTransactions = useCallback(async (uid: string) => {
+    const { data } = await supabase
+      .from('cashback_transactions')
+      .select('*')
+      .eq('user_id', uid)
+      .order('created_at', { ascending: false })
+      .limit(30);
+    setCashbackTransactions(data || []);
+  }, []);
+
+  const fetchReferralCode = useCallback(async (uid: string) => {
+    const { data } = await supabase
+      .from('referral_codes')
+      .select('code, uses_count, total_rewards_earned')
+      .eq('user_id', uid)
+      .maybeSingle();
+    if (data) setReferralCode(data);
+    else setReferralCode(null);
+  }, []);
+
+  const fetchSafeDeal = useCallback(async (uid: string) => {
+    const { data } = await supabase
+      .from('safedeal_certifications')
+      .select('certified_at, clean_deals_count, is_active')
+      .eq('user_id', uid)
+      .maybeSingle();
+    if (data) setSafeDeal(data);
+    else setSafeDeal(null);
+  }, []);
+
+  const refreshAll = useCallback(async () => {
+    if (!user) return;
+    setLoading(true);
+    await Promise.all([
+      fetchReputation(user.id),
+      fetchWallet(user.id),
+      fetchCashbackTransactions(user.id),
+      fetchReferralCode(user.id),
+      fetchSafeDeal(user.id),
+    ]);
+    setLoading(false);
+  }, [user, fetchReputation, fetchWallet, fetchCashbackTransactions, fetchReferralCode, fetchSafeDeal]);
+
   useEffect(() => {
     if (user) {
       refreshAll();
@@ -72,89 +152,52 @@ export function RewardsProvider({ children }: { children: ReactNode }) {
     }
   }, [user]);
 
-  const refreshAll = async () => {
+  useEffect(() => {
     if (!user) return;
-    setLoading(true);
-    await Promise.all([
-      fetchReputation(),
-      fetchWallet(),
-      fetchCashbackTransactions(),
-      fetchReferralCode(),
-      fetchSafeDeal(),
-    ]);
-    setLoading(false);
-  };
 
-  const fetchReputation = async () => {
-    if (!user) return;
-    const { data } = await supabase
-      .from('reputation_scores')
-      .select('*')
-      .eq('user_id', user.id)
-      .maybeSingle();
-    if (data) {
-      setReputation({
-        total_points: data.total_points,
-        level: data.level,
-        fast_replies: data.fast_replies,
-        five_star_reviews: data.five_star_reviews,
-        deals_completed: data.deals_completed,
-        complaints_received: data.complaints_received,
-      });
-    }
-  };
+    const channel = supabase
+      .channel(`rewards:${user.id}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'reputation_scores', filter: `user_id=eq.${user.id}` },
+        () => fetchReputation(user.id)
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'reputation_events', filter: `user_id=eq.${user.id}` },
+        () => fetchReputation(user.id)
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'cashback_wallet', filter: `user_id=eq.${user.id}` },
+        () => fetchWallet(user.id)
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'cashback_transactions', filter: `user_id=eq.${user.id}` },
+        () => fetchCashbackTransactions(user.id)
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'referral_codes', filter: `user_id=eq.${user.id}` },
+        () => fetchReferralCode(user.id)
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'safedeal_certifications', filter: `user_id=eq.${user.id}` },
+        () => fetchSafeDeal(user.id)
+      )
+      .subscribe();
 
-  const fetchWallet = async () => {
-    if (!user) return;
-    const { data } = await supabase
-      .from('cashback_wallet')
-      .select('*')
-      .eq('user_id', user.id)
-      .maybeSingle();
-    if (data) {
-      setWallet({
-        balance: Number(data.balance),
-        total_earned: Number(data.total_earned),
-        total_redeemed: Number(data.total_redeemed),
-      });
-    }
-  };
-
-  const fetchCashbackTransactions = async () => {
-    if (!user) return;
-    const { data } = await supabase
-      .from('cashback_transactions')
-      .select('*')
-      .eq('user_id', user.id)
-      .order('created_at', { ascending: false })
-      .limit(20);
-    setCashbackTransactions(data || []);
-  };
-
-  const fetchReferralCode = async () => {
-    if (!user) return;
-    const { data } = await supabase
-      .from('referral_codes')
-      .select('code, uses_count, total_rewards_earned')
-      .eq('user_id', user.id)
-      .maybeSingle();
-    if (data) setReferralCode(data);
-  };
-
-  const fetchSafeDeal = async () => {
-    if (!user) return;
-    const { data } = await supabase
-      .from('safedeal_certifications')
-      .select('certified_at, clean_deals_count, is_active')
-      .eq('user_id', user.id)
-      .maybeSingle();
-    if (data) setSafeDeal(data);
-  };
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user, fetchReputation, fetchWallet, fetchCashbackTransactions, fetchReferralCode, fetchSafeDeal]);
 
   const generateReferralCode = async () => {
     if (!user) return;
     const { data } = await supabase.rpc('generate_referral_code', { p_user_id: user.id });
-    if (data) await fetchReferralCode();
+    if (data) await fetchReferralCode(user.id);
   };
 
   return (
