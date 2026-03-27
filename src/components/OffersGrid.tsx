@@ -3,6 +3,8 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase, Listing } from '../lib/supabase';
 import { FilterState } from './Filters';
+import { useAuth } from '../contexts/AuthContext';
+import { useFavorite } from '../hooks/useFavorite';
 
 interface ListingWithPromotion extends Listing {
   is_featured?: boolean;
@@ -217,6 +219,9 @@ function getPricingMode(listing: Listing): 'group' | 'individual' {
 }
 
 function FreshListingCard({ listing, onClick }: { listing: ListingWithPromotion; onClick: () => void }) {
+  const { user } = useAuth();
+  const { isFavorited, toggle } = useFavorite(listing.id, user?.id);
+
   const imageUrl = listing.images && listing.images.length > 0
     ? listing.images[0]
     : 'https://images.pexels.com/photos/1002703/pexels-photo-1002703.jpeg';
@@ -287,10 +292,10 @@ function FreshListingCard({ listing, onClick }: { listing: ListingWithPromotion;
             </div>
 
             <button
-              onClick={(e) => { e.stopPropagation(); }}
-              className="flex-shrink-0 w-7 h-7 bg-white rounded-xl flex items-center justify-center shadow-sm border border-red-100 hover:scale-110 transition-transform mt-0.5"
+              onClick={toggle}
+              className={`flex-shrink-0 w-7 h-7 bg-white rounded-xl flex items-center justify-center shadow-sm border transition-transform hover:scale-110 mt-0.5 ${isFavorited ? 'border-red-300' : 'border-red-100'}`}
             >
-              <Heart className="text-red-400 w-3.5 h-3.5 stroke-[2.5]" />
+              <Heart className={`w-3.5 h-3.5 stroke-[2.5] transition-colors ${isFavorited ? 'text-red-500 fill-red-500' : 'text-red-400'}`} />
             </button>
           </div>
 

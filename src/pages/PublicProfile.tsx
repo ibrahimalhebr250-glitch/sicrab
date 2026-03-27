@@ -70,10 +70,9 @@ export default function PublicProfile() {
     if (!user) return;
 
     const { data } = await supabase
-      .from('follows')
+      .from('user_follows')
       .select('id')
       .eq('follower_id', user.id)
-      .eq('following_type', 'user')
       .eq('following_id', userId)
       .maybeSingle();
 
@@ -88,26 +87,16 @@ export default function PublicProfile() {
 
     if (isFollowing) {
       await supabase
-        .from('follows')
+        .from('user_follows')
         .delete()
         .eq('follower_id', user.id)
-        .eq('following_type', 'user')
         .eq('following_id', userId);
 
       setIsFollowing(false);
     } else {
-      await supabase.from('follows').insert({
+      await supabase.from('user_follows').insert({
         follower_id: user.id,
-        following_type: 'user',
         following_id: userId
-      });
-
-      await supabase.from('notifications').insert({
-        user_id: userId,
-        type: 'follow',
-        title: 'متابع جديد',
-        content: `بدأ ${user.email} بمتابعتك`,
-        link: `/user/${userId}`
       });
 
       setIsFollowing(true);

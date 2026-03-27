@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
-import { MapPin, Eye, ChevronLeft, ChevronRight, MessageCircle, Calendar, Tag, Box, X, Share2, ArrowRight, Flag, Star, Ruler, Package, Layers } from 'lucide-react';
+import { MapPin, Eye, ChevronLeft, ChevronRight, MessageCircle, Calendar, Tag, Box, X, Share2, ArrowRight, Flag, Star, Ruler, Package, Layers, Heart } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { supabase, Listing } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
+import { useFavorite } from '../hooks/useFavorite';
 import ShareSheet from '../components/ShareSheet';
 import SellerCard from '../components/SellerCard';
 import SimilarListings from '../components/SimilarListings';
@@ -70,6 +71,7 @@ export default function ListingDetails() {
   const [showReviewModal, setShowReviewModal] = useState(false);
 
   const listingId = listing?.id || '';
+  const { isFavorited, toggle: toggleFavorite } = useFavorite(listingId, user?.id);
 
   useEffect(() => {
     if (slug) {
@@ -223,6 +225,12 @@ ${listingUrl}`;
           <h1 className="text-lg font-bold text-gray-900 flex-1 text-center mx-4 truncate">
             {listing.title}
           </h1>
+          <button
+            onClick={toggleFavorite}
+            className={`w-10 h-10 flex items-center justify-center rounded-full active:scale-95 transition-all ${isFavorited ? 'bg-red-50 hover:bg-red-100' : 'bg-gray-100 hover:bg-gray-200'}`}
+          >
+            <Heart className={`w-5 h-5 transition-colors ${isFavorited ? 'text-red-500 fill-red-500' : 'text-gray-700'}`} />
+          </button>
           <button
             onClick={() => setShowShareSheet(true)}
             className="w-10 h-10 flex items-center justify-center bg-gray-100 rounded-full hover:bg-gray-200 active:scale-95 transition-all"

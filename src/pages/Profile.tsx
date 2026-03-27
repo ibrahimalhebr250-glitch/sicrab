@@ -1,6 +1,6 @@
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
-import { User, Phone, Calendar, CreditCard as Edit3, ArrowRight, TrendingUp, Package, Eye, MessageSquare, CheckCircle, LogOut, ChevronRight, BarChart2, Plus, Settings, Building2, CreditCard, Clock, XCircle, Upload, Copy, Check, MessageCircle, Headphones as HeadphonesIcon, Gift } from 'lucide-react';
+import { User, Phone, Calendar, CreditCard as Edit3, ArrowRight, TrendingUp, Package, Eye, MessageSquare, CheckCircle, LogOut, ChevronRight, BarChart2, Plus, Settings, Building2, CreditCard, Clock, XCircle, Upload, Copy, Check, MessageCircle, Headphones as HeadphonesIcon, Gift, Heart, Users } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 
@@ -48,6 +48,8 @@ export default function Profile() {
   const [message, setMessage] = useState('');
   const [listingStats, setListingStats] = useState<ListingStats>({ total: 0, active: 0, totalViews: 0, totalWhatsapp: 0 });
   const [statsLoading, setStatsLoading] = useState(true);
+  const [favoritesCount, setFavoritesCount] = useState(0);
+  const [followingCount, setFollowingCount] = useState(0);
   const [bankAccount, setBankAccount] = useState<PlatformBankAccount | null>(null);
   const [myCommissions, setMyCommissions] = useState<MyCommission[]>([]);
   const [commissionsLoading, setCommissionsLoading] = useState(false);
@@ -64,6 +66,7 @@ export default function Profile() {
     fetchBankAccount();
     fetchMyCommissions();
     fetchSupportWhatsapp();
+    fetchFavoritesAndFollows();
   }, [user, profile, authLoading]);
 
   useEffect(() => {
@@ -118,6 +121,16 @@ export default function Profile() {
         : data.setting_value.toString();
       setSupportWhatsapp(val);
     }
+  };
+
+  const fetchFavoritesAndFollows = async () => {
+    if (!user) return;
+    const [favRes, followRes] = await Promise.all([
+      supabase.from('favorites').select('id', { count: 'exact', head: true }).eq('user_id', user.id),
+      supabase.from('user_follows').select('id', { count: 'exact', head: true }).eq('follower_id', user.id),
+    ]);
+    setFavoritesCount(favRes.count || 0);
+    setFollowingCount(followRes.count || 0);
   };
 
   const fetchMyCommissions = async () => {
@@ -412,6 +425,22 @@ export default function Profile() {
               iconColor: 'text-amber-600',
               label: 'مركز المكافآت',
               desc: 'السمعة، الكاش باك، الإحالة، والصفقة المضمونة',
+            },
+            {
+              to: '/favorites',
+              icon: Heart,
+              iconBg: 'bg-red-50',
+              iconColor: 'text-red-500',
+              label: 'المفضلة',
+              desc: `${favoritesCount} إعلان محفوظ`,
+            },
+            {
+              to: '/following',
+              icon: Users,
+              iconBg: 'bg-blue-50',
+              iconColor: 'text-blue-600',
+              label: 'المتابعات',
+              desc: `تتابع ${followingCount} شخص`,
             },
           ].map((item, i) => (
             <Link
