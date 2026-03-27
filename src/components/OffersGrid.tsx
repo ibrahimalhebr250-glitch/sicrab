@@ -178,12 +178,23 @@ function OffersGridNew({ categoryId, subcategoryId, filters, onViewListing, sear
   );
 }
 
+interface PriceTierCard {
+  id: string;
+  trunkSize: string;
+  height: string;
+  price: string;
+  unit: string;
+  count: string;
+}
+
 interface SubcategoryItemCard {
   subcategoryId: string;
   name: string;
   price: string;
   size: string;
   quantity: string;
+  priceTiers: PriceTierCard[];
+  useTiers: boolean;
 }
 
 function getSelectedTypes(listing: Listing): SubcategoryItemCard[] {
@@ -284,24 +295,49 @@ function FreshListingCard({ listing, onClick }: { listing: ListingWithPromotion;
           </div>
 
           {hasTypes ? (
-            <div className="my-1.5 flex flex-wrap gap-1">
-              {selectedTypes.slice(0, 3).map((item) => (
-                <span
-                  key={item.subcategoryId}
-                  className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 text-[10px] font-bold px-2 py-0.5 rounded-lg border border-emerald-100"
-                >
-                  {item.name}
-                  {pricingMode === 'individual' && item.price && (
-                    <span className="text-emerald-600 font-black">
-                      {Number(item.price).toLocaleString()}ر
-                      {item.quantity && <span className="font-medium text-emerald-500">/{item.quantity.replace('لل', '')}</span>}
-                    </span>
+            <div className="my-1.5 space-y-1">
+              {selectedTypes.slice(0, 2).map((item) => (
+                <div key={item.subcategoryId} className="rounded-lg overflow-hidden border border-emerald-100">
+                  <div className="bg-emerald-600 px-2 py-0.5">
+                    <span className="text-white text-[10px] font-black">{item.name}</span>
+                  </div>
+                  {item.useTiers && item.priceTiers && item.priceTiers.length > 0 ? (
+                    <div className="bg-emerald-50 px-2 py-1 flex flex-wrap gap-1">
+                      {item.priceTiers.slice(0, 2).map((tier) => (
+                        <div key={tier.id} className="flex items-center gap-1 bg-white rounded-md px-1.5 py-0.5 border border-emerald-100">
+                          {tier.height && (
+                            <span className="text-[9px] text-gray-500">{tier.height}م</span>
+                          )}
+                          {tier.trunkSize && (
+                            <span className="text-[9px] text-gray-400">∅{tier.trunkSize}</span>
+                          )}
+                          {tier.count && (
+                            <span className="text-[9px] text-blue-600 font-bold">{tier.count}ق</span>
+                          )}
+                          {tier.price && (
+                            <span className="text-[9px] text-emerald-700 font-black">{Number(tier.price).toLocaleString()}ر</span>
+                          )}
+                        </div>
+                      ))}
+                      {item.priceTiers.length > 2 && (
+                        <span className="text-[9px] text-gray-400 font-bold self-center">+{item.priceTiers.length - 2}</span>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="bg-emerald-50 px-2 py-1 flex items-center gap-2">
+                      {item.price && (
+                        <span className="text-[10px] text-emerald-700 font-black">{Number(item.price).toLocaleString()} ريال</span>
+                      )}
+                      {item.quantity && (
+                        <span className="text-[9px] text-gray-500">{item.quantity}</span>
+                      )}
+                    </div>
                   )}
-                </span>
+                </div>
               ))}
-              {selectedTypes.length > 3 && (
+              {selectedTypes.length > 2 && (
                 <span className="inline-flex items-center bg-gray-100 text-gray-500 text-[10px] font-bold px-2 py-0.5 rounded-lg">
-                  +{selectedTypes.length - 3}
+                  +{selectedTypes.length - 2} أنواع أخرى
                 </span>
               )}
             </div>
