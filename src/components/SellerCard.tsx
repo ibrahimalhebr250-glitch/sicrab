@@ -1,6 +1,8 @@
-import { User, Calendar, Package, Star, Shield } from 'lucide-react';
+import { User, Calendar, Package, Star, Shield, UserPlus, UserMinus, Users } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
+import { useAuth } from '../contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
 import SellerBadge from './SellerBadge';
 import SafeDealBadge from './SafeDealBadge';
 import ReputationBadge from './ReputationBadge';
@@ -30,14 +32,68 @@ interface SellerRewards {
 }
 
 export default function SellerCard({ sellerId, sellerName }: SellerCardProps) {
+  const { user } = useAuth();
+  const navigate = useNavigate();
   const [profile, setProfile] = useState<SellerProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [rewards, setRewards] = useState<SellerRewards | null>(null);
+  const [isFollowing, setIsFollowing] = useState(false);
+  const [followId, setFollowId] = useState<string | null>(null);
+  const [followersCount, setFollowersCount] = useState(0);
+  const [followLoading, setFollowLoading] = useState(false);
+  const [followAnimated, setFollowAnimated] = useState(false);
 
   useEffect(() => {
     loadSellerProfile();
     loadSellerRewards();
+    loadFollowState();
   }, [sellerId]);
+
+  async function loadFollowState() {
+    const { count } = await supabase
+      .from('user_follows')
+      .select('id', { count: 'exact', head: true })
+      .eq('following_id', sellerId);
+    setFollowersCount(count || 0);
+
+    if (!user || user.id === sellerId) return;
+    const { data } = await supabase
+      .from('user_follows')
+      .select('id')
+      .eq('follower_id', user.id)
+      .eq('following_id', sellerId)
+      .maybeSingle();
+    if (data) {
+      setIsFollowing(true);
+      setFollowId(data.id);
+    }
+  }
+
+  async function handleFollow() {
+    if (!user) { navigate('/login'); return; }
+    if (user.id === sellerId) return;
+    setFollowLoading(true);
+    if (isFollowing && followId) {
+      await supabase.from('user_follows').delete().eq('id', followId);
+      setIsFollowing(false);
+      setFollowId(null);
+      setFollowersCount(c => Math.max(0, c - 1));
+    } else {
+      const { data } = await supabase
+        .from('user_follows')
+        .insert({ follower_id: user.id, following_id: sellerId })
+        .select('id')
+        .maybeSingle();
+      if (data) {
+        setIsFollowing(true);
+        setFollowId(data.id);
+        setFollowersCount(c => c + 1);
+        setFollowAnimated(true);
+        setTimeout(() => setFollowAnimated(false), 600);
+      }
+    }
+    setFollowLoading(false);
+  }
 
   async function loadSellerRewards() {
     const [{ data: repData }, { data: sdData }] = await Promise.all([
@@ -153,14 +209,20 @@ export default function SellerCard({ sellerId, sellerName }: SellerCardProps) {
             {rewards?.hasSafeDeal && <SafeDealBadge size="sm" />}
           </div>
 
-          <div className="flex items-center gap-4 text-sm text-gray-600 mb-2">
+          <div className="flex items-center gap-3 text-sm text-gray-600 mb-2 flex-wrap">
             <div className="flex items-center gap-1">
-              <Calendar className="w-4 h-4" />
+              <Calendar className="w-3.5 h-3.5" />
               <span>{profile ? getTimeAgo(profile.created_at) : 'عضو جديد'}</span>
             </div>
             <div className="flex items-center gap-1">
-              <Package className="w-4 h-4" />
+              <Package className="w-3.5 h-3.5" />
               <span>{profile?.listings_count || 0} إعلان</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <Users className="w-3.5 h-3.5" />
+              <span className={`transition-all duration-300 ${followAnimated ? 'text-amber-600 font-bold scale-110' : ''}`}>
+                {followersCount} متابع
+              </span>
             </div>
           </div>
 
@@ -191,11 +253,38 @@ export default function SellerCard({ sellerId, sellerName }: SellerCardProps) {
       <div className="flex gap-2">
         <a
           href={`/user/${sellerId}`}
-          className="flex-1 py-3 bg-white border-2 border-gray-300 text-gray-700 rounded-xl font-bold text-sm hover:bg-gray-50 transition-all text-center"
+          className="flex-1 py-2.5 bg-white border-2 border-gray-200 text-gray-700 rounded-xl font-bold text-sm hover:bg-gray-50 transition-all text-center"
         >
           عرض الملف
         </a>
+        {user && user.id !== sellerId && (
+          <button
+            onClick={handleFollow}
+            disabled={followLoading}
+            className={`flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl font-bold text-sm transition-all duration-200 disabled:opacity-60 active:scale-95 ${
+              isFollowing
+                ? 'bg-gray-100 hover:bg-red-50 text-gray-600 hover:text-red-500 border-2 border-gray-200 hover:border-red-200'
+                : 'bg-amber-500 hover:bg-amber-600 text-white border-2 border-amber-500 hover:border-amber-600 shadow-sm shadow-amber-200'
+            } ${followAnimated ? 'scale-110' : ''}`}
+          >
+            {followLoading ? (
+              <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+            ) : isFollowing ? (
+              <><UserMinus className="w-4 h-4" /><span>متابَع</span></>
+            ) : (
+              <><UserPlus className="w-4 h-4" /><span>تابع</span></>
+            )}
+          </button>
+        )}
       </div>
+
+      {followAnimated && (
+        <div className="mt-2 text-center">
+          <span className="text-xs text-amber-600 font-bold animate-pulse">
+            تمت المتابعة! ستظهر إعلاناته في متابعاتك
+          </span>
+        </div>
+      )}
     </div>
   );
 }
