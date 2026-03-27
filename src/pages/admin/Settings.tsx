@@ -318,6 +318,16 @@ export default function AdminSettings() {
 
         {tab === 'footer' && (
           <div className="space-y-5">
+            <div className="bg-blue-50 border-2 border-blue-200 rounded-2xl p-4 flex items-start gap-3">
+              <AlertCircle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="text-blue-800 font-bold text-sm">تنسيق الروابط</p>
+                <p className="text-blue-700 text-sm mt-0.5">
+                  يجب أن تبدأ الروابط الداخلية بـ <span className="font-mono bg-blue-100 px-1 rounded">/</span> مثل <span className="font-mono bg-blue-100 px-1 rounded">/about</span> أو <span className="font-mono bg-blue-100 px-1 rounded">/contact</span>، أو استخدم <span className="font-mono bg-blue-100 px-1 rounded">#</span> لإخفاء الرابط. الروابط الخارجية تبدأ بـ <span className="font-mono bg-blue-100 px-1 rounded">https://</span>
+                </p>
+              </div>
+            </div>
+
             <div className="bg-white rounded-2xl p-6 shadow-xl space-y-6">
               <div className="flex items-center gap-3 pb-4 border-b border-gray-100">
                 <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center">
@@ -333,22 +343,27 @@ export default function AdminSettings() {
                   { key: 'footer_about_url', label: 'رابط "من نحن"', placeholder: '/about' },
                   { key: 'footer_how_it_works_url', label: 'رابط "كيف نعمل"', placeholder: '/how-it-works' },
                   { key: 'footer_faq_url', label: 'رابط "الأسئلة الشائعة"', placeholder: '/faq' },
-                ].map(({ key, label, placeholder }) => (
-                  <div key={key}>
-                    <label className="block text-sm font-bold text-gray-700 mb-1.5">{label}</label>
-                    <div className="relative">
-                      <Link className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                      <input
-                        type="text"
-                        value={settings[key] || ''}
-                        onChange={e => setSettings({ ...settings, [key]: e.target.value })}
-                        placeholder={placeholder}
-                        className="w-full pr-10 pl-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-amber-500 text-left"
-                        dir="ltr"
-                      />
+                ].map(({ key, label, placeholder }) => {
+                  const val = settings[key] || '';
+                  const isInvalid = val.length > 0 && !val.startsWith('/') && !val.startsWith('http://') && !val.startsWith('https://') && val !== '#';
+                  return (
+                    <div key={key}>
+                      <label className="block text-sm font-bold text-gray-700 mb-1.5">{label}</label>
+                      <div className="relative">
+                        <Link className={`absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 ${isInvalid ? 'text-red-400' : 'text-gray-400'}`} />
+                        <input
+                          type="text"
+                          value={val}
+                          onChange={e => setSettings({ ...settings, [key]: e.target.value })}
+                          placeholder={placeholder}
+                          className={`w-full pr-10 pl-4 py-3 border-2 rounded-xl focus:outline-none text-left ${isInvalid ? 'border-red-400 bg-red-50 focus:border-red-500' : 'border-gray-200 focus:border-amber-500'}`}
+                          dir="ltr"
+                        />
+                      </div>
+                      {isInvalid && <p className="text-xs text-red-500 mt-1">الرابط غير صالح - يجب أن يبدأ بـ / أو https:// أو استخدم #</p>}
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
 
@@ -367,22 +382,27 @@ export default function AdminSettings() {
                   { key: 'footer_help_url', label: 'رابط "المساعدة"', placeholder: '/help' },
                   { key: 'footer_contact_url', label: 'رابط "اتصل بنا"', placeholder: '/contact' },
                   { key: 'footer_report_url', label: 'رابط "بلغ عن مخالفة"', placeholder: '/report' },
-                ].map(({ key, label, placeholder }) => (
-                  <div key={key}>
-                    <label className="block text-sm font-bold text-gray-700 mb-1.5">{label}</label>
-                    <div className="relative">
-                      <Link className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                      <input
-                        type="text"
-                        value={settings[key] || ''}
-                        onChange={e => setSettings({ ...settings, [key]: e.target.value })}
-                        placeholder={placeholder}
-                        className="w-full pr-10 pl-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-blue-500 text-left"
-                        dir="ltr"
-                      />
+                ].map(({ key, label, placeholder }) => {
+                  const val = settings[key] || '';
+                  const isInvalid = val.length > 0 && !val.startsWith('/') && !val.startsWith('http://') && !val.startsWith('https://') && val !== '#';
+                  return (
+                    <div key={key}>
+                      <label className="block text-sm font-bold text-gray-700 mb-1.5">{label}</label>
+                      <div className="relative">
+                        <Link className={`absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 ${isInvalid ? 'text-red-400' : 'text-gray-400'}`} />
+                        <input
+                          type="text"
+                          value={val}
+                          onChange={e => setSettings({ ...settings, [key]: e.target.value })}
+                          placeholder={placeholder}
+                          className={`w-full pr-10 pl-4 py-3 border-2 rounded-xl focus:outline-none text-left ${isInvalid ? 'border-red-400 bg-red-50 focus:border-red-500' : 'border-gray-200 focus:border-blue-500'}`}
+                          dir="ltr"
+                        />
+                      </div>
+                      {isInvalid && <p className="text-xs text-red-500 mt-1">الرابط غير صالح - يجب أن يبدأ بـ / أو https:// أو استخدم #</p>}
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
 
@@ -401,22 +421,27 @@ export default function AdminSettings() {
                   { key: 'footer_usage_policy_url', label: 'رابط "سياسة الاستخدام"', placeholder: '/usage-policy' },
                   { key: 'footer_privacy_url', label: 'رابط "الخصوصية"', placeholder: '/privacy' },
                   { key: 'footer_terms_url', label: 'رابط "الشروط والأحكام"', placeholder: '/terms' },
-                ].map(({ key, label, placeholder }) => (
-                  <div key={key}>
-                    <label className="block text-sm font-bold text-gray-700 mb-1.5">{label}</label>
-                    <div className="relative">
-                      <Link className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                      <input
-                        type="text"
-                        value={settings[key] || ''}
-                        onChange={e => setSettings({ ...settings, [key]: e.target.value })}
-                        placeholder={placeholder}
-                        className="w-full pr-10 pl-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-green-500 text-left"
-                        dir="ltr"
-                      />
+                ].map(({ key, label, placeholder }) => {
+                  const val = settings[key] || '';
+                  const isInvalid = val.length > 0 && !val.startsWith('/') && !val.startsWith('http://') && !val.startsWith('https://') && val !== '#';
+                  return (
+                    <div key={key}>
+                      <label className="block text-sm font-bold text-gray-700 mb-1.5">{label}</label>
+                      <div className="relative">
+                        <Link className={`absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 ${isInvalid ? 'text-red-400' : 'text-gray-400'}`} />
+                        <input
+                          type="text"
+                          value={val}
+                          onChange={e => setSettings({ ...settings, [key]: e.target.value })}
+                          placeholder={placeholder}
+                          className={`w-full pr-10 pl-4 py-3 border-2 rounded-xl focus:outline-none text-left ${isInvalid ? 'border-red-400 bg-red-50 focus:border-red-500' : 'border-gray-200 focus:border-green-500'}`}
+                          dir="ltr"
+                        />
+                      </div>
+                      {isInvalid && <p className="text-xs text-red-500 mt-1">الرابط غير صالح - يجب أن يبدأ بـ / أو https:// أو استخدم #</p>}
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
 

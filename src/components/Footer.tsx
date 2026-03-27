@@ -1,5 +1,6 @@
 import { Mail, Phone, MessageCircle, MapPin, Info, HelpCircle, Shield, Send } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 
 interface FooterSettings {
@@ -33,6 +34,18 @@ const DEFAULTS: FooterSettings = {
   footer_whatsapp: '966501234567',
   footer_copyright: '© 2024 سوق المشاتل - جميع الحقوق محفوظة',
 };
+
+function isValidPath(url: string): boolean {
+  return url.startsWith('/') || url.startsWith('http://') || url.startsWith('https://') || url === '#';
+}
+
+function FooterLink({ href, className, children }: { href: string; className: string; children: React.ReactNode }) {
+  const safe = isValidPath(href) ? href : '#';
+  if (safe.startsWith('http://') || safe.startsWith('https://')) {
+    return <a href={safe} target="_blank" rel="noopener noreferrer" className={className}>{children}</a>;
+  }
+  return <Link to={safe} className={className}>{children}</Link>;
+}
 
 export default function Footer() {
   const [expandedSection, setExpandedSection] = useState<string | null>(null);
@@ -138,13 +151,13 @@ export default function Footer() {
                 {isExpanded && (
                   <div className="px-4 pb-4 pt-2 space-y-2 animate-in slide-in-from-top-2">
                     {section.links.map((link, idx) => (
-                      <a
+                      <FooterLink
                         key={idx}
                         href={link.href}
                         className={`block py-2 px-3 text-sm rounded-lg ${colors.hover} transition-all text-gray-300 hover:${colors.text}`}
                       >
                         {link.label}
-                      </a>
+                      </FooterLink>
                     ))}
                   </div>
                 )}
@@ -200,9 +213,9 @@ export default function Footer() {
                 <ul className="space-y-3">
                   {section.links.map((link, idx) => (
                     <li key={idx}>
-                      <a href={link.href} className={`text-sm hover:${colors.text} transition-all hover:translate-x-1 inline-block font-medium`}>
+                      <FooterLink href={link.href} className={`text-sm hover:${colors.text} transition-all hover:translate-x-1 inline-block font-medium`}>
                         {link.label}
-                      </a>
+                      </FooterLink>
                     </li>
                   ))}
                 </ul>
