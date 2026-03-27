@@ -1,39 +1,8 @@
-import { Mail, Phone, MessageCircle, MapPin, Info, HelpCircle, Shield, Send, Crown } from 'lucide-react';
+import { Mail, Phone, MessageCircle, MapPin, Info, HelpCircle, Shield, Send } from 'lucide-react';
 import { useState } from 'react';
-import { useAdmin } from '../contexts/AdminContext';
-import { useAuth } from '../contexts/AuthContext';
-import { supabase } from '../lib/supabase';
 
 export default function Footer() {
   const [expandedSection, setExpandedSection] = useState<string | null>(null);
-  const { isAdmin } = useAdmin();
-  const { user } = useAuth();
-  const [makingAdmin, setMakingAdmin] = useState(false);
-
-  const makeUserAdmin = async () => {
-    if (!user || makingAdmin) return;
-
-    setMakingAdmin(true);
-    try {
-      const { error } = await supabase
-        .from('profiles')
-        .update({
-          is_admin: true,
-          role: 'admin'
-        })
-        .eq('id', user.id);
-
-      if (error) throw error;
-
-      alert('تم تفعيل صلاحيات الإدارة! قم بتحديث الصفحة');
-      window.location.reload();
-    } catch (error) {
-      console.error('Error:', error);
-      alert('حدث خطأ');
-    } finally {
-      setMakingAdmin(false);
-    }
-  };
 
   const sections = [
     {
@@ -230,60 +199,6 @@ export default function Footer() {
         </div>
       </div>
 
-      {/* زر تفعيل صلاحيات الإدارة (للتطوير) */}
-      {user && !isAdmin && (
-        <button
-          onClick={makeUserAdmin}
-          disabled={makingAdmin}
-          className="fixed bottom-24 left-6 group z-50"
-          title="تفعيل صلاحيات الإدارة"
-        >
-          <div className="relative w-14 h-14 bg-gradient-to-br from-blue-500 via-blue-600 to-indigo-600 rounded-full shadow-2xl flex items-center justify-center hover:scale-110 transition-all duration-300 hover:shadow-blue-500/50 animate-bounce hover:animate-none disabled:opacity-50 disabled:cursor-not-allowed">
-            <Crown className="w-7 h-7 text-white drop-shadow-lg" />
-            <div className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-green-500 rounded-full animate-ping"></div>
-            <div className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-green-500 rounded-full"></div>
-          </div>
-
-          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 opacity-0 group-hover:opacity-100 transition-all duration-300 pointer-events-none">
-            <div className="bg-gradient-to-br from-blue-800 to-blue-900 text-white px-4 py-2 rounded-lg shadow-xl border border-blue-500/30 whitespace-nowrap">
-              <div className="flex items-center gap-2">
-                <Crown className="w-4 h-4 text-blue-400" />
-                <span className="text-sm font-bold">اضغط للحصول على صلاحيات الإدارة</span>
-              </div>
-              <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-1">
-                <div className="w-3 h-3 bg-blue-900 rotate-45 border-r border-b border-blue-500/30"></div>
-              </div>
-            </div>
-          </div>
-        </button>
-      )}
-
-      {/* زر لوحة الإدارة */}
-      {isAdmin && (
-        <a
-          href="/admin"
-          className="fixed bottom-24 left-6 group z-50"
-          title="لوحة الإدارة"
-        >
-          <div className="relative w-14 h-14 bg-gradient-to-br from-amber-500 via-amber-600 to-orange-600 rounded-full shadow-2xl flex items-center justify-center hover:scale-110 transition-all duration-300 hover:shadow-amber-500/50 animate-pulse group-hover:animate-none">
-            <Crown className="w-7 h-7 text-white drop-shadow-lg" />
-            <div className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-red-500 rounded-full animate-ping"></div>
-            <div className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-red-500 rounded-full"></div>
-          </div>
-
-          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 opacity-0 group-hover:opacity-100 transition-all duration-300 pointer-events-none">
-            <div className="bg-gradient-to-br from-slate-800 to-slate-900 text-white px-4 py-2 rounded-lg shadow-xl border border-amber-500/30 whitespace-nowrap">
-              <div className="flex items-center gap-2">
-                <Crown className="w-4 h-4 text-amber-400" />
-                <span className="text-sm font-bold">لوحة التحكم</span>
-              </div>
-              <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-1">
-                <div className="w-3 h-3 bg-slate-900 rotate-45 border-r border-b border-amber-500/30"></div>
-              </div>
-            </div>
-          </div>
-        </a>
-      )}
     </footer>
   );
 }
