@@ -1047,59 +1047,65 @@ export default function AddListing({ onBack, onSuccess }: AddListingProps) {
           )}
 
           {step === 4 && (
-            <div className="space-y-6 animate-fade-in">
-              <div className="text-center mb-8">
+            <div className="space-y-5 animate-fade-in">
+              <div className="text-center mb-6">
                 <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-red-100 to-pink-100 rounded-2xl mb-4">
                   <MapPin className="w-8 h-8 text-red-600" />
                 </div>
                 <h2 className="text-2xl font-bold text-gray-900 mb-2">الموقع</h2>
-                <p className="text-gray-500">حدد موقع المشتل لتسهيل التواصل</p>
+                <p className="text-gray-500">حدد مدينتك لتسهيل وصول المشترين</p>
               </div>
 
               <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
                 <label className="block mb-3">
-                  <span className="text-sm font-bold text-gray-700">المدينة</span>
+                  <span className="text-sm font-bold text-gray-700 flex items-center gap-2">
+                    <span className="w-6 h-6 bg-red-100 text-red-600 rounded-full flex items-center justify-center text-xs font-bold">*</span>
+                    اختر المدينة
+                  </span>
                 </label>
-                <select
-                  value={formData.city_id}
-                  onChange={(e) => handleInputChange('city_id', e.target.value)}
-                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-red-500 focus:ring-4 focus:ring-red-100 transition-all outline-none bg-white"
-                >
-                  <option value="">اختر المدينة</option>
-                  {cities.map((city) => (
-                    <option key={city.id} value={city.id}>
-                      {city.name_ar}
-                    </option>
-                  ))}
-                </select>
+                <div className="relative">
+                  <select
+                    value={formData.city_id}
+                    onChange={(e) => handleInputChange('city_id', e.target.value)}
+                    className="w-full px-4 py-3.5 pr-4 pl-10 border-2 border-gray-200 rounded-xl focus:border-red-500 focus:ring-4 focus:ring-red-100 transition-all outline-none bg-white appearance-none text-gray-700 font-medium"
+                  >
+                    <option value="">-- اختر المدينة --</option>
+                    {cities.map((city) => (
+                      <option key={city.id} value={city.id}>
+                        {city.name_ar}
+                      </option>
+                    ))}
+                  </select>
+                  <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                </div>
+
+                {formData.city_id && (
+                  <div className="mt-3 flex items-center gap-2 bg-red-50 rounded-xl px-4 py-2.5 border border-red-100">
+                    <div className="w-2 h-2 bg-red-500 rounded-full flex-shrink-0"></div>
+                    <span className="text-sm font-semibold text-red-700">
+                      {cities.find(c => c.id === formData.city_id)?.name_ar}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => handleInputChange('city_id', '')}
+                      className="mr-auto text-xs text-red-400 hover:text-red-600 transition-colors"
+                    >
+                      تغيير
+                    </button>
+                  </div>
+                )}
               </div>
 
-              <div className="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-2xl p-6 border-2 border-blue-200">
+              <div className="bg-gradient-to-br from-amber-50 to-orange-50 rounded-2xl p-4 border border-amber-100">
                 <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0">
-                    <MapPin className="w-5 h-5 text-white" />
+                  <div className="w-9 h-9 bg-amber-500 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm">
+                    <MapPin className="w-4 h-4 text-white" />
                   </div>
                   <div>
-                    <h3 className="font-bold text-gray-900 mb-1">نصيحة</h3>
-                    <p className="text-sm text-gray-600">تحديد الموقع بدقة يساعد المشترين على زيارة مشتلك والتواصل بشكل أسرع</p>
+                    <h3 className="font-bold text-gray-900 text-sm mb-0.5">لماذا تحديد المدينة مهم؟</h3>
+                    <p className="text-xs text-gray-600 leading-relaxed">المشترون يبحثون عن منتجات قريبة منهم. تحديد مدينتك يزيد ظهور إعلانك في نتائج البحث المحلية ويسرع عملية البيع.</p>
                   </div>
                 </div>
-              </div>
-
-              <div className="grid grid-cols-3 gap-3">
-                {cities.slice(0, 6).map((city) => (
-                  <button
-                    key={city.id}
-                    onClick={() => handleInputChange('city_id', city.id)}
-                    className={`p-4 rounded-xl text-sm font-medium transition-all duration-200 ${
-                      formData.city_id === city.id
-                        ? 'bg-gradient-to-br from-red-500 to-pink-500 text-white shadow-lg scale-105'
-                        : 'bg-white text-gray-700 border-2 border-gray-200 hover:border-red-300 hover:scale-105 active:scale-95'
-                    }`}
-                  >
-                    {city.name_ar}
-                  </button>
-                ))}
               </div>
             </div>
           )}
