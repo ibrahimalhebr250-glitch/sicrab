@@ -50,6 +50,7 @@ export default function Profile() {
   const [statsLoading, setStatsLoading] = useState(true);
   const [favoritesCount, setFavoritesCount] = useState(0);
   const [followingCount, setFollowingCount] = useState(0);
+  const [followersCount, setFollowersCount] = useState(0);
   const [bankAccount, setBankAccount] = useState<PlatformBankAccount | null>(null);
   const [myCommissions, setMyCommissions] = useState<MyCommission[]>([]);
   const [commissionsLoading, setCommissionsLoading] = useState(false);
@@ -125,12 +126,14 @@ export default function Profile() {
 
   const fetchFavoritesAndFollows = async () => {
     if (!user) return;
-    const [favRes, followRes] = await Promise.all([
+    const [favRes, followingRes, followersRes] = await Promise.all([
       supabase.from('favorites').select('id', { count: 'exact', head: true }).eq('user_id', user.id),
       supabase.from('user_follows').select('id', { count: 'exact', head: true }).eq('follower_id', user.id),
+      supabase.from('user_follows').select('id', { count: 'exact', head: true }).eq('following_id', user.id),
     ]);
     setFavoritesCount(favRes.count || 0);
-    setFollowingCount(followRes.count || 0);
+    setFollowingCount(followingRes.count || 0);
+    setFollowersCount(followersRes.count || 0);
   };
 
   const fetchMyCommissions = async () => {
@@ -440,7 +443,7 @@ export default function Profile() {
               iconBg: 'bg-blue-50',
               iconColor: 'text-blue-600',
               label: 'المتابعات',
-              desc: `تتابع ${followingCount} شخص`,
+              desc: `تتابع ${followingCount} · يتابعك ${followersCount}`,
             },
           ].map((item, i) => (
             <Link
