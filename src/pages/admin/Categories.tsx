@@ -1,11 +1,12 @@
 import { useEffect, useState, useRef } from 'react';
-import { Package, Eye, Plus, Trash2, ChevronDown, ChevronUp, EyeOff, Image, X, Check, Search, Upload, Loader } from 'lucide-react';
+import { Package, Eye, Plus, Trash2, ChevronDown, ChevronUp, EyeOff, Image, X, Check, Search, Upload, Loader, Pencil, Save } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { uploadImage, validateImageFile } from '../../lib/imageUpload';
 
 interface Category {
   id: string;
   name_ar: string;
+  name_en?: string;
   slug: string;
   icon: string;
   order_index: number;
@@ -18,6 +19,7 @@ interface Subcategory {
   id: string;
   category_id: string;
   name_ar: string;
+  name_en?: string;
   slug: string;
   order_index: number;
   is_active: boolean;
@@ -62,7 +64,6 @@ const IMAGE_LIBRARY: ImageItem[] = [
   { url: 'https://images.pexels.com/photos/170811/pexels-photo-170811.jpeg?auto=compress&cs=tinysrgb&w=400', label: 'سيارة عائلية', group: 'سيارات' },
   { url: 'https://images.pexels.com/photos/210019/pexels-photo-210019.jpeg?auto=compress&cs=tinysrgb&w=400', label: 'سيارة دفع رباعي', group: 'سيارات' },
   { url: 'https://images.pexels.com/photos/1638459/pexels-photo-1638459.jpeg?auto=compress&cs=tinysrgb&w=400', label: 'شاحنة نقل', group: 'سيارات' },
-  { url: 'https://images.pexels.com/photos/1213294/pexels-photo-1213294.jpeg?auto=compress&cs=tinysrgb&w=400', label: 'سيارة بيكأب', group: 'سيارات' },
   { url: 'https://images.pexels.com/photos/244206/pexels-photo-244206.jpeg?auto=compress&cs=tinysrgb&w=400', label: 'سيارات متعددة', group: 'سيارات' },
   { url: 'https://images.pexels.com/photos/358070/pexels-photo-358070.jpeg?auto=compress&cs=tinysrgb&w=400', label: 'سيارة قديمة', group: 'سيارات' },
 
@@ -83,6 +84,8 @@ export default function AdminCategories() {
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
   const [showAddCategory, setShowAddCategory] = useState(false);
   const [showAddSubcategory, setShowAddSubcategory] = useState<string | null>(null);
+  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
+  const [editingSubcategory, setEditingSubcategory] = useState<Subcategory | null>(null);
 
   useEffect(() => {
     loadCategories();
@@ -99,7 +102,7 @@ export default function AdminCategories() {
       if (categoriesResult.error) throw categoriesResult.error;
       if (subcategoriesResult.error) throw subcategoriesResult.error;
 
-      const listingsCounts = listingsResult.data?.reduce((acc: any, listing: any) => {
+      const listingsCounts = listingsResult.data?.reduce((acc: Record<string, number>, listing: any) => {
         acc[listing.category_id] = (acc[listing.category_id] || 0) + 1;
         return acc;
       }, {});
@@ -140,16 +143,10 @@ export default function AdminCategories() {
   }
 
   async function deleteCategory(id: string) {
-    if (!confirm('هل أنت متأكد من حذف هذا القسم؟ سيتم حذف جميع الفئات الفرعية المرتبطة به.')) {
-      return;
-    }
+    if (!confirm('هل أنت متأكد من حذف هذا القسم؟ سيتم حذف جميع الفئات الفرعية المرتبطة به.')) return;
 
     try {
-      const { error } = await supabase
-        .from('categories')
-        .delete()
-        .eq('id', id);
-
+      const { error } = await supabase.from('categories').delete().eq('id', id);
       if (error) throw error;
 
       await supabase.rpc('log_admin_action', {
@@ -166,16 +163,10 @@ export default function AdminCategories() {
   }
 
   async function deleteSubcategory(id: string) {
-    if (!confirm('هل أنت متأكد من حذف هذه الفئة الفرعية؟')) {
-      return;
-    }
+    if (!confirm('هل أنت متأكد من حذف هذه الفئة الفرعية؟')) return;
 
     try {
-      const { error } = await supabase
-        .from('subcategories')
-        .delete()
-        .eq('id', id);
-
+      const { error } = await supabase.from('subcategories').delete().eq('id', id);
       if (error) throw error;
 
       await supabase.rpc('log_admin_action', {
@@ -239,6 +230,22 @@ export default function AdminCategories() {
           />
         )}
 
+        {editingCategory && (
+          <EditCategoryModal
+            category={editingCategory}
+            onClose={() => setEditingCategory(null)}
+            onSuccess={() => { setEditingCategory(null); loadCategories(); }}
+          />
+        )}
+
+        {editingSubcategory && (
+          <EditSubcategoryModal
+            subcategory={editingSubcategory}
+            onClose={() => setEditingSubcategory(null)}
+            onSuccess={() => { setEditingSubcategory(null); loadCategories(); }}
+          />
+        )}
+
         <div className="space-y-4">
           {categories.map((category) => (
             <div key={category.id} className="bg-white rounded-2xl shadow-xl overflow-hidden">
@@ -267,7 +274,14 @@ export default function AdminCategories() {
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={() => setEditingCategory(category)}
+                      className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
+                      title="تعديل القسم"
+                    >
+                      <Pencil className="w-5 h-5" />
+                    </button>
                     <button
                       onClick={() => toggleCategoryActive(category.id, category.is_active)}
                       className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-all"
@@ -276,7 +290,14 @@ export default function AdminCategories() {
                       {category.is_active ? <Eye className="w-5 h-5" /> : <EyeOff className="w-5 h-5" />}
                     </button>
                     <button
-                      onClick={() => setShowAddSubcategory(category.id)}
+                      onClick={() => {
+                        setShowAddSubcategory(showAddSubcategory === category.id ? null : category.id);
+                        if (!expandedCategories.has(category.id) && showAddSubcategory !== category.id) {
+                          const next = new Set(expandedCategories);
+                          next.add(category.id);
+                          setExpandedCategories(next);
+                        }
+                      }}
                       className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-all"
                       title="إضافة فئة فرعية"
                     >
@@ -289,18 +310,16 @@ export default function AdminCategories() {
                     >
                       <Trash2 className="w-5 h-5" />
                     </button>
-                    {category.subcategories && category.subcategories.length > 0 && (
-                      <button
-                        onClick={() => toggleExpanded(category.id)}
-                        className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-all"
-                      >
-                        {expandedCategories.has(category.id) ? (
-                          <ChevronUp className="w-5 h-5" />
-                        ) : (
-                          <ChevronDown className="w-5 h-5" />
-                        )}
-                      </button>
-                    )}
+                    <button
+                      onClick={() => toggleExpanded(category.id)}
+                      className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-all"
+                    >
+                      {expandedCategories.has(category.id) ? (
+                        <ChevronUp className="w-5 h-5" />
+                      ) : (
+                        <ChevronDown className="w-5 h-5" />
+                      )}
+                    </button>
                   </div>
                 </div>
 
@@ -315,26 +334,42 @@ export default function AdminCategories() {
                 )}
               </div>
 
-              {expandedCategories.has(category.id) && category.subcategories && category.subcategories.length > 0 && (
+              {expandedCategories.has(category.id) && (
                 <div className="bg-gray-50 px-6 py-4 border-t">
-                  <h4 className="text-sm font-bold text-gray-700 mb-3">الفئات الفرعية:</h4>
-                  <div className="space-y-2">
-                    {category.subcategories.map((sub) => (
-                      <div key={sub.id} className="flex items-center justify-between p-3 bg-white rounded-xl">
-                        <div className="flex items-center gap-2">
-                          <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                          <span className="font-medium text-gray-700">{sub.name_ar}</span>
-                          <span className="text-xs text-gray-400">({sub.slug})</span>
-                        </div>
-                        <button
-                          onClick={() => deleteSubcategory(sub.id)}
-                          className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-all"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                  {category.subcategories && category.subcategories.length > 0 ? (
+                    <>
+                      <h4 className="text-sm font-bold text-gray-700 mb-3">الفئات الفرعية ({category.subcategories.length}):</h4>
+                      <div className="space-y-2">
+                        {category.subcategories.map((sub) => (
+                          <div key={sub.id} className="flex items-center justify-between p-3 bg-white rounded-xl border border-gray-100">
+                            <div className="flex items-center gap-2">
+                              <div className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0"></div>
+                              <span className="font-medium text-gray-700">{sub.name_ar}</span>
+                              <span className="text-xs text-gray-400">({sub.slug})</span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <button
+                                onClick={() => setEditingSubcategory(sub)}
+                                className="p-1.5 text-blue-500 hover:bg-blue-50 rounded-lg transition-all"
+                                title="تعديل الفئة الفرعية"
+                              >
+                                <Pencil className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={() => deleteSubcategory(sub.id)}
+                                className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition-all"
+                                title="حذف"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </div>
+                        ))}
                       </div>
-                    ))}
-                  </div>
+                    </>
+                  ) : (
+                    <p className="text-sm text-gray-400 text-center py-2">لا توجد فئات فرعية بعد. انقر + لإضافة فئة فرعية.</p>
+                  )}
                 </div>
               )}
             </div>
@@ -552,7 +587,7 @@ function ImageLibraryModal({ selected, onSelect, onClose }: {
                   </>
                 ) : (
                   <>
-                    <div className="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center group-hover:bg-green-100 transition-all">
+                    <div className="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center transition-all">
                       <Upload className="w-8 h-8 text-gray-500" />
                     </div>
                     <div className="text-center">
@@ -603,6 +638,280 @@ function ImageLibraryModal({ selected, onSelect, onClose }: {
             </button>
           </div>
         </div>
+      </div>
+    </div>
+  );
+}
+
+function EditCategoryModal({ category, onClose, onSuccess }: {
+  category: Category;
+  onClose: () => void;
+  onSuccess: () => void;
+}) {
+  const [nameAr, setNameAr] = useState(category.name_ar);
+  const [nameEn, setNameEn] = useState(category.name_en || '');
+  const [selectedImage, setSelectedImage] = useState(category.icon || '');
+  const [showLibrary, setShowLibrary] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!nameAr.trim()) return;
+    setError('');
+    setSaving(true);
+    try {
+      const slug = nameAr.toLowerCase().replace(/\s+/g, '-');
+
+      const { error: updateError } = await supabase
+        .from('categories')
+        .update({
+          name_ar: nameAr,
+          name_en: nameEn || nameAr,
+          slug,
+          icon: selectedImage || 'package',
+        })
+        .eq('id', category.id);
+
+      if (updateError) throw updateError;
+
+      supabase.rpc('log_admin_action', {
+        p_action: 'update_category',
+        p_target_type: 'category',
+        p_target_id: category.id
+      });
+
+      onSuccess();
+    } catch (err: any) {
+      setError(err.message || 'حدث خطأ أثناء التعديل');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <>
+      {showLibrary && (
+        <ImageLibraryModal
+          selected={selectedImage}
+          onSelect={(url) => { setSelectedImage(url); setShowLibrary(false); }}
+          onClose={() => setShowLibrary(false)}
+        />
+      )}
+
+      <div className="fixed inset-0 z-40 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+        <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden">
+          <div className="flex items-center justify-between p-6 border-b bg-gradient-to-r from-blue-50 to-sky-50">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-sky-600 rounded-xl flex items-center justify-center">
+                <Pencil className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <h2 className="text-xl font-black text-gray-900">تعديل القسم</h2>
+                <p className="text-sm text-gray-500">{category.name_ar}</p>
+              </div>
+            </div>
+            <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-xl transition-all">
+              <X className="w-6 h-6 text-gray-600" />
+            </button>
+          </div>
+
+          <form onSubmit={handleSubmit} className="p-6 space-y-5">
+            <div>
+              <label className="block text-sm font-bold text-gray-700 mb-2">اسم القسم بالعربية</label>
+              <input
+                type="text"
+                value={nameAr}
+                onChange={(e) => setNameAr(e.target.value)}
+                placeholder="اسم القسم بالعربية"
+                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:outline-none"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-bold text-gray-700 mb-2">اسم القسم بالإنجليزية (اختياري)</label>
+              <input
+                type="text"
+                value={nameEn}
+                onChange={(e) => setNameEn(e.target.value)}
+                placeholder="اسم القسم بالإنجليزية"
+                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:outline-none"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-bold text-gray-700 mb-2">أيقونة القسم</label>
+              <button
+                type="button"
+                onClick={() => setShowLibrary(true)}
+                className="w-full flex items-center gap-4 p-4 border-2 border-dashed border-gray-300 rounded-xl hover:border-blue-500 hover:bg-blue-50 transition-all group"
+              >
+                {selectedImage && selectedImage.startsWith('http') ? (
+                  <>
+                    <div className="w-16 h-16 rounded-xl overflow-hidden border-2 border-blue-400 shadow-md flex-shrink-0">
+                      <img src={selectedImage} alt="selected" className="w-full h-full object-cover" />
+                    </div>
+                    <div className="text-right flex-1">
+                      <p className="font-bold text-blue-700">تم اختيار الصورة</p>
+                      <p className="text-sm text-gray-500">انقر لتغيير الصورة</p>
+                    </div>
+                    <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0">
+                      <Check className="w-5 h-5 text-white" />
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="w-16 h-16 rounded-xl bg-gray-100 flex items-center justify-center flex-shrink-0 group-hover:bg-blue-100 transition-all">
+                      <Image className="w-8 h-8 text-gray-400 group-hover:text-blue-500 transition-all" />
+                    </div>
+                    <div className="text-right flex-1">
+                      <p className="font-bold text-gray-700 group-hover:text-blue-700 transition-all">اختر صورة من المكتبة</p>
+                      <p className="text-sm text-gray-400">أو ارفع من جهازك</p>
+                    </div>
+                    <Plus className="w-5 h-5 text-gray-400 group-hover:text-blue-500 flex-shrink-0 transition-all" />
+                  </>
+                )}
+              </button>
+            </div>
+
+            {error && (
+              <div className="px-4 py-3 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm font-medium">
+                {error}
+              </div>
+            )}
+
+            <div className="flex gap-3 pt-1">
+              <button
+                type="submit"
+                disabled={saving}
+                className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-blue-500 to-sky-600 text-white rounded-xl font-bold hover:from-blue-600 hover:to-sky-700 transition-all disabled:opacity-50"
+              >
+                {saving ? <Loader className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                {saving ? 'جاري الحفظ...' : 'حفظ التعديلات'}
+              </button>
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-4 py-3 bg-gray-200 text-gray-700 rounded-xl font-medium hover:bg-gray-300 transition-all"
+              >
+                إلغاء
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </>
+  );
+}
+
+function EditSubcategoryModal({ subcategory, onClose, onSuccess }: {
+  subcategory: Subcategory;
+  onClose: () => void;
+  onSuccess: () => void;
+}) {
+  const [nameAr, setNameAr] = useState(subcategory.name_ar);
+  const [nameEn, setNameEn] = useState(subcategory.name_en || '');
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!nameAr.trim()) return;
+    setError('');
+    setSaving(true);
+    try {
+      const slug = nameAr.toLowerCase().replace(/\s+/g, '-');
+
+      const { error: updateError } = await supabase
+        .from('subcategories')
+        .update({
+          name_ar: nameAr,
+          name_en: nameEn || nameAr,
+          slug,
+        })
+        .eq('id', subcategory.id);
+
+      if (updateError) throw updateError;
+
+      supabase.rpc('log_admin_action', {
+        p_action: 'update_subcategory',
+        p_target_type: 'subcategory',
+        p_target_id: subcategory.id
+      });
+
+      onSuccess();
+    } catch (err: any) {
+      setError(err.message || 'حدث خطأ أثناء التعديل');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-40 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden">
+        <div className="flex items-center justify-between p-6 border-b bg-gradient-to-r from-amber-50 to-orange-50">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-gradient-to-br from-amber-500 to-orange-500 rounded-xl flex items-center justify-center">
+              <Pencil className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <h2 className="text-xl font-black text-gray-900">تعديل الفئة الفرعية</h2>
+              <p className="text-sm text-gray-500">{subcategory.name_ar}</p>
+            </div>
+          </div>
+          <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-xl transition-all">
+            <X className="w-6 h-6 text-gray-600" />
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          <div>
+            <label className="block text-sm font-bold text-gray-700 mb-2">اسم الفئة الفرعية بالعربية</label>
+            <input
+              type="text"
+              value={nameAr}
+              onChange={(e) => setNameAr(e.target.value)}
+              placeholder="اسم الفئة الفرعية بالعربية"
+              className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-amber-500 focus:outline-none"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-bold text-gray-700 mb-2">اسم الفئة الفرعية بالإنجليزية (اختياري)</label>
+            <input
+              type="text"
+              value={nameEn}
+              onChange={(e) => setNameEn(e.target.value)}
+              placeholder="اسم الفئة الفرعية بالإنجليزية"
+              className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-amber-500 focus:outline-none"
+            />
+          </div>
+
+          {error && (
+            <div className="px-4 py-3 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm font-medium">
+              {error}
+            </div>
+          )}
+
+          <div className="flex gap-3 pt-1">
+            <button
+              type="submit"
+              disabled={saving}
+              className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-xl font-bold hover:from-amber-600 hover:to-orange-600 transition-all disabled:opacity-50"
+            >
+              {saving ? <Loader className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+              {saving ? 'جاري الحفظ...' : 'حفظ التعديلات'}
+            </button>
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-3 bg-gray-200 text-gray-700 rounded-xl font-medium hover:bg-gray-300 transition-all"
+            >
+              إلغاء
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );
