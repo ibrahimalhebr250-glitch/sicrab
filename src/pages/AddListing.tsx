@@ -352,6 +352,10 @@ export default function AddListing({ onBack, onSuccess }: AddListingProps) {
 
     console.log(isEditMode ? '✏️ [AddListing] Updating listing:' : '➕ [AddListing] Creating listing:', editId);
 
+    const resolvedPrice = pricingMode === 'individual' && selectedSubcategoryItems.length > 0
+      ? parseFloat(selectedSubcategoryItems[0].price) || 0
+      : parseFloat(formData.price) || 0;
+
     const listingData = {
       user_id: user.id,
       category_id: formData.category_id,
@@ -359,7 +363,7 @@ export default function AddListing({ onBack, onSuccess }: AddListingProps) {
       city_id: formData.city_id || null,
       title: formData.title,
       description: formData.description,
-      price: parseFloat(formData.price),
+      price: resolvedPrice,
       price_type: formData.price_type,
       quantity: 1,
       unit: 'قطعة',
