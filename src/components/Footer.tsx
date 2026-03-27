@@ -17,6 +17,15 @@ interface FooterSettings {
   footer_phone: string;
   footer_whatsapp: string;
   footer_copyright: string;
+  footer_about_label: string;
+  footer_how_it_works_label: string;
+  footer_faq_label: string;
+  footer_help_label: string;
+  footer_contact_label: string;
+  footer_report_label: string;
+  footer_usage_policy_label: string;
+  footer_privacy_label: string;
+  footer_terms_label: string;
 }
 
 const DEFAULTS: FooterSettings = {
@@ -33,6 +42,15 @@ const DEFAULTS: FooterSettings = {
   footer_phone: '966501234567',
   footer_whatsapp: '966501234567',
   footer_copyright: '© 2024 سوق المشاتل - جميع الحقوق محفوظة',
+  footer_about_label: 'من نحن',
+  footer_how_it_works_label: 'كيف نعمل',
+  footer_faq_label: 'الأسئلة الشائعة',
+  footer_help_label: 'المساعدة',
+  footer_contact_label: 'اتصل بنا',
+  footer_report_label: 'بلغ عن مخالفة',
+  footer_usage_policy_label: 'سياسة الاستخدام',
+  footer_privacy_label: 'الخصوصية',
+  footer_terms_label: 'الشروط والأحكام',
 };
 
 function isValidPath(url: string): boolean {
@@ -77,9 +95,9 @@ export default function Footer() {
       title: 'المنصة',
       color: 'amber',
       links: [
-        { label: 'من نحن', href: fs.footer_about_url },
-        { label: 'كيف نعمل', href: fs.footer_how_it_works_url },
-        { label: 'الأسئلة الشائعة', href: fs.footer_faq_url },
+        { label: fs.footer_about_label, href: fs.footer_about_url },
+        { label: fs.footer_how_it_works_label, href: fs.footer_how_it_works_url },
+        { label: fs.footer_faq_label, href: fs.footer_faq_url },
       ],
     },
     {
@@ -88,9 +106,9 @@ export default function Footer() {
       title: 'الدعم',
       color: 'blue',
       links: [
-        { label: 'المساعدة', href: fs.footer_help_url },
-        { label: 'اتصل بنا', href: fs.footer_contact_url },
-        { label: 'بلغ عن مخالفة', href: fs.footer_report_url },
+        { label: fs.footer_help_label, href: fs.footer_help_url },
+        { label: fs.footer_contact_label, href: fs.footer_contact_url },
+        { label: fs.footer_report_label, href: fs.footer_report_url },
       ],
     },
     {
@@ -99,9 +117,9 @@ export default function Footer() {
       title: 'السياسات',
       color: 'green',
       links: [
-        { label: 'سياسة الاستخدام', href: fs.footer_usage_policy_url },
-        { label: 'الخصوصية', href: fs.footer_privacy_url },
-        { label: 'الشروط', href: fs.footer_terms_url },
+        { label: fs.footer_usage_policy_label, href: fs.footer_usage_policy_url },
+        { label: fs.footer_privacy_label, href: fs.footer_privacy_url },
+        { label: fs.footer_terms_label, href: fs.footer_terms_url },
       ],
     },
   ];
