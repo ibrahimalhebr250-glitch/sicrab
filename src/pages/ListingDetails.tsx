@@ -14,6 +14,7 @@ import ReviewModal from '../components/ReviewModal';
 
 interface PriceTierDetail {
   id: string;
+  name: string;
   trunkSize: string;
   height: string;
   price: string;
@@ -355,7 +356,8 @@ ${listingUrl}`;
 
                       {item.useTiers && item.priceTiers && item.priceTiers.length > 0 ? (
                         <div className="bg-gray-50">
-                          <div className="grid grid-cols-4 gap-0 border-b border-gray-200 bg-gray-100 px-3 py-1.5">
+                          <div className="grid grid-cols-5 gap-0 border-b border-gray-200 bg-gray-100 px-3 py-1.5">
+                            <span className="text-[10px] font-bold text-gray-500 text-center">الاسم</span>
                             <span className="text-[10px] font-bold text-gray-500 text-center">الارتفاع</span>
                             <span className="text-[10px] font-bold text-gray-500 text-center">قطر الساق</span>
                             <span className="text-[10px] font-bold text-gray-500 text-center">العدد</span>
@@ -364,8 +366,11 @@ ${listingUrl}`;
                           {item.priceTiers.map((tier, idx) => (
                             <div
                               key={tier.id}
-                              className={`grid grid-cols-4 gap-0 px-3 py-2 ${idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'} border-b border-gray-100 last:border-0`}
+                              className={`grid grid-cols-5 gap-0 px-3 py-2 ${idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'} border-b border-gray-100 last:border-0`}
                             >
+                              <span className="text-xs font-bold text-gray-900 text-center">
+                                {tier.name || '-'}
+                              </span>
                               <span className="text-xs font-semibold text-gray-700 text-center">
                                 {tier.height ? `${tier.height} م` : '-'}
                               </span>

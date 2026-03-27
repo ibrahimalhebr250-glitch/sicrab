@@ -41,6 +41,7 @@ interface CategoryField {
 
 interface PriceTier {
   id: string;
+  name: string;
   trunkSize: string;
   height: string;
   price: string;
@@ -343,6 +344,7 @@ export default function AddListing({ onBack, onSuccess }: AddListingProps) {
         ...i,
         priceTiers: [...i.priceTiers, {
           id: crypto.randomUUID(),
+          name: '',
           trunkSize: '',
           height: '',
           price: '',
@@ -1009,6 +1011,18 @@ export default function AddListing({ onBack, onSuccess }: AddListingProps) {
                                             </div>
 
                                             <div className="p-3 space-y-2">
+                                              <div>
+                                                <label className="text-xs text-gray-500 mb-1 block">
+                                                  اسم الشجرة <span className="text-red-500">*</span>
+                                                </label>
+                                                <input
+                                                  type="text"
+                                                  value={tier.name}
+                                                  onChange={(e) => updatePriceTier(item.subcategoryId, tier.id, 'name', e.target.value)}
+                                                  placeholder={`مثال: ${item.name}`}
+                                                  className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:border-blue-500 outline-none text-xs"
+                                                />
+                                              </div>
                                               <div className="grid grid-cols-2 gap-2">
                                                 <div>
                                                   <label className="text-xs text-gray-500 mb-1 block">قطر الساق (سم)</label>
