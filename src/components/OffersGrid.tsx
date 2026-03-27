@@ -369,11 +369,11 @@ function FreshListingCard({ listing, onClick }: { listing: ListingWithPromotion;
           </div>
         </div>
 
-        <div className="relative flex-shrink-0 w-[130px]">
+        <div className="relative flex-shrink-0 w-[130px] self-stretch overflow-hidden">
           <img
             src={imageUrl}
             alt={listing.title}
-            className="w-full h-full object-cover"
+            className="absolute inset-0 w-full h-full object-cover"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
           <div className="absolute inset-0 bg-gradient-to-r from-white/20 via-transparent to-transparent" />

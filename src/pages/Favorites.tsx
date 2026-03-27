@@ -119,13 +119,13 @@ export default function Favorites() {
 
                   {listing.images && listing.images.length > 0 && (
                     <div
-                      className="w-24 flex-shrink-0 cursor-pointer"
+                      className="w-24 flex-shrink-0 self-stretch cursor-pointer overflow-hidden relative"
                       onClick={() => navigate(`/listing/${listing.slug || listing.id}`)}
                     >
                       <img
                         src={listing.images[0]}
                         alt={listing.title}
-                        className="w-full h-full object-cover"
+                        className="absolute inset-0 w-full h-full object-cover"
                       />
                     </div>
                   )}
