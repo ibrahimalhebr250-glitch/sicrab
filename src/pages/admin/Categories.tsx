@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react';
-import { Package, Eye, Plus, Trash2, ChevronDown, ChevronUp, EyeOff, Image, X, Check, Search } from 'lucide-react';
+import { useEffect, useState, useRef } from 'react';
+import { Package, Eye, Plus, Trash2, ChevronDown, ChevronUp, EyeOff, Image, X, Check, Search, Upload, Loader } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
+import { uploadImage, validateImageFile } from '../../lib/imageUpload';
 
 interface Category {
   id: string;
@@ -349,8 +350,13 @@ function ImageLibraryModal({ selected, onSelect, onClose }: {
   onSelect: (url: string) => void;
   onClose: () => void;
 }) {
+  const [activeTab, setActiveTab] = useState<'library' | 'upload'>('library');
   const [activeGroup, setActiveGroup] = useState('الكل');
   const [search, setSearch] = useState('');
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState('');
+  const [dragOver, setDragOver] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const filtered = IMAGE_LIBRARY.filter(img => {
     const matchGroup = activeGroup === 'الكل' || img.group === activeGroup;
@@ -358,17 +364,48 @@ function ImageLibraryModal({ selected, onSelect, onClose }: {
     return matchGroup && matchSearch;
   });
 
+  async function handleFileUpload(file: File) {
+    setUploadError('');
+    const validationError = validateImageFile(file);
+    if (validationError) {
+      setUploadError(validationError);
+      return;
+    }
+    setUploading(true);
+    try {
+      const uploaded = await uploadImage(file);
+      onSelect(uploaded.url);
+    } catch {
+      setUploadError('فشل في رفع الصورة، حاول مرة أخرى');
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  function handleFileInputChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (file) handleFileUpload(file);
+  }
+
+  function handleDrop(e: React.DragEvent) {
+    e.preventDefault();
+    setDragOver(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file) handleFileUpload(file);
+  }
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
       <div className="bg-white rounded-3xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden">
+
         <div className="flex items-center justify-between p-6 border-b bg-gradient-to-r from-green-50 to-emerald-50">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl flex items-center justify-center">
               <Image className="w-5 h-5 text-white" />
             </div>
             <div>
-              <h2 className="text-xl font-black text-gray-900">مكتبة الصور</h2>
-              <p className="text-sm text-gray-500">اختر صورة لأيقونة القسم</p>
+              <h2 className="text-xl font-black text-gray-900">اختيار صورة الأيقونة</h2>
+              <p className="text-sm text-gray-500">من المكتبة أو ارفع من جهازك</p>
             </div>
           </div>
           <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-xl transition-all">
@@ -376,76 +413,170 @@ function ImageLibraryModal({ selected, onSelect, onClose }: {
           </button>
         </div>
 
-        <div className="p-4 border-b bg-gray-50 space-y-3">
-          <div className="relative">
-            <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-            <input
-              type="text"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="ابحث عن صورة..."
-              className="w-full pr-10 pl-4 py-2.5 border-2 border-gray-200 rounded-xl focus:border-green-500 focus:outline-none text-sm"
-            />
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {GROUPS.map(group => (
-              <button
-                key={group}
-                onClick={() => setActiveGroup(group)}
-                className={`px-4 py-1.5 rounded-full text-sm font-bold transition-all ${
-                  activeGroup === group
-                    ? 'bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow-md'
-                    : 'bg-white border-2 border-gray-200 text-gray-600 hover:border-green-400'
-                }`}
-              >
-                {group}
-              </button>
-            ))}
-          </div>
+        <div className="flex border-b bg-gray-50">
+          <button
+            onClick={() => setActiveTab('library')}
+            className={`flex-1 flex items-center justify-center gap-2 py-3.5 text-sm font-bold transition-all border-b-2 ${
+              activeTab === 'library'
+                ? 'border-green-500 text-green-700 bg-white'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-100'
+            }`}
+          >
+            <Image className="w-4 h-4" />
+            مكتبة الصور
+          </button>
+          <button
+            onClick={() => setActiveTab('upload')}
+            className={`flex-1 flex items-center justify-center gap-2 py-3.5 text-sm font-bold transition-all border-b-2 ${
+              activeTab === 'upload'
+                ? 'border-green-500 text-green-700 bg-white'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-100'
+            }`}
+          >
+            <Upload className="w-4 h-4" />
+            رفع من الجهاز
+          </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-5">
-          {filtered.length === 0 ? (
-            <div className="text-center py-12 text-gray-400">
-              <Image className="w-12 h-12 mx-auto mb-3 opacity-40" />
-              <p>لا توجد صور مطابقة</p>
+        {activeTab === 'library' ? (
+          <>
+            <div className="p-4 border-b bg-gray-50 space-y-3">
+              <div className="relative">
+                <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <input
+                  type="text"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="ابحث عن صورة..."
+                  className="w-full pr-10 pl-4 py-2.5 border-2 border-gray-200 rounded-xl focus:border-green-500 focus:outline-none text-sm"
+                />
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {GROUPS.map(group => (
+                  <button
+                    key={group}
+                    onClick={() => setActiveGroup(group)}
+                    className={`px-4 py-1.5 rounded-full text-sm font-bold transition-all ${
+                      activeGroup === group
+                        ? 'bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow-md'
+                        : 'bg-white border-2 border-gray-200 text-gray-600 hover:border-green-400'
+                    }`}
+                  >
+                    {group}
+                  </button>
+                ))}
+              </div>
             </div>
-          ) : (
-            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3">
-              {filtered.map((img, idx) => (
-                <button
-                  key={idx}
-                  onClick={() => onSelect(img.url)}
-                  className={`group relative aspect-square rounded-xl overflow-hidden border-3 transition-all hover:scale-105 hover:shadow-lg ${
-                    selected === img.url
-                      ? 'border-green-500 ring-2 ring-green-400 ring-offset-1 shadow-lg scale-105'
-                      : 'border-gray-200 hover:border-green-400'
-                  }`}
-                  style={{ borderWidth: 3 }}
-                  title={img.label}
-                >
-                  <img
-                    src={img.url}
-                    alt={img.label}
-                    className="w-full h-full object-cover"
-                    loading="lazy"
-                  />
-                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all" />
-                  {selected === img.url && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-green-500/30">
-                      <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center shadow-lg">
-                        <Check className="w-5 h-5 text-white" />
+
+            <div className="flex-1 overflow-y-auto p-5">
+              {filtered.length === 0 ? (
+                <div className="text-center py-12 text-gray-400">
+                  <Image className="w-12 h-12 mx-auto mb-3 opacity-40" />
+                  <p>لا توجد صور مطابقة</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3">
+                  {filtered.map((img, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => onSelect(img.url)}
+                      className={`group relative aspect-square rounded-xl overflow-hidden transition-all hover:scale-105 hover:shadow-lg ${
+                        selected === img.url
+                          ? 'ring-[3px] ring-green-500 ring-offset-1 shadow-lg scale-105'
+                          : 'ring-[2px] ring-gray-200 hover:ring-green-400'
+                      }`}
+                      title={img.label}
+                    >
+                      <img src={img.url} alt={img.label} className="w-full h-full object-cover" loading="lazy" />
+                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all" />
+                      {selected === img.url && (
+                        <div className="absolute inset-0 flex items-center justify-center bg-green-500/30">
+                          <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center shadow-lg">
+                            <Check className="w-5 h-5 text-white" />
+                          </div>
+                        </div>
+                      )}
+                      <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/70 to-transparent px-1 py-1 opacity-0 group-hover:opacity-100 transition-all">
+                        <p className="text-white text-xs text-center truncate">{img.label}</p>
                       </div>
-                    </div>
-                  )}
-                  <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/70 to-transparent px-1 py-1 opacity-0 group-hover:opacity-100 transition-all">
-                    <p className="text-white text-xs text-center truncate">{img.label}</p>
-                  </div>
-                </button>
-              ))}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
-          )}
-        </div>
+          </>
+        ) : (
+          <div className="flex-1 overflow-y-auto p-6 flex flex-col items-center justify-center gap-6">
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/jpg,image/webp"
+              className="hidden"
+              onChange={handleFileInputChange}
+            />
+
+            {selected && selected.startsWith('http') ? (
+              <div className="flex flex-col items-center gap-4">
+                <div className="w-32 h-32 rounded-2xl overflow-hidden ring-4 ring-green-400 shadow-xl">
+                  <img src={selected} alt="uploaded" className="w-full h-full object-cover" />
+                </div>
+                <div className="flex items-center gap-2 text-green-700 font-bold">
+                  <Check className="w-5 h-5" />
+                  تم رفع الصورة بنجاح
+                </div>
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  className="px-5 py-2.5 border-2 border-gray-300 text-gray-700 rounded-xl font-medium hover:border-green-500 hover:text-green-700 transition-all text-sm"
+                >
+                  رفع صورة مختلفة
+                </button>
+              </div>
+            ) : (
+              <div
+                onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+                onDragLeave={() => setDragOver(false)}
+                onDrop={handleDrop}
+                className={`w-full max-w-md border-2 border-dashed rounded-2xl p-10 flex flex-col items-center gap-4 transition-all cursor-pointer ${
+                  dragOver
+                    ? 'border-green-500 bg-green-50'
+                    : 'border-gray-300 bg-gray-50 hover:border-green-400 hover:bg-green-50/50'
+                }`}
+                onClick={() => !uploading && fileInputRef.current?.click()}
+              >
+                {uploading ? (
+                  <>
+                    <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
+                      <Loader className="w-8 h-8 text-green-600 animate-spin" />
+                    </div>
+                    <p className="text-green-700 font-bold">جاري رفع الصورة...</p>
+                  </>
+                ) : (
+                  <>
+                    <div className="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center group-hover:bg-green-100 transition-all">
+                      <Upload className="w-8 h-8 text-gray-500" />
+                    </div>
+                    <div className="text-center">
+                      <p className="font-bold text-gray-800 text-lg">اسحب الصورة هنا</p>
+                      <p className="text-gray-500 text-sm mt-1">أو انقر لاختيار صورة من جهازك</p>
+                    </div>
+                    <div className="flex flex-wrap justify-center gap-2 text-xs text-gray-400">
+                      <span className="px-2 py-1 bg-white rounded-lg border border-gray-200">JPG</span>
+                      <span className="px-2 py-1 bg-white rounded-lg border border-gray-200">PNG</span>
+                      <span className="px-2 py-1 bg-white rounded-lg border border-gray-200">WEBP</span>
+                      <span className="px-2 py-1 bg-white rounded-lg border border-gray-200">حتى 5 ميجابايت</span>
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+
+            {uploadError && (
+              <div className="w-full max-w-md px-4 py-3 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm font-medium text-center">
+                {uploadError}
+              </div>
+            )}
+          </div>
+        )}
 
         <div className="p-4 border-t bg-gray-50 flex items-center justify-between">
           <div className="flex items-center gap-3">
