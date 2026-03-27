@@ -100,7 +100,7 @@ export default function Filters({ filters: externalFilters, onFiltersChange, onC
 
   return (
     <>
-      <div className="bg-white border-b border-gray-200 sticky top-0 z-30 shadow-sm">
+      <div className="bg-white border-b border-gray-200 shadow-sm">
         <div className="max-w-7xl mx-auto px-3 py-3">
           <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-hide">
             <button
@@ -215,7 +215,7 @@ export default function Filters({ filters: externalFilters, onFiltersChange, onC
             onClick={() => setActiveFilter(null)}
           />
 
-          <div className="fixed inset-x-0 bottom-0 bg-white rounded-t-3xl shadow-2xl z-50 max-h-[70vh] overflow-hidden animate-slide-up md:absolute md:top-full md:bottom-auto md:max-w-xs md:rounded-2xl md:mt-2">
+          <div className="fixed inset-x-0 bottom-0 bg-white rounded-t-3xl shadow-2xl z-50 max-h-[75vh] overflow-hidden animate-slide-up">
             <div className="sticky top-0 bg-gradient-to-r from-gray-50 to-white px-6 py-4 border-b border-gray-200">
               <div className="flex items-center justify-between">
                 <h3 className="text-lg font-bold text-gray-900">
@@ -248,7 +248,7 @@ export default function Filters({ filters: externalFilters, onFiltersChange, onC
                     >
                       <div className="flex items-center justify-between">
                         <span>{city.name_ar}</span>
-                        {filters.cityId === city.id && (
+                        {externalFilters.cityId === city.id && (
                           <CheckCircle2 className="w-5 h-5" />
                         )}
                       </div>
@@ -271,7 +271,7 @@ export default function Filters({ filters: externalFilters, onFiltersChange, onC
                     >
                       <div className="flex items-center justify-between">
                         <span>{option.label}</span>
-                        {filters.priceRange === option.value && (
+                        {externalFilters.priceRange === option.value && (
                           <CheckCircle2 className="w-5 h-5" />
                         )}
                       </div>
@@ -294,7 +294,7 @@ export default function Filters({ filters: externalFilters, onFiltersChange, onC
                     >
                       <div className="flex items-center justify-between">
                         <span>{option.label}</span>
-                        {filters.condition === option.value && (
+                        {externalFilters.condition === option.value && (
                           <CheckCircle2 className="w-5 h-5" />
                         )}
                       </div>
@@ -317,7 +317,7 @@ export default function Filters({ filters: externalFilters, onFiltersChange, onC
                     >
                       <div className="flex items-center justify-between">
                         <span>{option.label}</span>
-                        {filters.quantityRange === option.value && (
+                        {externalFilters.quantityRange === option.value && (
                           <CheckCircle2 className="w-5 h-5" />
                         )}
                       </div>
