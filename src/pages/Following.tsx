@@ -66,16 +66,14 @@ export default function Following() {
   }
 
   async function followBack(profileId: string) {
-    const { data } = await supabase
+    const { error } = await supabase
       .from('user_follows')
-      .insert({ follower_id: user!.id, following_id: profileId })
-      .select('id')
-      .maybeSingle();
+      .insert({ follower_id: user!.id, following_id: profileId });
 
-    if (data) {
+    if (!error) {
       const profileData = followers.find(f => f.id === profileId);
       if (profileData) {
-        setFollowing(prev => [...prev, { ...profileData, follow_id: data.id }]);
+        setFollowing(prev => [...prev, { ...profileData, follow_id: '' }]);
         setFollowingIds(prev => new Set([...prev, profileId]));
       }
     }

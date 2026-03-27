@@ -104,15 +104,13 @@ export default function PublicProfile() {
         setIsFollowing(false);
       }
     } else {
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('user_follows')
-        .insert({ follower_id: user.id, following_id: userId })
-        .select('id')
-        .maybeSingle();
+        .insert({ follower_id: user.id, following_id: userId });
 
       if (error) {
         console.error('Follow error:', error);
-      } else if (data) {
+      } else {
         setIsFollowing(true);
       }
     }
