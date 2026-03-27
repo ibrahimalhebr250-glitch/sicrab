@@ -120,13 +120,22 @@ export default function ListingDetails() {
   }
 
   async function incrementViewCount(id: string) {
-    const { error } = await supabase.rpc('increment_listing_views', {
-      p_listing_id: id
-    });
+    let visitorKey = user?.id;
 
-    if (error) {
-      console.error('Error incrementing views:', error);
+    if (!visitorKey) {
+      const storageKey = 'anon_visitor_key';
+      let anonKey = localStorage.getItem(storageKey);
+      if (!anonKey) {
+        anonKey = `anon_${crypto.randomUUID()}`;
+        localStorage.setItem(storageKey, anonKey);
+      }
+      visitorKey = anonKey;
     }
+
+    await supabase.rpc('increment_listing_views_unique', {
+      p_listing_id: id,
+      p_visitor_key: visitorKey,
+    });
   }
 
   function nextImage() {
@@ -272,7 +281,7 @@ ${listingUrl}`;
           <div className="absolute top-3 left-3 flex flex-col gap-2">
             <div className="px-3 py-1.5 bg-black/70 backdrop-blur-sm rounded-full text-white text-sm flex items-center gap-1.5">
               <Eye className="w-4 h-4" />
-              <span>{listing.views_count + 1}</span>
+              <span>{listing.views_count}</span>
             </div>
             <div className="px-3 py-1.5 bg-green-500/80 backdrop-blur-sm rounded-full text-white text-sm flex items-center gap-1.5">
               <MessageCircle className="w-4 h-4" />
