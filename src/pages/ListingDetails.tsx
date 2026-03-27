@@ -12,12 +12,23 @@ import SafetyTips from '../components/SafetyTips';
 import ReportModal from '../components/ReportModal';
 import ReviewModal from '../components/ReviewModal';
 
+interface PriceTierDetail {
+  id: string;
+  trunkSize: string;
+  height: string;
+  price: string;
+  unit: string;
+  count: string;
+}
+
 interface SubcategoryItemDetail {
   subcategoryId: string;
   name: string;
   price: string;
   size: string;
   quantity: string;
+  priceTiers: PriceTierDetail[];
+  useTiers: boolean;
 }
 
 function getSelectedTypes(listing: Listing): SubcategoryItemDetail[] {
@@ -314,36 +325,79 @@ ${listingUrl}`;
                   <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full font-medium">{selectedTypes.length} نوع</span>
                 </div>
 
-                <div className="space-y-2">
+                <div className="space-y-3">
                   {selectedTypes.map((item) => (
-                    <div key={item.subcategoryId} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl border border-gray-100">
-                      <div className="flex items-center gap-2 flex-1 min-w-0">
-                        <div className="w-2 h-2 bg-emerald-500 rounded-full flex-shrink-0"></div>
-                        <span className="font-bold text-gray-900 text-sm truncate">{item.name}</span>
-                        {isSeed ? (
-                          item.quantity && (
-                            <span className="flex items-center gap-1 text-xs text-gray-500 bg-white px-2 py-0.5 rounded-lg border border-gray-200 flex-shrink-0">
-                              <Package className="w-3 h-3" />
-                              {item.quantity}
-                            </span>
-                          )
-                        ) : (
-                          item.size && (
-                            <span className="flex items-center gap-1 text-xs text-gray-500 bg-white px-2 py-0.5 rounded-lg border border-gray-200 flex-shrink-0">
+                    <div key={item.subcategoryId} className="rounded-xl border border-gray-200 overflow-hidden">
+                      <div className="flex items-center justify-between px-3 py-2.5 bg-emerald-600">
+                        <div className="flex items-center gap-2">
+                          <div className="w-2 h-2 bg-white rounded-full flex-shrink-0"></div>
+                          <span className="font-black text-white text-sm">{item.name}</span>
+                          {!isSeed && item.size && (
+                            <span className="flex items-center gap-1 text-xs text-emerald-100 bg-emerald-700/50 px-2 py-0.5 rounded-lg">
                               <Ruler className="w-3 h-3" />
                               {item.size}
                             </span>
-                          )
+                          )}
+                          {isSeed && item.quantity && (
+                            <span className="flex items-center gap-1 text-xs text-emerald-100 bg-emerald-700/50 px-2 py-0.5 rounded-lg">
+                              <Package className="w-3 h-3" />
+                              {item.quantity}
+                            </span>
+                          )}
+                        </div>
+                        {pricingMode === 'individual' && item.price && !item.useTiers && (
+                          <span className="font-black text-white text-sm flex items-baseline gap-1">
+                            {Number(item.price).toLocaleString()}
+                            <span className="text-xs font-bold text-emerald-200">ريال</span>
+                          </span>
                         )}
                       </div>
-                      {pricingMode === 'individual' && item.price && (
-                        <span className="font-black text-emerald-700 text-base flex-shrink-0 mr-2 flex items-baseline gap-1">
-                          {Number(item.price).toLocaleString()}
-                          <span className="text-xs font-bold text-gray-500">ريال</span>
-                          {item.quantity && (
-                            <span className="text-xs font-semibold text-gray-400">{item.quantity}</span>
-                          )}
-                        </span>
+
+                      {item.useTiers && item.priceTiers && item.priceTiers.length > 0 ? (
+                        <div className="bg-gray-50">
+                          <div className="grid grid-cols-4 gap-0 border-b border-gray-200 bg-gray-100 px-3 py-1.5">
+                            <span className="text-[10px] font-bold text-gray-500 text-center">الارتفاع</span>
+                            <span className="text-[10px] font-bold text-gray-500 text-center">قطر الساق</span>
+                            <span className="text-[10px] font-bold text-gray-500 text-center">العدد</span>
+                            <span className="text-[10px] font-bold text-gray-500 text-center">السعر</span>
+                          </div>
+                          {item.priceTiers.map((tier, idx) => (
+                            <div
+                              key={tier.id}
+                              className={`grid grid-cols-4 gap-0 px-3 py-2 ${idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'} border-b border-gray-100 last:border-0`}
+                            >
+                              <span className="text-xs font-semibold text-gray-700 text-center">
+                                {tier.height ? `${tier.height} م` : '-'}
+                              </span>
+                              <span className="text-xs font-semibold text-gray-700 text-center">
+                                {tier.trunkSize ? `${tier.trunkSize} سم` : '-'}
+                              </span>
+                              <span className="text-xs font-bold text-blue-700 text-center">
+                                {tier.count ? `${tier.count} ${tier.unit || ''}` : '-'}
+                              </span>
+                              <span className="text-xs font-black text-emerald-700 text-center">
+                                {tier.price ? `${Number(tier.price).toLocaleString()} ر` : '-'}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        !item.useTiers && (
+                          <div className="px-3 py-2 bg-gray-50 flex items-center gap-3">
+                            {item.quantity && (
+                              <span className="flex items-center gap-1 text-xs text-gray-600">
+                                <Package className="w-3 h-3 text-gray-400" />
+                                {item.quantity}
+                              </span>
+                            )}
+                            {item.size && !isSeed && (
+                              <span className="flex items-center gap-1 text-xs text-gray-600">
+                                <Ruler className="w-3 h-3 text-gray-400" />
+                                {item.size}
+                              </span>
+                            )}
+                          </div>
+                        )
                       )}
                     </div>
                   ))}
