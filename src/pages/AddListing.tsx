@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ArrowRight, MapPin, FileText, Image as ImageIcon, Check, ChevronLeft, User, Recycle, Box, Factory, Building, Container, Warehouse, Layers, Sparkles, TrendingUp, Shield, Tag, Ruler, Package } from 'lucide-react';
+import { ArrowRight, MapPin, FileText, Image as ImageIcon, Check, ChevronLeft, User, Recycle, Box, Factory, Building, Container, Warehouse, Layers, Sparkles, TrendingUp, Shield, Tag, Ruler, Package, Plus, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -39,12 +39,22 @@ interface CategoryField {
   order_index: number;
 }
 
+interface PriceTier {
+  id: string;
+  trunkSize: string;
+  height: string;
+  price: string;
+  unit: string;
+}
+
 interface SubcategoryItem {
   subcategoryId: string;
   name: string;
   price: string;
   size: string;
   quantity: string;
+  priceTiers: PriceTier[];
+  useTiers: boolean;
 }
 
 const SEED_CATEGORIES_KEYWORDS = ['بذور', 'بذر', 'seed'];
@@ -287,7 +297,13 @@ export default function AddListing({ onBack, onSuccess }: AddListingProps) {
         if (subcategories.length > 0 && selectedSubcategoryItems.length === 0) return false;
         if (subcategories.length > 0) {
           if (pricingMode === 'group' && !formData.price) return false;
-          if (pricingMode === 'individual' && selectedSubcategoryItems.some(i => !i.price)) return false;
+          if (pricingMode === 'individual') {
+            const invalid = selectedSubcategoryItems.some(i => {
+              if (i.useTiers) return i.priceTiers.length === 0 || i.priceTiers.some(t => !t.price);
+              return !i.price;
+            });
+            if (invalid) return false;
+          }
         } else {
           if (!formData.price) return false;
         }
@@ -308,8 +324,61 @@ export default function AddListing({ onBack, onSuccess }: AddListingProps) {
     setSelectedSubcategoryItems(prev => {
       const exists = prev.find(i => i.subcategoryId === sub.id);
       if (exists) return prev.filter(i => i.subcategoryId !== sub.id);
-      return [...prev, { subcategoryId: sub.id, name: sub.name_ar, price: '', size: '', quantity: '' }];
+      return [...prev, {
+        subcategoryId: sub.id,
+        name: sub.name_ar,
+        price: '',
+        size: '',
+        quantity: '',
+        priceTiers: [],
+        useTiers: false,
+      }];
     });
+  }
+
+  function addPriceTier(subcategoryId: string) {
+    setSelectedSubcategoryItems(prev =>
+      prev.map(i => i.subcategoryId === subcategoryId ? {
+        ...i,
+        priceTiers: [...i.priceTiers, {
+          id: crypto.randomUUID(),
+          trunkSize: '',
+          height: '',
+          price: '',
+          unit: 'للشجرة',
+        }]
+      } : i)
+    );
+  }
+
+  function updatePriceTier(subcategoryId: string, tierId: string, field: keyof PriceTier, value: string) {
+    setSelectedSubcategoryItems(prev =>
+      prev.map(i => i.subcategoryId === subcategoryId ? {
+        ...i,
+        priceTiers: i.priceTiers.map(t => t.id === tierId ? { ...t, [field]: value } : t)
+      } : i)
+    );
+  }
+
+  function removePriceTier(subcategoryId: string, tierId: string) {
+    setSelectedSubcategoryItems(prev =>
+      prev.map(i => i.subcategoryId === subcategoryId ? {
+        ...i,
+        priceTiers: i.priceTiers.filter(t => t.id !== tierId)
+      } : i)
+    );
+  }
+
+  function toggleUseTiers(subcategoryId: string) {
+    setSelectedSubcategoryItems(prev =>
+      prev.map(i => i.subcategoryId === subcategoryId ? {
+        ...i,
+        useTiers: !i.useTiers,
+        priceTiers: !i.useTiers && i.priceTiers.length === 0
+          ? [{ id: crypto.randomUUID(), trunkSize: '', height: '', price: '', unit: 'للشجرة' }]
+          : i.priceTiers,
+      } : i)
+    );
   }
 
   function updateSubcategoryItem(id: string, field: keyof SubcategoryItem, value: string) {
@@ -328,7 +397,11 @@ export default function AddListing({ onBack, onSuccess }: AddListingProps) {
 
   async function handleSubmit() {
     const hasPrice = subcategories.length > 0
-      ? (pricingMode === 'group' ? !!formData.price : selectedSubcategoryItems.every(i => !!i.price))
+      ? (pricingMode === 'group'
+          ? !!formData.price
+          : selectedSubcategoryItems.every(i =>
+              i.useTiers ? (i.priceTiers.length > 0 && i.priceTiers.every(t => !!t.price)) : !!i.price
+            ))
       : !!formData.price;
 
     if (!formData.category_id || !formData.title || !hasPrice || !formData.phone || !formData.city_id) {
@@ -353,7 +426,13 @@ export default function AddListing({ onBack, onSuccess }: AddListingProps) {
     console.log(isEditMode ? '✏️ [AddListing] Updating listing:' : '➕ [AddListing] Creating listing:', editId);
 
     const resolvedPrice = pricingMode === 'individual' && selectedSubcategoryItems.length > 0
-      ? parseFloat(selectedSubcategoryItems[0].price) || 0
+      ? (() => {
+          const first = selectedSubcategoryItems[0];
+          if (first.useTiers && first.priceTiers.length > 0) {
+            return parseFloat(first.priceTiers[0].price) || 0;
+          }
+          return parseFloat(first.price) || 0;
+        })()
       : parseFloat(formData.price) || 0;
 
     const listingData = {
@@ -837,48 +916,154 @@ export default function AddListing({ onBack, onSuccess }: AddListingProps) {
 
                         <div className="space-y-3">
                           {selectedSubcategoryItems.map((item) => (
-                            <div key={item.subcategoryId} className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
-                              <div className="flex items-center gap-2 mb-3">
+                            <div key={item.subcategoryId} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                              <div className="flex items-center gap-2 px-4 py-3 bg-gray-50 border-b border-gray-100">
                                 <div className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0"></div>
-                                <h4 className="font-bold text-gray-900 text-sm">{item.name}</h4>
+                                <h4 className="font-bold text-gray-900 text-sm flex-1">{item.name}</h4>
                               </div>
 
-                              <div className="space-y-3">
+                              <div className="p-4 space-y-4">
                                 {pricingMode === 'individual' && (
-                                  <div>
-                                    <label className="text-xs font-bold text-gray-600 mb-1 block flex items-center gap-1">
-                                      <Tag className="w-3 h-3" />
-                                      <span className="text-red-500">*</span> السعر
-                                    </label>
-                                    <div className="flex gap-2">
-                                      <div className="relative flex-1">
-                                        <input
-                                          type="number"
-                                          value={item.price}
-                                          onChange={(e) => updateSubcategoryItem(item.subcategoryId, 'price', e.target.value)}
-                                          placeholder="0"
-                                          className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-xl focus:border-blue-500 outline-none text-sm"
-                                        />
-                                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs">ر.س</span>
+                                  <div className="space-y-3">
+                                    {!isSeed && (
+                                      <button
+                                        type="button"
+                                        onClick={() => toggleUseTiers(item.subcategoryId)}
+                                        className={`w-full flex items-center justify-between px-4 py-2.5 rounded-xl border-2 text-sm font-semibold transition-all ${
+                                          item.useTiers
+                                            ? 'border-blue-500 bg-blue-50 text-blue-800'
+                                            : 'border-gray-200 bg-white text-gray-600 hover:border-blue-300'
+                                        }`}
+                                      >
+                                        <span className="flex items-center gap-2">
+                                          <Ruler className="w-4 h-4" />
+                                          {item.useTiers ? 'تسعير بحسب الحجم (شرائح)' : 'إضافة شرائح أسعار بحسب الحجم'}
+                                        </span>
+                                        {item.useTiers ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                                      </button>
+                                    )}
+
+                                    {!item.useTiers && (
+                                      <div>
+                                        <label className="text-xs font-bold text-gray-600 mb-1 block flex items-center gap-1">
+                                          <Tag className="w-3 h-3" />
+                                          <span className="text-red-500">*</span> السعر
+                                        </label>
+                                        <div className="flex gap-2">
+                                          <div className="relative flex-1">
+                                            <input
+                                              type="number"
+                                              value={item.price}
+                                              onChange={(e) => updateSubcategoryItem(item.subcategoryId, 'price', e.target.value)}
+                                              placeholder="0"
+                                              className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-xl focus:border-blue-500 outline-none text-sm"
+                                            />
+                                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs">ر.س</span>
+                                          </div>
+                                          {isSeed && (
+                                            <select
+                                              value={item.quantity}
+                                              onChange={(e) => updateSubcategoryItem(item.subcategoryId, 'quantity', e.target.value)}
+                                              className="px-3 py-2.5 border-2 border-gray-200 rounded-xl focus:border-blue-500 outline-none bg-white text-sm font-medium text-gray-700 min-w-[90px]"
+                                            >
+                                              <option value="">الوحدة</option>
+                                              <option value="للجرام">للجرام</option>
+                                              <option value="للكيلو">للكيلو</option>
+                                              <option value="للطن">للطن</option>
+                                              <option value="للكيس">للكيس</option>
+                                              <option value="للحبة">للحبة</option>
+                                              <option value="للعلبة">للعلبة</option>
+                                            </select>
+                                          )}
+                                        </div>
+                                        {isSeed && !item.quantity && (
+                                          <p className="text-xs text-amber-600 mt-1">حدد الوحدة (جرام / كيلو / طن...)</p>
+                                        )}
                                       </div>
-                                      {isSeed && (
-                                        <select
-                                          value={item.quantity}
-                                          onChange={(e) => updateSubcategoryItem(item.subcategoryId, 'quantity', e.target.value)}
-                                          className="px-3 py-2.5 border-2 border-gray-200 rounded-xl focus:border-blue-500 outline-none bg-white text-sm font-medium text-gray-700 min-w-[90px]"
+                                    )}
+
+                                    {item.useTiers && (
+                                      <div className="space-y-3">
+                                        <p className="text-xs text-gray-500 bg-blue-50 rounded-lg px-3 py-2 border border-blue-100">
+                                          أضف شريحة سعر لكل مواصفة (حجم الساق، الارتفاع، العمر...)
+                                        </p>
+
+                                        {item.priceTiers.map((tier, idx) => (
+                                          <div key={tier.id} className="bg-gray-50 rounded-xl p-3 border border-gray-200 space-y-2">
+                                            <div className="flex items-center justify-between mb-1">
+                                              <span className="text-xs font-bold text-gray-500">شريحة {idx + 1}</span>
+                                              {item.priceTiers.length > 1 && (
+                                                <button
+                                                  type="button"
+                                                  onClick={() => removePriceTier(item.subcategoryId, tier.id)}
+                                                  className="w-6 h-6 flex items-center justify-center text-red-400 hover:text-red-600 hover:bg-red-50 rounded-full transition-all"
+                                                >
+                                                  <Trash2 className="w-3.5 h-3.5" />
+                                                </button>
+                                              )}
+                                            </div>
+
+                                            <div className="grid grid-cols-2 gap-2">
+                                              <div>
+                                                <label className="text-xs text-gray-500 mb-1 block">قطر الساق (سم)</label>
+                                                <input
+                                                  type="text"
+                                                  value={tier.trunkSize}
+                                                  onChange={(e) => updatePriceTier(item.subcategoryId, tier.id, 'trunkSize', e.target.value)}
+                                                  placeholder="مثال: 5-10"
+                                                  className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:border-blue-500 outline-none text-xs"
+                                                />
+                                              </div>
+                                              <div>
+                                                <label className="text-xs text-gray-500 mb-1 block">الارتفاع (م)</label>
+                                                <input
+                                                  type="text"
+                                                  value={tier.height}
+                                                  onChange={(e) => updatePriceTier(item.subcategoryId, tier.id, 'height', e.target.value)}
+                                                  placeholder="مثال: 1-2"
+                                                  className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:border-blue-500 outline-none text-xs"
+                                                />
+                                              </div>
+                                            </div>
+
+                                            <div className="flex gap-2">
+                                              <div className="relative flex-1">
+                                                <input
+                                                  type="number"
+                                                  value={tier.price}
+                                                  onChange={(e) => updatePriceTier(item.subcategoryId, tier.id, 'price', e.target.value)}
+                                                  placeholder="السعر"
+                                                  className="w-full px-3 py-2 pl-10 border-2 border-gray-200 rounded-lg focus:border-blue-500 outline-none text-xs"
+                                                />
+                                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs">ر.س</span>
+                                              </div>
+                                              <select
+                                                value={tier.unit}
+                                                onChange={(e) => updatePriceTier(item.subcategoryId, tier.id, 'unit', e.target.value)}
+                                                className="px-2 py-2 border-2 border-gray-200 rounded-lg focus:border-blue-500 outline-none bg-white text-xs font-medium text-gray-700"
+                                              >
+                                                <option value="للشجرة">للشجرة</option>
+                                                <option value="للمتر">للمتر</option>
+                                                <option value="للكيلو">للكيلو</option>
+                                                <option value="للقطعة">للقطعة</option>
+                                              </select>
+                                            </div>
+
+                                            {!tier.price && (
+                                              <p className="text-xs text-red-500">السعر مطلوب</p>
+                                            )}
+                                          </div>
+                                        ))}
+
+                                        <button
+                                          type="button"
+                                          onClick={() => addPriceTier(item.subcategoryId)}
+                                          className="w-full flex items-center justify-center gap-2 py-2.5 border-2 border-dashed border-blue-300 rounded-xl text-blue-600 text-sm font-semibold hover:bg-blue-50 transition-all"
                                         >
-                                          <option value="">الوحدة</option>
-                                          <option value="للجرام">للجرام</option>
-                                          <option value="للكيلو">للكيلو</option>
-                                          <option value="للطن">للطن</option>
-                                          <option value="للكيس">للكيس</option>
-                                          <option value="للحبة">للحبة</option>
-                                          <option value="للعلبة">للعلبة</option>
-                                        </select>
-                                      )}
-                                    </div>
-                                    {isSeed && !item.quantity && (
-                                      <p className="text-xs text-amber-600 mt-1">حدد الوحدة (جرام / كيلو / طن...)</p>
+                                          <Plus className="w-4 h-4" />
+                                          إضافة شريحة سعر جديدة
+                                        </button>
+                                      </div>
                                     )}
                                   </div>
                                 )}
@@ -900,14 +1085,14 @@ export default function AddListing({ onBack, onSuccess }: AddListingProps) {
                                 ) : (
                                   <div>
                                     <label className="text-xs font-bold text-gray-600 mb-1 block flex items-center gap-1">
-                                      <Ruler className="w-3 h-3" />
-                                      الحجم / المواصفات (مثال: 2 متر، ارتفاع 150 سم)
+                                      <Package className="w-3 h-3" />
+                                      الكمية المتاحة (اختياري)
                                     </label>
                                     <input
                                       type="text"
                                       value={item.size}
                                       onChange={(e) => updateSubcategoryItem(item.subcategoryId, 'size', e.target.value)}
-                                      placeholder="مثال: ارتفاع 2 متر، عمر 3 سنوات..."
+                                      placeholder="مثال: 10 أشجار، كمية كبيرة..."
                                       className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-xl focus:border-blue-500 outline-none text-sm"
                                     />
                                   </div>
