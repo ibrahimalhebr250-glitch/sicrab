@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Package, Eye, MessageCircle, Plus, CreditCard as Edit2, Trash2, ChevronDown, ChevronUp, EyeOff } from 'lucide-react';
+import { Package, Eye, Plus, Trash2, ChevronDown, ChevronUp, EyeOff, Image, X, Check, Search } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 
 interface Category {
@@ -21,6 +21,60 @@ interface Subcategory {
   order_index: number;
   is_active: boolean;
 }
+
+interface ImageItem {
+  url: string;
+  label: string;
+  group: string;
+}
+
+const IMAGE_LIBRARY: ImageItem[] = [
+  { url: 'https://images.pexels.com/photos/1072824/pexels-photo-1072824.jpeg?auto=compress&cs=tinysrgb&w=400', label: 'نخلة تمر', group: 'نخيل' },
+  { url: 'https://images.pexels.com/photos/3609409/pexels-photo-3609409.jpeg?auto=compress&cs=tinysrgb&w=400', label: 'نخيل صحراوي', group: 'نخيل' },
+  { url: 'https://images.pexels.com/photos/2469122/pexels-photo-2469122.jpeg?auto=compress&cs=tinysrgb&w=400', label: 'نخلة جوز الهند', group: 'نخيل' },
+  { url: 'https://images.pexels.com/photos/6024561/pexels-photo-6024561.jpeg?auto=compress&cs=tinysrgb&w=400', label: 'نخلة زينة', group: 'نخيل' },
+  { url: 'https://images.pexels.com/photos/1537445/pexels-photo-1537445.jpeg?auto=compress&cs=tinysrgb&w=400', label: 'نخيل متعدد', group: 'نخيل' },
+  { url: 'https://images.pexels.com/photos/3044473/pexels-photo-3044473.jpeg?auto=compress&cs=tinysrgb&w=400', label: 'نخيل الواحة', group: 'نخيل' },
+
+  { url: 'https://images.pexels.com/photos/167699/pexels-photo-167699.jpeg?auto=compress&cs=tinysrgb&w=400', label: 'شجرة خضراء', group: 'أشجار' },
+  { url: 'https://images.pexels.com/photos/601798/pexels-photo-601798.jpeg?auto=compress&cs=tinysrgb&w=400', label: 'شجرة ضخمة', group: 'أشجار' },
+  { url: 'https://images.pexels.com/photos/1179229/pexels-photo-1179229.jpeg?auto=compress&cs=tinysrgb&w=400', label: 'شجرة الزيتون', group: 'أشجار' },
+  { url: 'https://images.pexels.com/photos/1459496/pexels-photo-1459496.jpeg?auto=compress&cs=tinysrgb&w=400', label: 'أشجار الغابة', group: 'أشجار' },
+  { url: 'https://images.pexels.com/photos/957024/forest-trees-perspective-bright-957024.jpeg?auto=compress&cs=tinysrgb&w=400', label: 'غابة كثيفة', group: 'أشجار' },
+  { url: 'https://images.pexels.com/photos/1048036/pexels-photo-1048036.jpeg?auto=compress&cs=tinysrgb&w=400', label: 'شجرة الخريف', group: 'أشجار' },
+  { url: 'https://images.pexels.com/photos/1770809/pexels-photo-1770809.jpeg?auto=compress&cs=tinysrgb&w=400', label: 'شجرة الجوافة', group: 'أشجار' },
+  { url: 'https://images.pexels.com/photos/1266810/pexels-photo-1266810.jpeg?auto=compress&cs=tinysrgb&w=400', label: 'شجرة الليمون', group: 'أشجار' },
+  { url: 'https://images.pexels.com/photos/2300742/pexels-photo-2300742.jpeg?auto=compress&cs=tinysrgb&w=400', label: 'شجرة فواكه', group: 'أشجار' },
+
+  { url: 'https://images.pexels.com/photos/1407305/pexels-photo-1407305.jpeg?auto=compress&cs=tinysrgb&w=400', label: 'نباتات خضراء', group: 'نباتات' },
+  { url: 'https://images.pexels.com/photos/1453499/pexels-photo-1453499.jpeg?auto=compress&cs=tinysrgb&w=400', label: 'نبات داخلي', group: 'نباتات' },
+  { url: 'https://images.pexels.com/photos/1084188/pexels-photo-1084188.jpeg?auto=compress&cs=tinysrgb&w=400', label: 'نبات الصبار', group: 'نباتات' },
+  { url: 'https://images.pexels.com/photos/931177/pexels-photo-931177.jpeg?auto=compress&cs=tinysrgb&w=400', label: 'ورود وزهور', group: 'نباتات' },
+  { url: 'https://images.pexels.com/photos/1034733/pexels-photo-1034733.jpeg?auto=compress&cs=tinysrgb&w=400', label: 'نبات العشب', group: 'نباتات' },
+  { url: 'https://images.pexels.com/photos/807598/pexels-photo-807598.jpeg?auto=compress&cs=tinysrgb&w=400', label: 'نبات الزرع', group: 'نباتات' },
+  { url: 'https://images.pexels.com/photos/1213294/pexels-photo-1213294.jpeg?auto=compress&cs=tinysrgb&w=400', label: 'نبات الريحان', group: 'نباتات' },
+  { url: 'https://images.pexels.com/photos/1006085/pexels-photo-1006085.jpeg?auto=compress&cs=tinysrgb&w=400', label: 'زراعة الخضروات', group: 'نباتات' },
+  { url: 'https://images.pexels.com/photos/1301856/pexels-photo-1301856.jpeg?auto=compress&cs=tinysrgb&w=400', label: 'نبات الزينة', group: 'نباتات' },
+
+  { url: 'https://images.pexels.com/photos/116675/pexels-photo-116675.jpeg?auto=compress&cs=tinysrgb&w=400', label: 'سيارة رياضية', group: 'سيارات' },
+  { url: 'https://images.pexels.com/photos/1545743/pexels-photo-1545743.jpeg?auto=compress&cs=tinysrgb&w=400', label: 'سيارة فاخرة', group: 'سيارات' },
+  { url: 'https://images.pexels.com/photos/170811/pexels-photo-170811.jpeg?auto=compress&cs=tinysrgb&w=400', label: 'سيارة عائلية', group: 'سيارات' },
+  { url: 'https://images.pexels.com/photos/210019/pexels-photo-210019.jpeg?auto=compress&cs=tinysrgb&w=400', label: 'سيارة دفع رباعي', group: 'سيارات' },
+  { url: 'https://images.pexels.com/photos/1638459/pexels-photo-1638459.jpeg?auto=compress&cs=tinysrgb&w=400', label: 'شاحنة نقل', group: 'سيارات' },
+  { url: 'https://images.pexels.com/photos/1213294/pexels-photo-1213294.jpeg?auto=compress&cs=tinysrgb&w=400', label: 'سيارة بيكأب', group: 'سيارات' },
+  { url: 'https://images.pexels.com/photos/244206/pexels-photo-244206.jpeg?auto=compress&cs=tinysrgb&w=400', label: 'سيارات متعددة', group: 'سيارات' },
+  { url: 'https://images.pexels.com/photos/358070/pexels-photo-358070.jpeg?auto=compress&cs=tinysrgb&w=400', label: 'سيارة قديمة', group: 'سيارات' },
+
+  { url: 'https://images.pexels.com/photos/1280564/pexels-photo-1280564.jpeg?auto=compress&cs=tinysrgb&w=400', label: 'جرار زراعي', group: 'آلات زراعية' },
+  { url: 'https://images.pexels.com/photos/974314/pexels-photo-974314.jpeg?auto=compress&cs=tinysrgb&w=400', label: 'حصادة آلية', group: 'آلات زراعية' },
+  { url: 'https://images.pexels.com/photos/1482860/pexels-photo-1482860.jpeg?auto=compress&cs=tinysrgb&w=400', label: 'جرار مزرعة', group: 'آلات زراعية' },
+  { url: 'https://images.pexels.com/photos/1239162/pexels-photo-1239162.jpeg?auto=compress&cs=tinysrgb&w=400', label: 'آلة حصاد', group: 'آلات زراعية' },
+  { url: 'https://images.pexels.com/photos/2132250/pexels-photo-2132250.jpeg?auto=compress&cs=tinysrgb&w=400', label: 'معدات زراعية', group: 'آلات زراعية' },
+  { url: 'https://images.pexels.com/photos/2132254/pexels-photo-2132254.jpeg?auto=compress&cs=tinysrgb&w=400', label: 'آلة ري', group: 'آلات زراعية' },
+  { url: 'https://images.pexels.com/photos/1239168/pexels-photo-1239168.jpeg?auto=compress&cs=tinysrgb&w=400', label: 'حراثة الأرض', group: 'آلات زراعية' },
+];
+
+const GROUPS = ['الكل', 'نخيل', 'أشجار', 'نباتات', 'سيارات', 'آلات زراعية'];
 
 export default function AdminCategories() {
   const [categories, setCategories] = useState<Category[]>([]);
@@ -190,8 +244,14 @@ export default function AdminCategories() {
               <div className="p-6">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3 flex-1">
-                    <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center text-white">
-                      <Package className="w-6 h-6" />
+                    <div className="w-12 h-12 rounded-xl overflow-hidden border-2 border-gray-100 flex-shrink-0">
+                      {category.icon && category.icon.startsWith('http') ? (
+                        <img src={category.icon} alt={category.name_ar} className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center">
+                          <Package className="w-6 h-6 text-white" />
+                        </div>
+                      )}
                     </div>
                     <div className="flex-1">
                       <div className="flex items-center gap-2">
@@ -284,9 +344,144 @@ export default function AdminCategories() {
   );
 }
 
+function ImageLibraryModal({ selected, onSelect, onClose }: {
+  selected: string;
+  onSelect: (url: string) => void;
+  onClose: () => void;
+}) {
+  const [activeGroup, setActiveGroup] = useState('الكل');
+  const [search, setSearch] = useState('');
+
+  const filtered = IMAGE_LIBRARY.filter(img => {
+    const matchGroup = activeGroup === 'الكل' || img.group === activeGroup;
+    const matchSearch = !search || img.label.includes(search) || img.group.includes(search);
+    return matchGroup && matchSearch;
+  });
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden">
+        <div className="flex items-center justify-between p-6 border-b bg-gradient-to-r from-green-50 to-emerald-50">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl flex items-center justify-center">
+              <Image className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <h2 className="text-xl font-black text-gray-900">مكتبة الصور</h2>
+              <p className="text-sm text-gray-500">اختر صورة لأيقونة القسم</p>
+            </div>
+          </div>
+          <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-xl transition-all">
+            <X className="w-6 h-6 text-gray-600" />
+          </button>
+        </div>
+
+        <div className="p-4 border-b bg-gray-50 space-y-3">
+          <div className="relative">
+            <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="ابحث عن صورة..."
+              className="w-full pr-10 pl-4 py-2.5 border-2 border-gray-200 rounded-xl focus:border-green-500 focus:outline-none text-sm"
+            />
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {GROUPS.map(group => (
+              <button
+                key={group}
+                onClick={() => setActiveGroup(group)}
+                className={`px-4 py-1.5 rounded-full text-sm font-bold transition-all ${
+                  activeGroup === group
+                    ? 'bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow-md'
+                    : 'bg-white border-2 border-gray-200 text-gray-600 hover:border-green-400'
+                }`}
+              >
+                {group}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="flex-1 overflow-y-auto p-5">
+          {filtered.length === 0 ? (
+            <div className="text-center py-12 text-gray-400">
+              <Image className="w-12 h-12 mx-auto mb-3 opacity-40" />
+              <p>لا توجد صور مطابقة</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3">
+              {filtered.map((img, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => onSelect(img.url)}
+                  className={`group relative aspect-square rounded-xl overflow-hidden border-3 transition-all hover:scale-105 hover:shadow-lg ${
+                    selected === img.url
+                      ? 'border-green-500 ring-2 ring-green-400 ring-offset-1 shadow-lg scale-105'
+                      : 'border-gray-200 hover:border-green-400'
+                  }`}
+                  style={{ borderWidth: 3 }}
+                  title={img.label}
+                >
+                  <img
+                    src={img.url}
+                    alt={img.label}
+                    className="w-full h-full object-cover"
+                    loading="lazy"
+                  />
+                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all" />
+                  {selected === img.url && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-green-500/30">
+                      <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center shadow-lg">
+                        <Check className="w-5 h-5 text-white" />
+                      </div>
+                    </div>
+                  )}
+                  <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/70 to-transparent px-1 py-1 opacity-0 group-hover:opacity-100 transition-all">
+                    <p className="text-white text-xs text-center truncate">{img.label}</p>
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="p-4 border-t bg-gray-50 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            {selected && (
+              <>
+                <div className="w-10 h-10 rounded-xl overflow-hidden border-2 border-green-400 shadow">
+                  <img src={selected} alt="selected" className="w-full h-full object-cover" />
+                </div>
+                <span className="text-sm text-gray-600 font-medium">تم اختيار الصورة</span>
+              </>
+            )}
+            {!selected && <span className="text-sm text-gray-400">لم يتم اختيار صورة بعد</span>}
+          </div>
+          <div className="flex gap-2">
+            <button onClick={onClose} className="px-4 py-2 bg-gray-200 text-gray-700 rounded-xl font-medium hover:bg-gray-300 transition-all">
+              إلغاء
+            </button>
+            <button
+              onClick={onClose}
+              disabled={!selected}
+              className="px-6 py-2 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-xl font-bold hover:from-green-600 hover:to-emerald-700 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              تأكيد الاختيار
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function AddCategoryForm({ onClose, onSuccess }: { onClose: () => void; onSuccess: () => void }) {
   const [nameAr, setNameAr] = useState('');
   const [nameEn, setNameEn] = useState('');
+  const [selectedImage, setSelectedImage] = useState('');
+  const [showLibrary, setShowLibrary] = useState(false);
   const [saving, setSaving] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
@@ -303,7 +498,7 @@ function AddCategoryForm({ onClose, onSuccess }: { onClose: () => void; onSucces
           name_ar: nameAr,
           name_en: nameEn || nameAr,
           slug,
-          icon: 'package',
+          icon: selectedImage || 'package',
           is_active: true
         }]);
 
@@ -329,42 +524,91 @@ function AddCategoryForm({ onClose, onSuccess }: { onClose: () => void; onSucces
   }
 
   return (
-    <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl p-6 mb-6 shadow-xl">
-      <h3 className="text-lg font-black text-gray-900 mb-4">إضافة قسم جديد</h3>
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <input
-          type="text"
-          value={nameAr}
-          onChange={(e) => setNameAr(e.target.value)}
-          placeholder="اسم القسم بالعربية"
-          className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-green-500 focus:outline-none"
-          required
+    <>
+      {showLibrary && (
+        <ImageLibraryModal
+          selected={selectedImage}
+          onSelect={(url) => {
+            setSelectedImage(url);
+            setShowLibrary(false);
+          }}
+          onClose={() => setShowLibrary(false)}
         />
-        <input
-          type="text"
-          value={nameEn}
-          onChange={(e) => setNameEn(e.target.value)}
-          placeholder="اسم القسم بالإنجليزية (اختياري)"
-          className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-green-500 focus:outline-none"
-        />
-        <div className="flex gap-2">
-          <button
-            type="submit"
-            disabled={saving}
-            className="flex-1 px-4 py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-xl font-bold hover:from-green-600 hover:to-emerald-700 transition-all disabled:opacity-50"
-          >
-            {saving ? 'جاري الإضافة...' : 'إضافة القسم'}
-          </button>
-          <button
-            type="button"
-            onClick={onClose}
-            className="px-4 py-3 bg-gray-200 text-gray-700 rounded-xl font-medium hover:bg-gray-300 transition-all"
-          >
-            إلغاء
-          </button>
-        </div>
-      </form>
-    </div>
+      )}
+
+      <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl p-6 mb-6 shadow-xl border border-green-100">
+        <h3 className="text-lg font-black text-gray-900 mb-5">إضافة قسم جديد</h3>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <input
+            type="text"
+            value={nameAr}
+            onChange={(e) => setNameAr(e.target.value)}
+            placeholder="اسم القسم بالعربية"
+            className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-green-500 focus:outline-none"
+            required
+          />
+          <input
+            type="text"
+            value={nameEn}
+            onChange={(e) => setNameEn(e.target.value)}
+            placeholder="اسم القسم بالإنجليزية (اختياري)"
+            className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-green-500 focus:outline-none"
+          />
+
+          <div>
+            <label className="block text-sm font-bold text-gray-700 mb-2">أيقونة القسم</label>
+            <button
+              type="button"
+              onClick={() => setShowLibrary(true)}
+              className="w-full flex items-center gap-4 p-4 border-2 border-dashed border-gray-300 rounded-xl hover:border-green-500 hover:bg-green-50 transition-all group"
+            >
+              {selectedImage ? (
+                <>
+                  <div className="w-16 h-16 rounded-xl overflow-hidden border-2 border-green-400 shadow-md flex-shrink-0">
+                    <img src={selectedImage} alt="selected" className="w-full h-full object-cover" />
+                  </div>
+                  <div className="text-right flex-1">
+                    <p className="font-bold text-green-700">تم اختيار الصورة</p>
+                    <p className="text-sm text-gray-500">انقر لتغيير الصورة</p>
+                  </div>
+                  <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0">
+                    <Check className="w-5 h-5 text-white" />
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="w-16 h-16 rounded-xl bg-gray-100 flex items-center justify-center flex-shrink-0 group-hover:bg-green-100 transition-all">
+                    <Image className="w-8 h-8 text-gray-400 group-hover:text-green-500 transition-all" />
+                  </div>
+                  <div className="text-right flex-1">
+                    <p className="font-bold text-gray-700 group-hover:text-green-700 transition-all">اختر صورة من المكتبة</p>
+                    <p className="text-sm text-gray-400">أشجار • نخيل • نباتات • سيارات • آلات زراعية</p>
+                  </div>
+                  <Plus className="w-5 h-5 text-gray-400 group-hover:text-green-500 flex-shrink-0 transition-all" />
+                </>
+              )}
+            </button>
+          </div>
+
+          <div className="flex gap-2 pt-1">
+            <button
+              type="submit"
+              disabled={saving}
+              className="flex-1 px-4 py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-xl font-bold hover:from-green-600 hover:to-emerald-700 transition-all disabled:opacity-50"
+            >
+              {saving ? 'جاري الإضافة...' : 'إضافة القسم'}
+            </button>
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-3 bg-gray-200 text-gray-700 rounded-xl font-medium hover:bg-gray-300 transition-all"
+            >
+              إلغاء
+            </button>
+          </div>
+        </form>
+      </div>
+    </>
   );
 }
 
