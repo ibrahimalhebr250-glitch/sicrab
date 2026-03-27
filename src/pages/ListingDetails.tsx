@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { MapPin, Eye, ChevronLeft, ChevronRight, MessageCircle, Calendar, Tag, Box, X, Share2, ArrowRight, Flag, Star } from 'lucide-react';
+import { MapPin, Eye, ChevronLeft, ChevronRight, MessageCircle, Calendar, Tag, Box, X, Share2, ArrowRight, Flag, Star, Ruler, Package, Layers } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { supabase, Listing } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
@@ -11,6 +11,39 @@ import ListingActivity from '../components/ListingActivity';
 import SafetyTips from '../components/SafetyTips';
 import ReportModal from '../components/ReportModal';
 import ReviewModal from '../components/ReviewModal';
+
+interface SubcategoryItemDetail {
+  subcategoryId: string;
+  name: string;
+  price: string;
+  size: string;
+  quantity: string;
+}
+
+function getSelectedTypes(listing: Listing): SubcategoryItemDetail[] {
+  try {
+    const cf = listing.custom_fields as Record<string, string> | null;
+    if (!cf || !cf['selected_types']) return [];
+    return JSON.parse(cf['selected_types']);
+  } catch {
+    return [];
+  }
+}
+
+function getPricingMode(listing: Listing): 'group' | 'individual' {
+  try {
+    const cf = listing.custom_fields as Record<string, string> | null;
+    return (cf?.['pricing_mode'] as 'group' | 'individual') || 'group';
+  } catch {
+    return 'group';
+  }
+}
+
+const SEED_KEYWORDS = ['بذور', 'بذر', 'seed'];
+function isSeedListing(listing: Listing): boolean {
+  const catName = (listing.categories as { name_ar?: string } | null)?.name_ar || '';
+  return SEED_KEYWORDS.some(k => catName.includes(k));
+}
 
 export default function ListingDetails() {
   const { slug } = useParams<{ slug: string }>();
@@ -255,13 +288,76 @@ ${listingUrl}`;
           </span>
         </div>
 
-        <div className="mb-4">
-          <div className="text-3xl md:text-4xl font-black bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
-            {listing.price.toLocaleString()} ريال
-            {listing.price_type === 'per_unit' && <span className="text-lg md:text-xl mr-2">/ {listing.unit}</span>}
-            {listing.price_type === 'negotiable' && <span className="text-base md:text-lg text-gray-500 mr-2">(قابل للتفاوض)</span>}
-          </div>
-        </div>
+        {(() => {
+          const selectedTypes = getSelectedTypes(listing);
+          const pricingMode = getPricingMode(listing);
+          const isSeed = isSeedListing(listing);
+
+          if (selectedTypes.length > 0) {
+            return (
+              <div className="mb-4">
+                {pricingMode === 'group' ? (
+                  <div className="text-3xl md:text-4xl font-black bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent mb-3">
+                    {listing.price.toLocaleString()} ريال
+                    {listing.price_type === 'negotiable' && <span className="text-base md:text-lg text-gray-500 mr-2">(قابل للتفاوض)</span>}
+                  </div>
+                ) : (
+                  <div className="mb-3 px-3 py-2 bg-blue-50 rounded-xl border border-blue-100 inline-flex items-center gap-2">
+                    <Tag className="w-4 h-4 text-blue-600" />
+                    <span className="text-sm font-bold text-blue-800">سعر مختلف لكل نوع - راجع التفاصيل أدناه</span>
+                  </div>
+                )}
+
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="w-1 h-5 bg-emerald-500 rounded-full"></div>
+                  <h3 className="text-base font-bold text-gray-900">الأنواع المتاحة</h3>
+                  <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full font-medium">{selectedTypes.length} نوع</span>
+                </div>
+
+                <div className="space-y-2">
+                  {selectedTypes.map((item) => (
+                    <div key={item.subcategoryId} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl border border-gray-100">
+                      <div className="flex items-center gap-2 flex-1 min-w-0">
+                        <div className="w-2 h-2 bg-emerald-500 rounded-full flex-shrink-0"></div>
+                        <span className="font-bold text-gray-900 text-sm truncate">{item.name}</span>
+                        {isSeed ? (
+                          item.quantity && (
+                            <span className="flex items-center gap-1 text-xs text-gray-500 bg-white px-2 py-0.5 rounded-lg border border-gray-200 flex-shrink-0">
+                              <Package className="w-3 h-3" />
+                              {item.quantity}
+                            </span>
+                          )
+                        ) : (
+                          item.size && (
+                            <span className="flex items-center gap-1 text-xs text-gray-500 bg-white px-2 py-0.5 rounded-lg border border-gray-200 flex-shrink-0">
+                              <Ruler className="w-3 h-3" />
+                              {item.size}
+                            </span>
+                          )
+                        )}
+                      </div>
+                      {pricingMode === 'individual' && item.price && (
+                        <span className="font-black text-emerald-700 text-base flex-shrink-0 mr-2">
+                          {Number(item.price).toLocaleString()} <span className="text-xs font-bold text-gray-500">ريال</span>
+                        </span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          }
+
+          return (
+            <div className="mb-4">
+              <div className="text-3xl md:text-4xl font-black bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
+                {listing.price.toLocaleString()} ريال
+                {listing.price_type === 'per_unit' && <span className="text-lg md:text-xl mr-2">/ {listing.unit}</span>}
+                {listing.price_type === 'negotiable' && <span className="text-base md:text-lg text-gray-500 mr-2">(قابل للتفاوض)</span>}
+              </div>
+            </div>
+          );
+        })()}
 
         <div className="grid grid-cols-2 gap-2 mb-4">
           <div className="flex items-center gap-2 p-3 bg-gradient-to-br from-amber-50 to-orange-50 rounded-xl">
@@ -278,8 +374,8 @@ ${listingUrl}`;
               <p className="font-bold text-gray-900 truncate">{listing.cities?.name_ar}</p>
             </div>
           </div>
-          <div className="flex items-center gap-2 p-3 bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl">
-            <Tag className="w-5 h-5 text-purple-600 flex-shrink-0" />
+          <div className="flex items-center gap-2 p-3 bg-gradient-to-br from-teal-50 to-emerald-50 rounded-xl">
+            <Layers className="w-5 h-5 text-teal-600 flex-shrink-0" />
             <div className="min-w-0">
               <p className="text-xs text-gray-600 mb-0.5">القسم</p>
               <p className="font-bold text-gray-900 truncate">{listing.categories?.name_ar}</p>
@@ -293,14 +389,6 @@ ${listingUrl}`;
             </div>
           </div>
         </div>
-
-        {listing.subcategories && (
-          <div className="flex items-center gap-2 mb-4">
-            <span className="px-3 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg">
-              {listing.subcategories.name_ar}
-            </span>
-          </div>
-        )}
       </div>
 
       <div className="h-2 bg-gray-100"></div>

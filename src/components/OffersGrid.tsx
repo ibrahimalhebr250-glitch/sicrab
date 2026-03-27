@@ -178,10 +178,41 @@ function OffersGridNew({ categoryId, subcategoryId, filters, onViewListing, sear
   );
 }
 
+interface SubcategoryItemCard {
+  subcategoryId: string;
+  name: string;
+  price: string;
+  size: string;
+  quantity: string;
+}
+
+function getSelectedTypes(listing: Listing): SubcategoryItemCard[] {
+  try {
+    const cf = listing.custom_fields as Record<string, string> | null;
+    if (!cf || !cf['selected_types']) return [];
+    return JSON.parse(cf['selected_types']);
+  } catch {
+    return [];
+  }
+}
+
+function getPricingMode(listing: Listing): 'group' | 'individual' {
+  try {
+    const cf = listing.custom_fields as Record<string, string> | null;
+    return (cf?.['pricing_mode'] as 'group' | 'individual') || 'group';
+  } catch {
+    return 'group';
+  }
+}
+
 function FreshListingCard({ listing, onClick }: { listing: ListingWithPromotion; onClick: () => void }) {
   const imageUrl = listing.images && listing.images.length > 0
     ? listing.images[0]
     : 'https://images.pexels.com/photos/1002703/pexels-photo-1002703.jpeg';
+
+  const selectedTypes = getSelectedTypes(listing);
+  const pricingMode = getPricingMode(listing);
+  const hasTypes = selectedTypes.length > 0;
 
   function getTimeAgo(dateString: string) {
     const now = new Date();
@@ -200,6 +231,8 @@ function FreshListingCard({ listing, onClick }: { listing: ListingWithPromotion;
   const isFeatured = listing.is_featured;
   const isPinned = listing.is_pinned;
 
+  const cardHeight = hasTypes && selectedTypes.length > 2 ? 'auto' : '148px';
+
   return (
     <div
       onClick={onClick}
@@ -208,7 +241,7 @@ function FreshListingCard({ listing, onClick }: { listing: ListingWithPromotion;
           ? 'bg-gradient-to-br from-amber-50 to-orange-50 border-2 border-amber-300 shadow-md shadow-amber-100'
           : 'bg-white border border-gray-100 shadow-sm hover:shadow-md hover:border-gray-200'
         }`}
-      style={{ height: '148px' }}
+      style={{ minHeight: cardHeight }}
     >
       {isPinned && (
         <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-cyan-400 via-blue-500 to-cyan-400 z-10" />
@@ -250,15 +283,36 @@ function FreshListingCard({ listing, onClick }: { listing: ListingWithPromotion;
             </button>
           </div>
 
-          <div className="flex items-center gap-1.5 my-1.5 flex-wrap">
-            <span className="inline-flex items-center gap-0.5 bg-blue-50 text-blue-700 text-[10px] font-bold px-2 py-0.5 rounded-lg border border-blue-100">
-              {listing.condition}
-            </span>
-            <span className="inline-flex items-center gap-0.5 bg-gray-50 text-gray-600 text-[10px] font-bold px-2 py-0.5 rounded-lg border border-gray-100">
-              <Package className="w-2.5 h-2.5" />
-              {listing.quantity} {listing.unit}
-            </span>
-          </div>
+          {hasTypes ? (
+            <div className="my-1.5 flex flex-wrap gap-1">
+              {selectedTypes.slice(0, 3).map((item) => (
+                <span
+                  key={item.subcategoryId}
+                  className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 text-[10px] font-bold px-2 py-0.5 rounded-lg border border-emerald-100"
+                >
+                  {item.name}
+                  {pricingMode === 'individual' && item.price && (
+                    <span className="text-emerald-600 font-black">{Number(item.price).toLocaleString()}ر</span>
+                  )}
+                </span>
+              ))}
+              {selectedTypes.length > 3 && (
+                <span className="inline-flex items-center bg-gray-100 text-gray-500 text-[10px] font-bold px-2 py-0.5 rounded-lg">
+                  +{selectedTypes.length - 3}
+                </span>
+              )}
+            </div>
+          ) : (
+            <div className="flex items-center gap-1.5 my-1.5 flex-wrap">
+              <span className="inline-flex items-center gap-0.5 bg-blue-50 text-blue-700 text-[10px] font-bold px-2 py-0.5 rounded-lg border border-blue-100">
+                {listing.condition}
+              </span>
+              <span className="inline-flex items-center gap-0.5 bg-gray-50 text-gray-600 text-[10px] font-bold px-2 py-0.5 rounded-lg border border-gray-100">
+                <Package className="w-2.5 h-2.5" />
+                {listing.quantity} {listing.unit}
+              </span>
+            </div>
+          )}
 
           <div className="flex items-end justify-between">
             <div>
@@ -274,6 +328,11 @@ function FreshListingCard({ listing, onClick }: { listing: ListingWithPromotion;
               {listing.price_type === 'negotiable' && (
                 <span className="inline-block text-amber-700 font-black text-[9px] px-1.5 py-0.5 bg-amber-100 rounded-md border border-amber-200 leading-none mt-0.5">
                   قابل للتفاوض
+                </span>
+              )}
+              {hasTypes && pricingMode === 'individual' && (
+                <span className="inline-block text-blue-700 font-black text-[9px] px-1.5 py-0.5 bg-blue-50 rounded-md border border-blue-100 leading-none mt-0.5">
+                  سعر لكل نوع
                 </span>
               )}
             </div>
