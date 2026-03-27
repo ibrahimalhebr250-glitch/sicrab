@@ -70,8 +70,33 @@ export default function AdminSettings() {
 
   async function loadSettings() {
     try {
+      const footerDefaults: Record<string, string> = {
+        footer_about_label: 'من نحن',
+        footer_about_url: '#',
+        footer_how_it_works_label: 'كيف نعمل',
+        footer_how_it_works_url: '#',
+        footer_faq_label: 'الأسئلة الشائعة',
+        footer_faq_url: '#',
+        footer_help_label: 'المساعدة',
+        footer_help_url: '#',
+        footer_contact_label: 'اتصل بنا',
+        footer_contact_url: '#',
+        footer_report_label: 'بلغ عن مخالفة',
+        footer_report_url: '#',
+        footer_usage_policy_label: 'سياسة الاستخدام',
+        footer_usage_policy_url: '#',
+        footer_privacy_label: 'الخصوصية',
+        footer_privacy_url: '#',
+        footer_terms_label: 'الشروط والأحكام',
+        footer_terms_url: '#',
+        footer_email: '',
+        footer_phone: '',
+        footer_whatsapp: '',
+        footer_copyright: '',
+      };
+
       const { data } = await supabase.from('platform_settings').select('setting_key, setting_value');
-      const settingsMap: Record<string, string> = {};
+      const settingsMap: Record<string, string> = { ...footerDefaults };
       data?.forEach((s: PlatformSetting) => {
         let val: string;
         if (typeof s.setting_value === 'string') {

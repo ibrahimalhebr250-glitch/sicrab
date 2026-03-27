@@ -53,16 +53,15 @@ const DEFAULTS: FooterSettings = {
   footer_terms_label: 'الشروط والأحكام',
 };
 
-function isValidPath(url: string): boolean {
-  return url.startsWith('/') || url.startsWith('http://') || url.startsWith('https://') || url === '#';
-}
-
 function FooterLink({ href, className, children }: { href: string; className: string; children: React.ReactNode }) {
-  const safe = isValidPath(href) ? href : '#';
-  if (safe.startsWith('http://') || safe.startsWith('https://')) {
-    return <a href={safe} target="_blank" rel="noopener noreferrer" className={className}>{children}</a>;
+  if (!href || href === '#') {
+    return <span className={className}>{children}</span>;
   }
-  return <Link to={safe} className={className}>{children}</Link>;
+  if (href.startsWith('http://') || href.startsWith('https://')) {
+    return <a href={href} target="_blank" rel="noopener noreferrer" className={className}>{children}</a>;
+  }
+  const path = href.startsWith('/') ? href : `/${href}`;
+  return <Link to={path} className={className}>{children}</Link>;
 }
 
 export default function Footer() {
