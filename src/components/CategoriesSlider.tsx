@@ -86,7 +86,8 @@ export default function CategoriesSlider({ onSelectCategory, selectedCategory }:
             </button>
 
             {categories.map((category, index) => {
-              const Icon = iconMap[category.icon] || Recycle;
+              const isImageUrl = category.icon && (category.icon.startsWith('http') || category.icon.startsWith('/'));
+              const Icon = !isImageUrl ? (iconMap[category.icon] || Recycle) : Recycle;
               const isSelected = selectedCategory === category.id;
               const s = styles[index % styles.length];
 
@@ -98,17 +99,25 @@ export default function CategoriesSlider({ onSelectCategory, selectedCategory }:
                     isSelected ? 'scale-100' : 'hover:scale-105'
                   }`}
                 >
-                  <div className={`w-14 h-14 sm:w-16 sm:h-16 rounded-2xl flex items-center justify-center transition-all duration-200 ${
+                  <div className={`w-14 h-14 sm:w-16 sm:h-16 rounded-2xl flex items-center justify-center overflow-hidden transition-all duration-200 ${
                     isSelected
                       ? `bg-gradient-to-br ${s.active} shadow-lg`
                       : `${s.iconBg} border-2 border-transparent group-hover:border-opacity-40 group-hover:ring-2 ${s.ring}`
                   }`}>
-                    <Icon
-                      className={`w-6 h-6 sm:w-7 sm:h-7 transition-colors ${
-                        isSelected ? 'text-white' : s.iconColor
-                      }`}
-                      strokeWidth={2}
-                    />
+                    {isImageUrl ? (
+                      <img
+                        src={category.icon}
+                        alt={category.name_ar}
+                        className={`w-full h-full object-cover transition-opacity ${isSelected ? 'opacity-90' : 'opacity-80 group-hover:opacity-100'}`}
+                      />
+                    ) : (
+                      <Icon
+                        className={`w-6 h-6 sm:w-7 sm:h-7 transition-colors ${
+                          isSelected ? 'text-white' : s.iconColor
+                        }`}
+                        strokeWidth={2}
+                      />
+                    )}
                   </div>
                   <span className={`text-[11px] sm:text-xs font-semibold text-center leading-tight w-14 sm:w-16 truncate ${
                     isSelected ? s.iconColor : 'text-gray-500 group-hover:' + s.iconColor
