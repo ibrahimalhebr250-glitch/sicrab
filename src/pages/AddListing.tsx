@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ArrowRight, MapPin, FileText, Image as ImageIcon, Check, ChevronLeft, User, Recycle, Box, Factory, Building, Container, Warehouse, Layers, ChevronRight, Sparkles, TrendingUp, Shield } from 'lucide-react';
+import { ArrowRight, MapPin, FileText, Image as ImageIcon, Check, ChevronLeft, User, Recycle, Box, Factory, Building, Container, Warehouse, Layers, Sparkles, TrendingUp, Shield, Tag, Ruler, Package } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -38,6 +38,17 @@ interface CategoryField {
   placeholder: string;
   order_index: number;
 }
+
+interface SubcategoryItem {
+  subcategoryId: string;
+  name: string;
+  price: string;
+  size: string;
+  quantity: string;
+}
+
+const SEED_CATEGORIES_KEYWORDS = ['بذور', 'بذر', 'seed'];
+const isSeedCategory = (name: string) => SEED_CATEGORIES_KEYWORDS.some(k => name.includes(k));
 
 interface AddListingProps {
   onBack?: () => void;
@@ -111,6 +122,8 @@ export default function AddListing({ onBack, onSuccess }: AddListingProps) {
   const [showDraftBanner, setShowDraftBanner] = useState<boolean>(!editId && !!draft);
   const [phoneWarning, setPhoneWarning] = useState<string | null>(null);
   const [commissionAccepted, setCommissionAccepted] = useState(true);
+  const [pricingMode, setPricingMode] = useState<'group' | 'individual'>('group');
+  const [selectedSubcategoryItems, setSelectedSubcategoryItems] = useState<SubcategoryItem[]>([]);
 
   useEffect(() => {
     if (!editId) {
@@ -269,8 +282,17 @@ export default function AddListing({ onBack, onSuccess }: AddListingProps) {
     switch (stepNum) {
       case 1:
         return !!formData.category_id;
-      case 2:
-        return !!formData.title && !!formData.price;
+      case 2: {
+        if (!formData.title) return false;
+        if (subcategories.length > 0 && selectedSubcategoryItems.length === 0) return false;
+        if (subcategories.length > 0) {
+          if (pricingMode === 'group' && !formData.price) return false;
+          if (pricingMode === 'individual' && selectedSubcategoryItems.some(i => !i.price)) return false;
+        } else {
+          if (!formData.price) return false;
+        }
+        return true;
+      }
       case 3:
         return true;
       case 4:
@@ -280,6 +302,28 @@ export default function AddListing({ onBack, onSuccess }: AddListingProps) {
       default:
         return false;
     }
+  }
+
+  function toggleSubcategoryItem(sub: Subcategory) {
+    setSelectedSubcategoryItems(prev => {
+      const exists = prev.find(i => i.subcategoryId === sub.id);
+      if (exists) return prev.filter(i => i.subcategoryId !== sub.id);
+      return [...prev, { subcategoryId: sub.id, name: sub.name_ar, price: '', size: '', quantity: '' }];
+    });
+  }
+
+  function updateSubcategoryItem(id: string, field: keyof SubcategoryItem, value: string) {
+    setSelectedSubcategoryItems(prev =>
+      prev.map(i => i.subcategoryId === id ? { ...i, [field]: value } : i)
+    );
+  }
+
+  function buildCustomFieldsWithSubcategories(): Record<string, string> {
+    if (selectedSubcategoryItems.length === 0) return customFieldsData;
+    const combined: Record<string, string> = { ...customFieldsData };
+    combined['selected_types'] = JSON.stringify(selectedSubcategoryItems);
+    combined['pricing_mode'] = pricingMode;
+    return combined;
   }
 
   async function handleSubmit() {
@@ -314,7 +358,7 @@ export default function AddListing({ onBack, onSuccess }: AddListingProps) {
       contact_name: formData.contact_name || formData.phone,
       contact_phone: formData.phone,
       whatsapp_number: formData.whatsapp_number || formData.phone,
-      custom_fields: customFieldsData,
+      custom_fields: buildCustomFieldsWithSubcategories(),
       is_active: true,
     };
 
@@ -612,7 +656,7 @@ export default function AddListing({ onBack, onSuccess }: AddListingProps) {
 
           {step === 2 && (
             <div className="space-y-5 animate-fade-in">
-              <div className="text-center mb-8">
+              <div className="text-center mb-6">
                 <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-blue-100 to-cyan-100 rounded-2xl mb-4">
                   <FileText className="w-8 h-8 text-blue-600" />
                 </div>
@@ -623,7 +667,7 @@ export default function AddListing({ onBack, onSuccess }: AddListingProps) {
               <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
                 <label className="block mb-2">
                   <span className="text-sm font-bold text-gray-700 flex items-center gap-2">
-                    <span className="w-6 h-6 bg-red-100 text-red-600 rounded-full flex items-center justify-center text-xs">*</span>
+                    <span className="w-6 h-6 bg-red-100 text-red-600 rounded-full flex items-center justify-center text-xs font-bold">*</span>
                     عنوان الإعلان
                   </span>
                 </label>
@@ -648,59 +692,254 @@ export default function AddListing({ onBack, onSuccess }: AddListingProps) {
                   rows={4}
                   className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all outline-none resize-none"
                 />
-                <p className="text-xs text-gray-400 mt-1.5 text-right">ممنوع ذكر أرقام الجوال هنا — أدخله في خانة التواصل بالخطوة الأخيرة</p>
+                <p className="text-xs text-gray-400 mt-1.5 text-right">ممنوع ذكر أرقام الجوال هنا</p>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
-                  <label className="block mb-2">
-                    <span className="text-sm font-bold text-gray-700 flex items-center gap-2">
-                      <span className="w-6 h-6 bg-red-100 text-red-600 rounded-full flex items-center justify-center text-xs">*</span>
-                      السعر
-                    </span>
-                  </label>
-                  <div className="relative">
-                    <input
-                      type="number"
-                      value={formData.price}
-                      onChange={(e) => handleInputChange('price', e.target.value)}
-                      placeholder="0"
-                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-green-500 focus:ring-4 focus:ring-green-100 transition-all outline-none"
-                    />
-                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-medium">ر.س</span>
+              {subcategories.length > 0 && (() => {
+                const catName = categories.find(c => c.id === formData.category_id)?.name_ar || '';
+                const isSeed = isSeedCategory(catName);
+                return (
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-2">
+                      <div className="h-px flex-1 bg-gradient-to-r from-cyan-400 to-blue-500"></div>
+                      <h3 className="text-base font-black text-gray-900 px-1">اختر الأنواع المتاحة</h3>
+                      <div className="h-px flex-1 bg-gradient-to-l from-cyan-400 to-blue-500"></div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2">
+                      {subcategories.map((sub) => {
+                        const isSelected = selectedSubcategoryItems.some(i => i.subcategoryId === sub.id);
+                        return (
+                          <button
+                            key={sub.id}
+                            type="button"
+                            onClick={() => toggleSubcategoryItem(sub)}
+                            className={`relative flex items-center gap-2 p-3 rounded-xl border-2 text-right transition-all duration-200 active:scale-95 ${
+                              isSelected
+                                ? 'border-blue-500 bg-blue-50 shadow-sm'
+                                : 'border-gray-200 bg-white hover:border-blue-300'
+                            }`}
+                          >
+                            <div className={`w-5 h-5 rounded-md border-2 flex-shrink-0 flex items-center justify-center transition-all ${
+                              isSelected ? 'bg-blue-500 border-blue-500' : 'border-gray-300'
+                            }`}>
+                              {isSelected && <Check className="w-3 h-3 text-white" strokeWidth={3} />}
+                            </div>
+                            <span className={`text-sm font-semibold flex-1 leading-tight ${isSelected ? 'text-blue-800' : 'text-gray-700'}`}>
+                              {sub.name_ar}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    {selectedSubcategoryItems.length === 0 && (
+                      <p className="text-xs text-amber-600 font-medium text-center bg-amber-50 rounded-lg py-2 px-3">
+                        يجب اختيار نوع واحد على الأقل للمتابعة
+                      </p>
+                    )}
+
+                    {selectedSubcategoryItems.length > 0 && (
+                      <div className="space-y-4">
+                        <div className="flex items-center gap-2">
+                          <div className="h-px flex-1 bg-gray-200"></div>
+                          <h3 className="text-sm font-black text-gray-700 px-1">طريقة التسعير</h3>
+                          <div className="h-px flex-1 bg-gray-200"></div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-3">
+                          <button
+                            type="button"
+                            onClick={() => setPricingMode('group')}
+                            className={`flex items-center gap-2 p-3.5 rounded-xl border-2 transition-all ${
+                              pricingMode === 'group'
+                                ? 'border-green-500 bg-green-50'
+                                : 'border-gray-200 bg-white hover:border-green-300'
+                            }`}
+                          >
+                            <div className={`w-5 h-5 rounded-full border-2 flex-shrink-0 flex items-center justify-center ${
+                              pricingMode === 'group' ? 'border-green-500' : 'border-gray-300'
+                            }`}>
+                              {pricingMode === 'group' && <div className="w-2.5 h-2.5 bg-green-500 rounded-full" />}
+                            </div>
+                            <div className="text-right flex-1">
+                              <p className={`text-sm font-bold ${pricingMode === 'group' ? 'text-green-800' : 'text-gray-700'}`}>سعر موحد</p>
+                              <p className="text-xs text-gray-400">نفس السعر لجميع الأنواع</p>
+                            </div>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setPricingMode('individual')}
+                            className={`flex items-center gap-2 p-3.5 rounded-xl border-2 transition-all ${
+                              pricingMode === 'individual'
+                                ? 'border-blue-500 bg-blue-50'
+                                : 'border-gray-200 bg-white hover:border-blue-300'
+                            }`}
+                          >
+                            <div className={`w-5 h-5 rounded-full border-2 flex-shrink-0 flex items-center justify-center ${
+                              pricingMode === 'individual' ? 'border-blue-500' : 'border-gray-300'
+                            }`}>
+                              {pricingMode === 'individual' && <div className="w-2.5 h-2.5 bg-blue-500 rounded-full" />}
+                            </div>
+                            <div className="text-right flex-1">
+                              <p className={`text-sm font-bold ${pricingMode === 'individual' ? 'text-blue-800' : 'text-gray-700'}`}>سعر لكل نوع</p>
+                              <p className="text-xs text-gray-400">سعر مختلف لكل نوع</p>
+                            </div>
+                          </button>
+                        </div>
+
+                        {pricingMode === 'group' && (
+                          <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+                            <label className="block mb-2">
+                              <span className="text-sm font-bold text-gray-700 flex items-center gap-2">
+                                <Tag className="w-4 h-4 text-green-600" />
+                                <span className="w-5 h-5 bg-red-100 text-red-600 rounded-full flex items-center justify-center text-xs font-bold">*</span>
+                                السعر الموحد
+                              </span>
+                            </label>
+                            <div className="flex items-center gap-3">
+                              <div className="relative flex-1">
+                                <input
+                                  type="number"
+                                  value={formData.price}
+                                  onChange={(e) => handleInputChange('price', e.target.value)}
+                                  placeholder="0"
+                                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-green-500 focus:ring-4 focus:ring-green-100 transition-all outline-none"
+                                />
+                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 font-medium text-sm">ر.س</span>
+                              </div>
+                              <select
+                                value={formData.price_type}
+                                onChange={(e) => handleInputChange('price_type', e.target.value)}
+                                className="px-3 py-3 border-2 border-gray-200 rounded-xl focus:border-green-500 outline-none bg-white text-sm font-medium text-gray-700"
+                              >
+                                <option value="fixed">ثابت</option>
+                                <option value="negotiable">قابل للتفاوض</option>
+                                <option value="per_unit">للوحدة</option>
+                              </select>
+                            </div>
+                          </div>
+                        )}
+
+                        <div className="space-y-3">
+                          {selectedSubcategoryItems.map((item) => (
+                            <div key={item.subcategoryId} className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+                              <div className="flex items-center gap-2 mb-3">
+                                <div className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0"></div>
+                                <h4 className="font-bold text-gray-900 text-sm">{item.name}</h4>
+                              </div>
+
+                              <div className="space-y-3">
+                                {pricingMode === 'individual' && (
+                                  <div>
+                                    <label className="text-xs font-bold text-gray-600 mb-1 block flex items-center gap-1">
+                                      <Tag className="w-3 h-3" />
+                                      <span className="text-red-500">*</span> السعر
+                                    </label>
+                                    <div className="relative">
+                                      <input
+                                        type="number"
+                                        value={item.price}
+                                        onChange={(e) => updateSubcategoryItem(item.subcategoryId, 'price', e.target.value)}
+                                        placeholder="0"
+                                        className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-xl focus:border-blue-500 outline-none text-sm"
+                                      />
+                                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs">ر.س</span>
+                                    </div>
+                                  </div>
+                                )}
+
+                                {isSeed ? (
+                                  <div>
+                                    <label className="text-xs font-bold text-gray-600 mb-1 block flex items-center gap-1">
+                                      <Package className="w-3 h-3" />
+                                      الكمية (مثال: 500 غرام، كيس 1 كيلو)
+                                    </label>
+                                    <input
+                                      type="text"
+                                      value={item.quantity}
+                                      onChange={(e) => updateSubcategoryItem(item.subcategoryId, 'quantity', e.target.value)}
+                                      placeholder="مثال: 1 كيس، 500 غرام، 100 حبة..."
+                                      className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-xl focus:border-blue-500 outline-none text-sm"
+                                    />
+                                  </div>
+                                ) : (
+                                  <div>
+                                    <label className="text-xs font-bold text-gray-600 mb-1 block flex items-center gap-1">
+                                      <Ruler className="w-3 h-3" />
+                                      الحجم / المواصفات (مثال: 2 متر، ارتفاع 150 سم)
+                                    </label>
+                                    <input
+                                      type="text"
+                                      value={item.size}
+                                      onChange={(e) => updateSubcategoryItem(item.subcategoryId, 'size', e.target.value)}
+                                      placeholder="مثال: ارتفاع 2 متر، عمر 3 سنوات..."
+                                      className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-xl focus:border-blue-500 outline-none text-sm"
+                                    />
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
+
+              {subcategories.length === 0 && (
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+                    <label className="block mb-2">
+                      <span className="text-sm font-bold text-gray-700 flex items-center gap-2">
+                        <span className="w-6 h-6 bg-red-100 text-red-600 rounded-full flex items-center justify-center text-xs font-bold">*</span>
+                        السعر
+                      </span>
+                    </label>
+                    <div className="relative">
+                      <input
+                        type="number"
+                        value={formData.price}
+                        onChange={(e) => handleInputChange('price', e.target.value)}
+                        placeholder="0"
+                        className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-green-500 focus:ring-4 focus:ring-green-100 transition-all outline-none"
+                      />
+                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-medium">ر.س</span>
+                    </div>
+                  </div>
+
+                  <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+                    <label className="block mb-2">
+                      <span className="text-sm font-bold text-gray-700">نوع السعر</span>
+                    </label>
+                    <select
+                      value={formData.price_type}
+                      onChange={(e) => handleInputChange('price_type', e.target.value)}
+                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-green-500 focus:ring-4 focus:ring-green-100 transition-all outline-none bg-white"
+                    >
+                      <option value="fixed">ثابت</option>
+                      <option value="negotiable">قابل للتفاوض</option>
+                      <option value="per_unit">للوحدة</option>
+                    </select>
                   </div>
                 </div>
+              )}
 
-                <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
-                  <label className="block mb-2">
-                    <span className="text-sm font-bold text-gray-700">نوع السعر</span>
-                  </label>
-                  <select
-                    value={formData.price_type}
-                    onChange={(e) => handleInputChange('price_type', e.target.value)}
-                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-green-500 focus:ring-4 focus:ring-green-100 transition-all outline-none bg-white"
-                  >
-                    <option value="fixed">ثابت</option>
-                    <option value="negotiable">قابل للتفاوض</option>
-                    <option value="per_unit">للوحدة</option>
-                  </select>
-                </div>
-              </div>
-
-              {categoryFields.length > 0 && (
-                <div className="space-y-5">
-                  <div className="flex items-center gap-2 mt-6">
-                    <div className="h-1 flex-1 bg-gradient-to-r from-cyan-500 to-blue-500 rounded-full"></div>
-                    <h3 className="text-lg font-bold text-gray-900">مواصفات المنتج</h3>
-                    <div className="h-1 flex-1 bg-gradient-to-l from-cyan-500 to-blue-500 rounded-full"></div>
+              {categoryFields.filter(f => !f.use_subcategories).length > 0 && (
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2 mt-2">
+                    <div className="h-px flex-1 bg-gradient-to-r from-cyan-400 to-blue-500"></div>
+                    <h3 className="text-base font-black text-gray-900 px-1">مواصفات إضافية</h3>
+                    <div className="h-px flex-1 bg-gradient-to-l from-cyan-400 to-blue-500"></div>
                   </div>
 
-                  {categoryFields.map((field) => (
-                    <div key={field.id} className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 animate-fade-in">
+                  {categoryFields.filter(f => !f.use_subcategories).map((field) => (
+                    <div key={field.id} className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
                       <label className="block mb-2">
                         <span className="text-sm font-bold text-gray-700 flex items-center gap-2">
                           {field.is_required && (
-                            <span className="w-6 h-6 bg-red-100 text-red-600 rounded-full flex items-center justify-center text-xs">*</span>
+                            <span className="w-6 h-6 bg-red-100 text-red-600 rounded-full flex items-center justify-center text-xs font-bold">*</span>
                           )}
                           {field.field_name}
                         </span>
@@ -714,19 +953,9 @@ export default function AddListing({ onBack, onSuccess }: AddListingProps) {
                           required={field.is_required}
                         >
                           <option value="">{field.placeholder}</option>
-                          {field.use_subcategories ? (
-                            subcategories.map((sub) => (
-                              <option key={sub.id} value={sub.name_ar}>
-                                {sub.name_ar}
-                              </option>
-                            ))
-                          ) : (
-                            field.field_options.map((option) => (
-                              <option key={option} value={option}>
-                                {option}
-                              </option>
-                            ))
-                          )}
+                          {field.field_options.map((option) => (
+                            <option key={option} value={option}>{option}</option>
+                          ))}
                         </select>
                       )}
 
@@ -764,20 +993,20 @@ export default function AddListing({ onBack, onSuccess }: AddListingProps) {
                       )}
                     </div>
                   ))}
-
-                  <div className="bg-gradient-to-br from-cyan-50 to-blue-50 rounded-2xl p-4 border-2 border-cyan-100">
-                    <div className="flex items-start gap-3">
-                      <div className="w-8 h-8 bg-cyan-500 rounded-full flex items-center justify-center flex-shrink-0">
-                        <Check className="w-4 h-4 text-white" />
-                      </div>
-                      <div>
-                        <h4 className="font-bold text-gray-900 mb-1 text-sm">وصف دقيق = مبيعات أسرع</h4>
-                        <p className="text-xs text-gray-600">هذه التفاصيل تساعد المشترين على اتخاذ قرار الشراء بسرعة</p>
-                      </div>
-                    </div>
-                  </div>
                 </div>
               )}
+
+              <div className="bg-gradient-to-br from-cyan-50 to-blue-50 rounded-2xl p-4 border border-cyan-100">
+                <div className="flex items-start gap-3">
+                  <div className="w-8 h-8 bg-cyan-500 rounded-full flex items-center justify-center flex-shrink-0">
+                    <Check className="w-4 h-4 text-white" />
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-gray-900 mb-1 text-sm">وصف دقيق = مبيعات أسرع</h4>
+                    <p className="text-xs text-gray-600">التفاصيل تساعد المشترين على اتخاذ قرار الشراء بسرعة</p>
+                  </div>
+                </div>
+              </div>
             </div>
           )}
 
