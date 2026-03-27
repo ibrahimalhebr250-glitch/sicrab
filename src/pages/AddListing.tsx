@@ -45,6 +45,7 @@ interface PriceTier {
   height: string;
   price: string;
   unit: string;
+  count: string;
 }
 
 interface SubcategoryItem {
@@ -346,6 +347,7 @@ export default function AddListing({ onBack, onSuccess }: AddListingProps) {
           height: '',
           price: '',
           unit: 'للشجرة',
+          count: '',
         }]
       } : i)
     );
@@ -375,7 +377,7 @@ export default function AddListing({ onBack, onSuccess }: AddListingProps) {
         ...i,
         useTiers: !i.useTiers,
         priceTiers: !i.useTiers && i.priceTiers.length === 0
-          ? [{ id: crypto.randomUUID(), trunkSize: '', height: '', price: '', unit: 'للشجرة' }]
+          ? [{ id: crypto.randomUUID(), trunkSize: '', height: '', price: '', unit: 'للشجرة', count: '' }]
           : i.priceTiers,
       } : i)
     );
@@ -989,9 +991,12 @@ export default function AddListing({ onBack, onSuccess }: AddListingProps) {
                                         </p>
 
                                         {item.priceTiers.map((tier, idx) => (
-                                          <div key={tier.id} className="bg-gray-50 rounded-xl p-3 border border-gray-200 space-y-2">
-                                            <div className="flex items-center justify-between mb-1">
-                                              <span className="text-xs font-bold text-gray-500">شريحة {idx + 1}</span>
+                                          <div key={tier.id} className="bg-gray-50 rounded-xl border border-gray-200 overflow-hidden">
+                                            <div className="flex items-center justify-between px-3 py-2 bg-blue-50 border-b border-blue-100">
+                                              <div className="flex items-center gap-2">
+                                                <span className="w-5 h-5 bg-blue-600 text-white rounded-full flex items-center justify-center text-xs font-bold">{idx + 1}</span>
+                                                <span className="text-xs font-bold text-blue-800">{item.name}</span>
+                                              </div>
                                               {item.priceTiers.length > 1 && (
                                                 <button
                                                   type="button"
@@ -1003,55 +1008,78 @@ export default function AddListing({ onBack, onSuccess }: AddListingProps) {
                                               )}
                                             </div>
 
-                                            <div className="grid grid-cols-2 gap-2">
-                                              <div>
-                                                <label className="text-xs text-gray-500 mb-1 block">قطر الساق (سم)</label>
-                                                <input
-                                                  type="text"
-                                                  value={tier.trunkSize}
-                                                  onChange={(e) => updatePriceTier(item.subcategoryId, tier.id, 'trunkSize', e.target.value)}
-                                                  placeholder="مثال: 5-10"
-                                                  className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:border-blue-500 outline-none text-xs"
-                                                />
+                                            <div className="p-3 space-y-2">
+                                              <div className="grid grid-cols-2 gap-2">
+                                                <div>
+                                                  <label className="text-xs text-gray-500 mb-1 block">قطر الساق (سم)</label>
+                                                  <input
+                                                    type="text"
+                                                    value={tier.trunkSize}
+                                                    onChange={(e) => updatePriceTier(item.subcategoryId, tier.id, 'trunkSize', e.target.value)}
+                                                    placeholder="مثال: 5-10"
+                                                    className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:border-blue-500 outline-none text-xs"
+                                                  />
+                                                </div>
+                                                <div>
+                                                  <label className="text-xs text-gray-500 mb-1 block">الارتفاع (م)</label>
+                                                  <input
+                                                    type="text"
+                                                    value={tier.height}
+                                                    onChange={(e) => updatePriceTier(item.subcategoryId, tier.id, 'height', e.target.value)}
+                                                    placeholder="مثال: 1-2"
+                                                    className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:border-blue-500 outline-none text-xs"
+                                                  />
+                                                </div>
                                               </div>
-                                              <div>
-                                                <label className="text-xs text-gray-500 mb-1 block">الارتفاع (م)</label>
-                                                <input
-                                                  type="text"
-                                                  value={tier.height}
-                                                  onChange={(e) => updatePriceTier(item.subcategoryId, tier.id, 'height', e.target.value)}
-                                                  placeholder="مثال: 1-2"
-                                                  className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:border-blue-500 outline-none text-xs"
-                                                />
-                                              </div>
-                                            </div>
 
-                                            <div className="flex gap-2">
-                                              <div className="relative flex-1">
-                                                <input
-                                                  type="number"
-                                                  value={tier.price}
-                                                  onChange={(e) => updatePriceTier(item.subcategoryId, tier.id, 'price', e.target.value)}
-                                                  placeholder="السعر"
-                                                  className="w-full px-3 py-2 pl-10 border-2 border-gray-200 rounded-lg focus:border-blue-500 outline-none text-xs"
-                                                />
-                                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs">ر.س</span>
+                                              <div className="grid grid-cols-2 gap-2">
+                                                <div>
+                                                  <label className="text-xs text-gray-500 mb-1 block">العدد المتاح</label>
+                                                  <input
+                                                    type="number"
+                                                    value={tier.count}
+                                                    onChange={(e) => updatePriceTier(item.subcategoryId, tier.id, 'count', e.target.value)}
+                                                    placeholder="مثال: 20"
+                                                    className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:border-blue-500 outline-none text-xs"
+                                                  />
+                                                </div>
+                                                <div>
+                                                  <label className="text-xs text-gray-500 mb-1 block">
+                                                    السعر <span className="text-red-500">*</span>
+                                                  </label>
+                                                  <div className="flex gap-1">
+                                                    <div className="relative flex-1">
+                                                      <input
+                                                        type="number"
+                                                        value={tier.price}
+                                                        onChange={(e) => updatePriceTier(item.subcategoryId, tier.id, 'price', e.target.value)}
+                                                        placeholder="0"
+                                                        className="w-full px-3 py-2 pl-8 border-2 border-gray-200 rounded-lg focus:border-blue-500 outline-none text-xs"
+                                                      />
+                                                      <span className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400 text-xs">ر.س</span>
+                                                    </div>
+                                                  </div>
+                                                </div>
                                               </div>
-                                              <select
-                                                value={tier.unit}
-                                                onChange={(e) => updatePriceTier(item.subcategoryId, tier.id, 'unit', e.target.value)}
-                                                className="px-2 py-2 border-2 border-gray-200 rounded-lg focus:border-blue-500 outline-none bg-white text-xs font-medium text-gray-700"
-                                              >
-                                                <option value="للشجرة">للشجرة</option>
-                                                <option value="للمتر">للمتر</option>
-                                                <option value="للكيلو">للكيلو</option>
-                                                <option value="للقطعة">للقطعة</option>
-                                              </select>
-                                            </div>
 
-                                            {!tier.price && (
-                                              <p className="text-xs text-red-500">السعر مطلوب</p>
-                                            )}
+                                              <div>
+                                                <label className="text-xs text-gray-500 mb-1 block">وحدة السعر</label>
+                                                <select
+                                                  value={tier.unit}
+                                                  onChange={(e) => updatePriceTier(item.subcategoryId, tier.id, 'unit', e.target.value)}
+                                                  className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:border-blue-500 outline-none bg-white text-xs font-medium text-gray-700"
+                                                >
+                                                  <option value="للشجرة">للشجرة</option>
+                                                  <option value="للمتر">للمتر</option>
+                                                  <option value="للكيلو">للكيلو</option>
+                                                  <option value="للقطعة">للقطعة</option>
+                                                </select>
+                                              </div>
+
+                                              {!tier.price && (
+                                                <p className="text-xs text-red-500">السعر مطلوب</p>
+                                              )}
+                                            </div>
                                           </div>
                                         ))}
 
