@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { Phone, Lock, ArrowRight, Eye, EyeOff, User, ChevronLeft } from 'lucide-react';
 
@@ -17,8 +17,10 @@ function validateSaudiPhone(phone: string): boolean {
 
 export default function Login() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { signIn, signUp } = useAuth();
   const [mode, setMode] = useState<Mode>('login');
+  const locationState = location.state as { from?: string; pendingListing?: boolean } | null;
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -54,13 +56,15 @@ export default function Login() {
 
     setLoading(true);
 
+    const redirectTo = locationState?.from || '/';
+
     if (mode === 'login') {
       const { error } = await signIn(phone, password);
       if (error) {
         setError('رقم الجوال أو كلمة المرور غير صحيحة');
         setLoading(false);
       } else {
-        navigate('/');
+        navigate(redirectTo, { state: { pendingListing: locationState?.pendingListing }, replace: true });
       }
     } else {
       const { error } = await signUp(phone, password, fullName.trim());
@@ -72,7 +76,7 @@ export default function Login() {
         }
         setLoading(false);
       } else {
-        navigate('/');
+        navigate(redirectTo, { state: { pendingListing: locationState?.pendingListing }, replace: true });
       }
     }
   };

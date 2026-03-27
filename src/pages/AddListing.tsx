@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { ArrowRight, MapPin, FileText, Image as ImageIcon, Check, ChevronLeft, User, Recycle, Box, Factory, Building, Container, Warehouse, Layers, Sparkles, TrendingUp, Shield, Tag, Ruler, Package, Plus, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import PhoneVerification from '../components/PhoneVerification';
 import ImageUpload from '../components/ImageUpload';
 
@@ -101,7 +101,9 @@ function clearDraft() {
 export default function AddListing({ onBack, onSuccess }: AddListingProps) {
   const { user, profile } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const { id: editId } = useParams<{ id: string }>();
+  const locationState = location.state as { pendingListing?: boolean } | null;
   const [isEditMode, setIsEditMode] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
   const [subcategories, setSubcategories] = useState<Subcategory[]>([]);
@@ -159,6 +161,12 @@ export default function AddListing({ onBack, onSuccess }: AddListingProps) {
       loadListingData(editId);
     }
   }, [editId]);
+
+  useEffect(() => {
+    if (!user || !locationState?.pendingListing || editId) return;
+    navigate(location.pathname, { replace: true, state: {} });
+    setTimeout(() => handleSubmit(), 300);
+  }, [user, locationState?.pendingListing]);
 
   async function loadListingData(listingId: string) {
     try {
@@ -1582,7 +1590,7 @@ export default function AddListing({ onBack, onSuccess }: AddListingProps) {
 
               <div className="space-y-3">
                 <button
-                  onClick={() => navigate('/login', { state: { from: '/add-listing', formData, imageUrls } })}
+                  onClick={() => navigate('/login', { state: { from: '/add-listing', pendingListing: true } })}
                   className="w-full py-4 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-xl font-bold text-lg hover:from-amber-600 hover:to-orange-600 active:scale-98 transition-all shadow-lg flex items-center justify-center gap-2"
                 >
                   <User className="w-5 h-5" />
