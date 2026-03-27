@@ -125,13 +125,14 @@ export default function AdminSettings() {
   async function handleSaveSettings() {
     setSaving(true);
     try {
-      for (const [key, value] of Object.entries(settings)) {
-        const jsonValue = key === 'commission_rate' ? parseInt(value) : `"${value}"`;
-        await supabase
-          .from('platform_settings')
-          .update({ setting_value: jsonValue, updated_at: new Date().toISOString() })
-          .eq('setting_key', key);
-      }
+      const upsertRows = Object.entries(settings).map(([key, value]) => ({
+        setting_key: key,
+        setting_value: key === 'commission_rate' ? parseInt(value) : `"${value}"`,
+        updated_at: new Date().toISOString(),
+      }));
+      await supabase
+        .from('platform_settings')
+        .upsert(upsertRows, { onConflict: 'setting_key' });
       alert('تم حفظ الإعدادات بنجاح');
     } catch (e) {
       alert('حدث خطأ أثناء حفظ الإعدادات');
