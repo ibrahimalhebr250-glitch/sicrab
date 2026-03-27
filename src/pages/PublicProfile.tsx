@@ -27,8 +27,11 @@ export default function PublicProfile() {
   useEffect(() => {
     loadProfile();
     loadListings();
-    checkIfFollowing();
   }, [userId]);
+
+  useEffect(() => {
+    checkIfFollowing();
+  }, [userId, user]);
 
   async function loadProfile() {
     const { data, error } = await supabase
@@ -86,20 +89,20 @@ export default function PublicProfile() {
     }
 
     if (isFollowing) {
-      await supabase
+      const { error } = await supabase
         .from('user_follows')
         .delete()
         .eq('follower_id', user.id)
         .eq('following_id', userId);
 
-      setIsFollowing(false);
+      if (!error) setIsFollowing(false);
     } else {
-      await supabase.from('user_follows').insert({
+      const { error } = await supabase.from('user_follows').insert({
         follower_id: user.id,
         following_id: userId
       });
 
-      setIsFollowing(true);
+      if (!error) setIsFollowing(true);
     }
   }
 
