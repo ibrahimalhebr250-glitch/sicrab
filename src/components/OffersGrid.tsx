@@ -292,7 +292,10 @@ function FreshListingCard({ listing, onClick }: { listing: ListingWithPromotion;
                 >
                   {item.name}
                   {pricingMode === 'individual' && item.price && (
-                    <span className="text-emerald-600 font-black">{Number(item.price).toLocaleString()}ر</span>
+                    <span className="text-emerald-600 font-black">
+                      {Number(item.price).toLocaleString()}ر
+                      {item.quantity && <span className="font-medium text-emerald-500">/{item.quantity.replace('لل', '')}</span>}
+                    </span>
                   )}
                 </span>
               ))}

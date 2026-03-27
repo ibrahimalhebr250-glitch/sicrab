@@ -337,8 +337,12 @@ ${listingUrl}`;
                         )}
                       </div>
                       {pricingMode === 'individual' && item.price && (
-                        <span className="font-black text-emerald-700 text-base flex-shrink-0 mr-2">
-                          {Number(item.price).toLocaleString()} <span className="text-xs font-bold text-gray-500">ريال</span>
+                        <span className="font-black text-emerald-700 text-base flex-shrink-0 mr-2 flex items-baseline gap-1">
+                          {Number(item.price).toLocaleString()}
+                          <span className="text-xs font-bold text-gray-500">ريال</span>
+                          {item.quantity && (
+                            <span className="text-xs font-semibold text-gray-400">{item.quantity}</span>
+                          )}
                         </span>
                       )}
                     </div>
