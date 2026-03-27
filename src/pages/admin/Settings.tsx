@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
-import { Settings as SettingsIcon, Save, Building2, CreditCard, Eye, EyeOff, CheckCircle, XCircle, Clock, AlertCircle, RefreshCw, Check, X } from 'lucide-react';
+import { Settings as SettingsIcon, Save, Building2, CreditCard, Eye, EyeOff, CheckCircle, XCircle, Clock, AlertCircle, RefreshCw, Check, X, LayoutGrid as Layout, Link, Mail, Phone, MessageCircle } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 
-type SettingsTab = 'general' | 'bank' | 'transfers';
+type SettingsTab = 'general' | 'footer' | 'bank' | 'transfers';
 
 interface PlatformSetting {
   setting_key: string;
@@ -215,9 +215,10 @@ export default function AdminSettings() {
           </div>
         </div>
 
-        <div className="flex gap-2 mb-6 bg-white/5 rounded-2xl p-1.5">
+        <div className="flex flex-wrap gap-2 mb-6 bg-white/5 rounded-2xl p-1.5">
           {([
             { id: 'general' as SettingsTab, label: 'الإعدادات العامة', icon: <SettingsIcon className="w-4 h-4" /> },
+            { id: 'footer' as SettingsTab, label: 'الفوتر', icon: <Layout className="w-4 h-4" /> },
             { id: 'bank' as SettingsTab, label: 'الحساب البنكي', icon: <Building2 className="w-4 h-4" /> },
             { id: 'transfers' as SettingsTab, label: 'التحويلات البنكية', icon: <CreditCard className="w-4 h-4" />, badge: pendingCount > 0 ? pendingCount : null },
           ]).map(t => (
@@ -311,6 +312,189 @@ export default function AdminSettings() {
             >
               <Save className="w-5 h-5" />
               {saving ? 'جاري الحفظ...' : 'حفظ الإعدادات'}
+            </button>
+          </div>
+        )}
+
+        {tab === 'footer' && (
+          <div className="space-y-5">
+            <div className="bg-white rounded-2xl p-6 shadow-xl space-y-6">
+              <div className="flex items-center gap-3 pb-4 border-b border-gray-100">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center">
+                  <Layout className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <h3 className="font-black text-gray-900">قسم المنصة</h3>
+                  <p className="text-gray-500 text-xs">روابط من نحن، كيف نعمل، الأسئلة الشائعة</p>
+                </div>
+              </div>
+              <div className="grid grid-cols-1 gap-4">
+                {[
+                  { key: 'footer_about_url', label: 'رابط "من نحن"', placeholder: '/about' },
+                  { key: 'footer_how_it_works_url', label: 'رابط "كيف نعمل"', placeholder: '/how-it-works' },
+                  { key: 'footer_faq_url', label: 'رابط "الأسئلة الشائعة"', placeholder: '/faq' },
+                ].map(({ key, label, placeholder }) => (
+                  <div key={key}>
+                    <label className="block text-sm font-bold text-gray-700 mb-1.5">{label}</label>
+                    <div className="relative">
+                      <Link className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                      <input
+                        type="text"
+                        value={settings[key] || ''}
+                        onChange={e => setSettings({ ...settings, [key]: e.target.value })}
+                        placeholder={placeholder}
+                        className="w-full pr-10 pl-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-amber-500 text-left"
+                        dir="ltr"
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="bg-white rounded-2xl p-6 shadow-xl space-y-6">
+              <div className="flex items-center gap-3 pb-4 border-b border-gray-100">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center">
+                  <AlertCircle className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <h3 className="font-black text-gray-900">قسم الدعم</h3>
+                  <p className="text-gray-500 text-xs">روابط المساعدة، اتصل بنا، بلغ عن مخالفة</p>
+                </div>
+              </div>
+              <div className="grid grid-cols-1 gap-4">
+                {[
+                  { key: 'footer_help_url', label: 'رابط "المساعدة"', placeholder: '/help' },
+                  { key: 'footer_contact_url', label: 'رابط "اتصل بنا"', placeholder: '/contact' },
+                  { key: 'footer_report_url', label: 'رابط "بلغ عن مخالفة"', placeholder: '/report' },
+                ].map(({ key, label, placeholder }) => (
+                  <div key={key}>
+                    <label className="block text-sm font-bold text-gray-700 mb-1.5">{label}</label>
+                    <div className="relative">
+                      <Link className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                      <input
+                        type="text"
+                        value={settings[key] || ''}
+                        onChange={e => setSettings({ ...settings, [key]: e.target.value })}
+                        placeholder={placeholder}
+                        className="w-full pr-10 pl-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-blue-500 text-left"
+                        dir="ltr"
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="bg-white rounded-2xl p-6 shadow-xl space-y-6">
+              <div className="flex items-center gap-3 pb-4 border-b border-gray-100">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-green-500 to-emerald-500 flex items-center justify-center">
+                  <Save className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <h3 className="font-black text-gray-900">قسم السياسات</h3>
+                  <p className="text-gray-500 text-xs">روابط سياسة الاستخدام، الخصوصية، الشروط</p>
+                </div>
+              </div>
+              <div className="grid grid-cols-1 gap-4">
+                {[
+                  { key: 'footer_usage_policy_url', label: 'رابط "سياسة الاستخدام"', placeholder: '/usage-policy' },
+                  { key: 'footer_privacy_url', label: 'رابط "الخصوصية"', placeholder: '/privacy' },
+                  { key: 'footer_terms_url', label: 'رابط "الشروط والأحكام"', placeholder: '/terms' },
+                ].map(({ key, label, placeholder }) => (
+                  <div key={key}>
+                    <label className="block text-sm font-bold text-gray-700 mb-1.5">{label}</label>
+                    <div className="relative">
+                      <Link className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                      <input
+                        type="text"
+                        value={settings[key] || ''}
+                        onChange={e => setSettings({ ...settings, [key]: e.target.value })}
+                        placeholder={placeholder}
+                        className="w-full pr-10 pl-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-green-500 text-left"
+                        dir="ltr"
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="bg-white rounded-2xl p-6 shadow-xl space-y-6">
+              <div className="flex items-center gap-3 pb-4 border-b border-gray-100">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-rose-500 to-pink-500 flex items-center justify-center">
+                  <Mail className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <h3 className="font-black text-gray-900">بيانات التواصل</h3>
+                  <p className="text-gray-500 text-xs">الإيميل، رقم الجوال، واتساب، ونص حقوق الملكية</p>
+                </div>
+              </div>
+              <div className="grid grid-cols-1 gap-4">
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-1.5">البريد الإلكتروني</label>
+                  <div className="relative">
+                    <Mail className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                    <input
+                      type="email"
+                      value={settings.footer_email || ''}
+                      onChange={e => setSettings({ ...settings, footer_email: e.target.value })}
+                      placeholder="info@example.com"
+                      className="w-full pr-10 pl-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-rose-500 text-left"
+                      dir="ltr"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-1.5">رقم الجوال</label>
+                  <div className="relative">
+                    <Phone className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                    <input
+                      type="text"
+                      value={settings.footer_phone || ''}
+                      onChange={e => setSettings({ ...settings, footer_phone: e.target.value })}
+                      placeholder="966501234567"
+                      className="w-full pr-10 pl-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-rose-500 text-left"
+                      dir="ltr"
+                    />
+                  </div>
+                  <p className="text-xs text-gray-400 mt-1">أدخل الرقم بالصيغة الدولية بدون علامة + (مثال: 966501234567)</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-1.5">رقم واتساب التواصل</label>
+                  <div className="relative">
+                    <MessageCircle className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                    <input
+                      type="text"
+                      value={settings.footer_whatsapp || ''}
+                      onChange={e => setSettings({ ...settings, footer_whatsapp: e.target.value })}
+                      placeholder="966501234567"
+                      className="w-full pr-10 pl-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-rose-500 text-left"
+                      dir="ltr"
+                    />
+                  </div>
+                  <p className="text-xs text-gray-400 mt-1">أدخل الرقم بالصيغة الدولية بدون علامة + (مثال: 966501234567)</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-1.5">نص حقوق الملكية</label>
+                  <input
+                    type="text"
+                    value={settings.footer_copyright || ''}
+                    onChange={e => setSettings({ ...settings, footer_copyright: e.target.value })}
+                    placeholder="© 2024 اسم المنصة - جميع الحقوق محفوظة"
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-rose-500 text-right"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <button
+              onClick={handleSaveSettings}
+              disabled={saving}
+              className="w-full flex items-center justify-center gap-2 py-4 bg-gradient-to-r from-slate-700 to-slate-800 text-white rounded-xl font-bold hover:shadow-lg transition-all disabled:opacity-50"
+            >
+              <Save className="w-5 h-5" />
+              {saving ? 'جاري الحفظ...' : 'حفظ إعدادات الفوتر'}
             </button>
           </div>
         )}

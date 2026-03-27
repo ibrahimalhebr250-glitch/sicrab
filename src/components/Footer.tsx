@@ -1,8 +1,61 @@
 import { Mail, Phone, MessageCircle, MapPin, Info, HelpCircle, Shield, Send } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { supabase } from '../lib/supabase';
+
+interface FooterSettings {
+  footer_about_url: string;
+  footer_how_it_works_url: string;
+  footer_faq_url: string;
+  footer_help_url: string;
+  footer_contact_url: string;
+  footer_report_url: string;
+  footer_usage_policy_url: string;
+  footer_privacy_url: string;
+  footer_terms_url: string;
+  footer_email: string;
+  footer_phone: string;
+  footer_whatsapp: string;
+  footer_copyright: string;
+}
+
+const DEFAULTS: FooterSettings = {
+  footer_about_url: '#',
+  footer_how_it_works_url: '#',
+  footer_faq_url: '#',
+  footer_help_url: '#',
+  footer_contact_url: '#',
+  footer_report_url: '#',
+  footer_usage_policy_url: '#',
+  footer_privacy_url: '#',
+  footer_terms_url: '#',
+  footer_email: 'info@souqalmawad.com',
+  footer_phone: '966501234567',
+  footer_whatsapp: '966501234567',
+  footer_copyright: '© 2024 سوق المشاتل - جميع الحقوق محفوظة',
+};
 
 export default function Footer() {
   const [expandedSection, setExpandedSection] = useState<string | null>(null);
+  const [fs, setFs] = useState<FooterSettings>(DEFAULTS);
+
+  useEffect(() => {
+    async function loadFooterSettings() {
+      const { data } = await supabase
+        .from('platform_settings')
+        .select('setting_key, setting_value')
+        .in('setting_key', Object.keys(DEFAULTS));
+      if (!data) return;
+      const map: Partial<FooterSettings> = {};
+      data.forEach((row: { setting_key: string; setting_value: any }) => {
+        const val = typeof row.setting_value === 'string'
+          ? row.setting_value.replace(/^"|"$/g, '')
+          : String(row.setting_value);
+        (map as any)[row.setting_key] = val;
+      });
+      setFs({ ...DEFAULTS, ...map });
+    }
+    loadFooterSettings();
+  }, []);
 
   const sections = [
     {
@@ -11,10 +64,10 @@ export default function Footer() {
       title: 'المنصة',
       color: 'amber',
       links: [
-        { label: 'من نحن', href: '#' },
-        { label: 'كيف نعمل', href: '#' },
-        { label: 'الأسئلة الشائعة', href: '#' }
-      ]
+        { label: 'من نحن', href: fs.footer_about_url },
+        { label: 'كيف نعمل', href: fs.footer_how_it_works_url },
+        { label: 'الأسئلة الشائعة', href: fs.footer_faq_url },
+      ],
     },
     {
       id: 'support',
@@ -22,10 +75,10 @@ export default function Footer() {
       title: 'الدعم',
       color: 'blue',
       links: [
-        { label: 'المساعدة', href: '#' },
-        { label: 'اتصل بنا', href: '#' },
-        { label: 'بلغ عن مخالفة', href: '#' }
-      ]
+        { label: 'المساعدة', href: fs.footer_help_url },
+        { label: 'اتصل بنا', href: fs.footer_contact_url },
+        { label: 'بلغ عن مخالفة', href: fs.footer_report_url },
+      ],
     },
     {
       id: 'policies',
@@ -33,19 +86,24 @@ export default function Footer() {
       title: 'السياسات',
       color: 'green',
       links: [
-        { label: 'سياسة الاستخدام', href: '#' },
-        { label: 'الخصوصية', href: '#' },
-        { label: 'الشروط', href: '#' }
-      ]
-    }
+        { label: 'سياسة الاستخدام', href: fs.footer_usage_policy_url },
+        { label: 'الخصوصية', href: fs.footer_privacy_url },
+        { label: 'الشروط', href: fs.footer_terms_url },
+      ],
+    },
   ];
 
   const getColorClasses = (color: string) => ({
     bg: color === 'amber' ? 'bg-amber-500/10' : color === 'blue' ? 'bg-blue-500/10' : 'bg-green-500/10',
     text: color === 'amber' ? 'text-amber-400' : color === 'blue' ? 'text-blue-400' : 'text-green-400',
     hover: color === 'amber' ? 'hover:bg-amber-500/20' : color === 'blue' ? 'hover:bg-blue-500/20' : 'hover:bg-green-500/20',
-    border: color === 'amber' ? 'border-amber-500/30' : color === 'blue' ? 'border-blue-500/30' : 'border-green-500/30'
+    border: color === 'amber' ? 'border-amber-500/30' : color === 'blue' ? 'border-blue-500/30' : 'border-green-500/30',
   });
+
+  const phoneDisplay = fs.footer_phone ? `+${fs.footer_phone}` : '';
+  const emailHref = fs.footer_email ? `mailto:${fs.footer_email}` : '#';
+  const phoneHref = fs.footer_phone ? `tel:+${fs.footer_phone}` : '#';
+  const whatsappHref = fs.footer_whatsapp ? `https://wa.me/${fs.footer_whatsapp}` : '#';
 
   return (
     <footer className="bg-gradient-to-b from-slate-900 via-slate-900 to-slate-950 text-gray-300 border-t border-slate-800">
@@ -95,7 +153,7 @@ export default function Footer() {
           })}
 
           {/* Contact Cards - Mobile */}
-          <div className={`rounded-xl border border-rose-500/30 bg-rose-500/10 p-4`}>
+          <div className="rounded-xl border border-rose-500/30 bg-rose-500/10 p-4">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-9 h-9 bg-rose-500/10 rounded-lg flex items-center justify-center">
                 <Send className="w-4 h-4 text-rose-400" />
@@ -103,18 +161,24 @@ export default function Footer() {
               <span className="font-bold text-white text-sm">تواصل معنا</span>
             </div>
             <div className="space-y-2">
-              <a href="mailto:info@souqalmawad.com" className="flex items-center gap-2.5 p-2.5 rounded-lg hover:bg-rose-500/20 transition-all group text-sm">
-                <Mail className="w-4 h-4 text-rose-400" />
-                <span className="text-gray-300 group-hover:text-rose-400">info@souqalmawad.com</span>
-              </a>
-              <a href="tel:+966501234567" className="flex items-center gap-2.5 p-2.5 rounded-lg hover:bg-rose-500/20 transition-all group text-sm">
-                <Phone className="w-4 h-4 text-rose-400" />
-                <span className="text-gray-300 group-hover:text-rose-400">966501234567+</span>
-              </a>
-              <a href="#" className="flex items-center gap-2.5 p-2.5 rounded-lg hover:bg-rose-500/20 transition-all group text-sm">
-                <MessageCircle className="w-4 h-4 text-rose-400" />
-                <span className="text-gray-300 group-hover:text-rose-400">واتساب</span>
-              </a>
+              {fs.footer_email && (
+                <a href={emailHref} className="flex items-center gap-2.5 p-2.5 rounded-lg hover:bg-rose-500/20 transition-all group text-sm">
+                  <Mail className="w-4 h-4 text-rose-400" />
+                  <span className="text-gray-300 group-hover:text-rose-400">{fs.footer_email}</span>
+                </a>
+              )}
+              {fs.footer_phone && (
+                <a href={phoneHref} className="flex items-center gap-2.5 p-2.5 rounded-lg hover:bg-rose-500/20 transition-all group text-sm">
+                  <Phone className="w-4 h-4 text-rose-400" />
+                  <span className="text-gray-300 group-hover:text-rose-400">{phoneDisplay}</span>
+                </a>
+              )}
+              {fs.footer_whatsapp && (
+                <a href={whatsappHref} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2.5 p-2.5 rounded-lg hover:bg-rose-500/20 transition-all group text-sm">
+                  <MessageCircle className="w-4 h-4 text-rose-400" />
+                  <span className="text-gray-300 group-hover:text-rose-400">واتساب</span>
+                </a>
+              )}
             </div>
           </div>
         </div>
@@ -154,24 +218,30 @@ export default function Footer() {
               </div>
             </div>
             <div className="space-y-3">
-              <a href="mailto:info@souqalmawad.com" className="flex items-center gap-3 justify-end text-sm hover:text-rose-400 transition-all group">
-                <span className="font-medium">info@souqalmawad.com</span>
-                <div className="w-9 h-9 bg-slate-800 rounded-lg flex items-center justify-center group-hover:bg-rose-500 transition-all group-hover:scale-110">
-                  <Mail className="w-4 h-4" />
-                </div>
-              </a>
-              <a href="tel:+966501234567" className="flex items-center gap-3 justify-end text-sm hover:text-green-400 transition-all group">
-                <span className="font-medium">966501234567+</span>
-                <div className="w-9 h-9 bg-slate-800 rounded-lg flex items-center justify-center group-hover:bg-green-500 transition-all group-hover:scale-110">
-                  <Phone className="w-4 h-4" />
-                </div>
-              </a>
-              <a href="#" className="flex items-center gap-3 justify-end text-sm hover:text-emerald-400 transition-all group">
-                <span className="font-medium">واتساب</span>
-                <div className="w-9 h-9 bg-slate-800 rounded-lg flex items-center justify-center group-hover:bg-emerald-500 transition-all group-hover:scale-110">
-                  <MessageCircle className="w-4 h-4" />
-                </div>
-              </a>
+              {fs.footer_email && (
+                <a href={emailHref} className="flex items-center gap-3 justify-end text-sm hover:text-rose-400 transition-all group">
+                  <span className="font-medium">{fs.footer_email}</span>
+                  <div className="w-9 h-9 bg-slate-800 rounded-lg flex items-center justify-center group-hover:bg-rose-500 transition-all group-hover:scale-110">
+                    <Mail className="w-4 h-4" />
+                  </div>
+                </a>
+              )}
+              {fs.footer_phone && (
+                <a href={phoneHref} className="flex items-center gap-3 justify-end text-sm hover:text-green-400 transition-all group">
+                  <span className="font-medium">{phoneDisplay}</span>
+                  <div className="w-9 h-9 bg-slate-800 rounded-lg flex items-center justify-center group-hover:bg-green-500 transition-all group-hover:scale-110">
+                    <Phone className="w-4 h-4" />
+                  </div>
+                </a>
+              )}
+              {fs.footer_whatsapp && (
+                <a href={whatsappHref} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 justify-end text-sm hover:text-emerald-400 transition-all group">
+                  <span className="font-medium">واتساب</span>
+                  <div className="w-9 h-9 bg-slate-800 rounded-lg flex items-center justify-center group-hover:bg-emerald-500 transition-all group-hover:scale-110">
+                    <MessageCircle className="w-4 h-4" />
+                  </div>
+                </a>
+              )}
             </div>
           </div>
         </div>
@@ -180,7 +250,7 @@ export default function Footer() {
         <div className="border-t border-slate-800 pt-6 sm:pt-8">
           <div className="flex flex-col items-center text-center gap-4 sm:gap-5 md:flex-row md:justify-between md:text-right">
             <p className="text-xs sm:text-sm text-gray-400 font-medium order-1 md:order-2">
-              © 2024 سوق المشاتل - جميع الحقوق محفوظة
+              {fs.footer_copyright}
             </p>
 
             <div className="flex flex-col items-center gap-3 sm:flex-row sm:gap-4 order-2 md:order-1">
@@ -198,7 +268,6 @@ export default function Footer() {
           </div>
         </div>
       </div>
-
     </footer>
   );
 }
