@@ -18,7 +18,7 @@ interface ListingData {
   id: string; title: string; description: string; price: number;
   price_type: string; images: string[]; is_active: boolean;
   category_id: string; subcategory_id: string | null; city_id: string | null;
-  contact_name: string; phone: string; whatsapp_number: string;
+  contact_name: string; contact_phone: string; whatsapp_number: string;
   custom_fields: Record<string, string> | null; slug: string; user_id: string;
 }
 
@@ -91,7 +91,7 @@ export default function EditListing() {
     setSubcategoryId(data.subcategory_id || '');
     setCityId(data.city_id || '');
     setContactName(data.contact_name || '');
-    setPhone(data.phone || '');
+    setPhone(data.contact_phone || '');
     setWhatsapp(data.whatsapp_number || '');
     setImages(data.images || []);
     setCustomFields(data.custom_fields || {});
@@ -147,7 +147,7 @@ export default function EditListing() {
       subcategory_id: subcategoryId || null,
       city_id: cityId || null,
       contact_name: contactName || phone,
-      phone,
+      contact_phone: phone,
       whatsapp_number: whatsapp || phone,
       images,
       custom_fields: customFields,
