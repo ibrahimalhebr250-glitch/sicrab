@@ -23,6 +23,7 @@ export default function PublicProfile() {
   const [listings, setListings] = useState<Listing[]>([]);
   const [loading, setLoading] = useState(true);
   const [isFollowing, setIsFollowing] = useState(false);
+  const [followLoading, setFollowLoading] = useState(false);
 
   useEffect(() => {
     loadProfile();
@@ -87,6 +88,8 @@ export default function PublicProfile() {
       window.location.href = '/login';
       return;
     }
+    if (followLoading) return;
+    setFollowLoading(true);
 
     if (isFollowing) {
       const { error } = await supabase
@@ -95,15 +98,25 @@ export default function PublicProfile() {
         .eq('follower_id', user.id)
         .eq('following_id', userId);
 
-      if (!error) setIsFollowing(false);
+      if (error) {
+        console.error('Unfollow error:', error);
+      } else {
+        setIsFollowing(false);
+      }
     } else {
-      const { error } = await supabase.from('user_follows').insert({
-        follower_id: user.id,
-        following_id: userId
-      });
+      const { data, error } = await supabase
+        .from('user_follows')
+        .insert({ follower_id: user.id, following_id: userId })
+        .select('id')
+        .maybeSingle();
 
-      if (!error) setIsFollowing(true);
+      if (error) {
+        console.error('Follow error:', error);
+      } else if (data) {
+        setIsFollowing(true);
+      }
     }
+    setFollowLoading(false);
   }
 
   function getJoinDate(dateString: string) {
@@ -194,13 +207,16 @@ export default function PublicProfile() {
                 {user && user.id !== userId && (
                   <button
                     onClick={toggleFollow}
-                    className={`px-6 py-2.5 rounded-xl font-bold text-sm transition-all flex items-center gap-2 ${
+                    disabled={followLoading}
+                    className={`px-6 py-2.5 rounded-xl font-bold text-sm transition-all flex items-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed ${
                       isFollowing
                         ? 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                         : 'bg-gradient-to-r from-amber-500 to-orange-500 text-white hover:from-amber-600 hover:to-orange-600 shadow-lg'
                     }`}
                   >
-                    {isFollowing ? (
+                    {followLoading ? (
+                      <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                    ) : isFollowing ? (
                       <>
                         <UserCheck className="w-5 h-5" />
                         تتابع
