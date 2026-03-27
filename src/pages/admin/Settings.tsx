@@ -70,12 +70,18 @@ export default function AdminSettings() {
 
   async function loadSettings() {
     try {
-      const { data } = await supabase.from('platform_settings').select('*');
+      const { data } = await supabase.from('platform_settings').select('setting_key, setting_value');
       const settingsMap: Record<string, string> = {};
       data?.forEach((s: PlatformSetting) => {
-        settingsMap[s.setting_key] = typeof s.setting_value === 'string'
-          ? s.setting_value.replace(/^"|"$/g, '')
-          : s.setting_value.toString();
+        let val: string;
+        if (typeof s.setting_value === 'string') {
+          val = s.setting_value;
+        } else if (typeof s.setting_value === 'number' || typeof s.setting_value === 'boolean') {
+          val = s.setting_value.toString();
+        } else {
+          val = String(s.setting_value ?? '');
+        }
+        settingsMap[s.setting_key] = val;
       });
       setSettings(settingsMap);
     } catch (e) {
@@ -127,14 +133,16 @@ export default function AdminSettings() {
     try {
       const upsertRows = Object.entries(settings).map(([key, value]) => ({
         setting_key: key,
-        setting_value: key === 'commission_rate' ? parseInt(value) : `"${value}"`,
+        setting_value: key === 'commission_rate' ? Number(value) : value,
         updated_at: new Date().toISOString(),
       }));
-      await supabase
+      const { error } = await supabase
         .from('platform_settings')
         .upsert(upsertRows, { onConflict: 'setting_key' });
+      if (error) throw error;
       alert('تم حفظ الإعدادات بنجاح');
     } catch (e) {
+      console.error(e);
       alert('حدث خطأ أثناء حفظ الإعدادات');
     } finally {
       setSaving(false);

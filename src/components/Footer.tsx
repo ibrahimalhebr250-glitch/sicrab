@@ -78,9 +78,14 @@ export default function Footer() {
       if (!data) return;
       const map: Partial<FooterSettings> = {};
       data.forEach((row: { setting_key: string; setting_value: any }) => {
-        const val = typeof row.setting_value === 'string'
-          ? row.setting_value.replace(/^"|"$/g, '')
-          : String(row.setting_value);
+        let val: string;
+        if (typeof row.setting_value === 'string') {
+          val = row.setting_value;
+        } else if (row.setting_value !== null && row.setting_value !== undefined) {
+          val = String(row.setting_value);
+        } else {
+          return;
+        }
         (map as any)[row.setting_key] = val;
       });
       setFs({ ...DEFAULTS, ...map });
