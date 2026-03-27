@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ArrowRight, User, Calendar, Package, MapPin, Eye } from 'lucide-react';
+import { ArrowRight, User, Calendar, Package, MapPin, Eye, UserPlus, UserMinus, Users } from 'lucide-react';
 import { supabase, Listing } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import ReviewsList from '../components/ReviewsList';
@@ -22,9 +22,15 @@ export default function PublicProfile() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [listings, setListings] = useState<Listing[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isFollowing, setIsFollowing] = useState(false);
+  const [followId, setFollowId] = useState<string | null>(null);
+  const [followersCount, setFollowersCount] = useState(0);
+  const [followLoading, setFollowLoading] = useState(false);
+
   useEffect(() => {
     loadProfile();
     loadListings();
+    loadFollowState();
   }, [userId]);
 
   async function loadProfile() {
@@ -61,6 +67,49 @@ export default function PublicProfile() {
     if (data) {
       setListings(data);
     }
+  }
+
+  async function loadFollowState() {
+    const { count } = await supabase
+      .from('user_follows')
+      .select('id', { count: 'exact', head: true })
+      .eq('following_id', userId);
+    setFollowersCount(count || 0);
+
+    if (!user || user.id === userId) return;
+    const { data } = await supabase
+      .from('user_follows')
+      .select('id')
+      .eq('follower_id', user.id)
+      .eq('following_id', userId)
+      .maybeSingle();
+    if (data) {
+      setIsFollowing(true);
+      setFollowId(data.id);
+    }
+  }
+
+  async function handleFollow() {
+    if (!user) { navigate('/login'); return; }
+    setFollowLoading(true);
+    if (isFollowing && followId) {
+      await supabase.from('user_follows').delete().eq('id', followId);
+      setIsFollowing(false);
+      setFollowId(null);
+      setFollowersCount(c => Math.max(0, c - 1));
+    } else {
+      const { data } = await supabase
+        .from('user_follows')
+        .insert({ follower_id: user.id, following_id: userId })
+        .select('id')
+        .maybeSingle();
+      if (data) {
+        setIsFollowing(true);
+        setFollowId(data.id);
+        setFollowersCount(c => c + 1);
+      }
+    }
+    setFollowLoading(false);
   }
 
   function getJoinDate(dateString: string) {
@@ -133,11 +182,29 @@ export default function PublicProfile() {
               </div>
 
               <div className="flex-1 mt-16">
-                <h2 className="text-3xl font-black text-gray-900 mb-2">
-                  {profile.full_name}
-                </h2>
+                <div className="flex items-start justify-between gap-2">
+                  <h2 className="text-2xl font-black text-gray-900">
+                    {profile.full_name}
+                  </h2>
+                  {user && user.id !== userId && (
+                    <button
+                      onClick={handleFollow}
+                      disabled={followLoading}
+                      className={`flex-shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-xl font-bold text-sm transition-all active:scale-95 disabled:opacity-60 ${
+                        isFollowing
+                          ? 'bg-gray-100 hover:bg-red-50 text-gray-600 hover:text-red-500 border border-gray-200 hover:border-red-200'
+                          : 'bg-amber-500 hover:bg-amber-600 text-white shadow-sm shadow-amber-200'
+                      }`}
+                    >
+                      {isFollowing
+                        ? <><UserMinus className="w-4 h-4" /> إلغاء المتابعة</>
+                        : <><UserPlus className="w-4 h-4" /> متابعة</>
+                      }
+                    </button>
+                  )}
+                </div>
 
-                <div className="flex flex-wrap gap-4 text-sm text-gray-600 mb-4">
+                <div className="flex flex-wrap gap-4 text-sm text-gray-600 mt-2 mb-1">
                   <div className="flex items-center gap-1">
                     <Calendar className="w-4 h-4" />
                     <span>انضم {getJoinDate(profile.created_at)}</span>
@@ -145,6 +212,10 @@ export default function PublicProfile() {
                   <div className="flex items-center gap-1">
                     <Package className="w-4 h-4" />
                     <span>{profile.listings_count || listings.length} إعلان</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Users className="w-4 h-4" />
+                    <span>{followersCount} متابع</span>
                   </div>
                 </div>
 
