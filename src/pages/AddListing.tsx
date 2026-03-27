@@ -327,8 +327,18 @@ export default function AddListing({ onBack, onSuccess }: AddListingProps) {
   }
 
   async function handleSubmit() {
-    if (!formData.category_id || !formData.title || !formData.price || !formData.phone || !formData.city_id) {
-      alert('الرجاء ملء جميع الحقول المطلوبة');
+    const hasPrice = subcategories.length > 0
+      ? (pricingMode === 'group' ? !!formData.price : selectedSubcategoryItems.every(i => !!i.price))
+      : !!formData.price;
+
+    if (!formData.category_id || !formData.title || !hasPrice || !formData.phone || !formData.city_id) {
+      const missing = [];
+      if (!formData.category_id) missing.push('الفئة');
+      if (!formData.title) missing.push('العنوان');
+      if (!hasPrice) missing.push('السعر');
+      if (!formData.city_id) missing.push('المدينة');
+      if (!formData.phone) missing.push('رقم الجوال');
+      alert('الرجاء ملء الحقول التالية: ' + missing.join('، '));
       return;
     }
 
