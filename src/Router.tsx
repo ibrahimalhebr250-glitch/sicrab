@@ -23,6 +23,7 @@ import PrivacyPage from './pages/PrivacyPage';
 import Rewards from './pages/Rewards';
 import Favorites from './pages/Favorites';
 import Following from './pages/Following';
+import EditListing from './pages/EditListing';
 
 export default function Router() {
   return (
@@ -31,6 +32,7 @@ export default function Router() {
       <Route path="/search" element={<SearchPage />} />
       <Route path="/listing/:slug" element={<ListingDetails />} />
       <Route path="/listing/:id/edit" element={<AddListing />} />
+      <Route path="/edit/:id" element={<EditListing />} />
       <Route path="/add" element={<AddListing />} />
       <Route path="/login" element={<Login />} />
       <Route path="/profile" element={<Profile />} />
