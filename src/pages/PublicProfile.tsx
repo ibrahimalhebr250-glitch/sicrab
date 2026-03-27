@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ArrowRight, User, Calendar, Package, MapPin, Eye, UserPlus, UserCheck } from 'lucide-react';
+import { ArrowRight, User, Calendar, Package, MapPin, Eye } from 'lucide-react';
 import { supabase, Listing } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import ReviewsList from '../components/ReviewsList';
@@ -22,17 +22,10 @@ export default function PublicProfile() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [listings, setListings] = useState<Listing[]>([]);
   const [loading, setLoading] = useState(true);
-  const [isFollowing, setIsFollowing] = useState(false);
-  const [followLoading, setFollowLoading] = useState(false);
-
   useEffect(() => {
     loadProfile();
     loadListings();
   }, [userId]);
-
-  useEffect(() => {
-    checkIfFollowing();
-  }, [userId, user]);
 
   async function loadProfile() {
     const { data, error } = await supabase
@@ -68,53 +61,6 @@ export default function PublicProfile() {
     if (data) {
       setListings(data);
     }
-  }
-
-  async function checkIfFollowing() {
-    if (!user) return;
-
-    const { data } = await supabase
-      .from('user_follows')
-      .select('id')
-      .eq('follower_id', user.id)
-      .eq('following_id', userId)
-      .maybeSingle();
-
-    setIsFollowing(!!data);
-  }
-
-  async function toggleFollow() {
-    if (!user) {
-      window.location.href = '/login';
-      return;
-    }
-    if (followLoading) return;
-    setFollowLoading(true);
-
-    if (isFollowing) {
-      const { error } = await supabase
-        .from('user_follows')
-        .delete()
-        .eq('follower_id', user.id)
-        .eq('following_id', userId);
-
-      if (error) {
-        console.error('Unfollow error:', error);
-      } else {
-        setIsFollowing(false);
-      }
-    } else {
-      const { error } = await supabase
-        .from('user_follows')
-        .insert({ follower_id: user.id, following_id: userId });
-
-      if (error) {
-        console.error('Follow error:', error);
-      } else {
-        setIsFollowing(true);
-      }
-    }
-    setFollowLoading(false);
   }
 
   function getJoinDate(dateString: string) {
@@ -202,31 +148,6 @@ export default function PublicProfile() {
                   </div>
                 </div>
 
-                {user && user.id !== userId && (
-                  <button
-                    onClick={toggleFollow}
-                    disabled={followLoading}
-                    className={`px-6 py-2.5 rounded-xl font-bold text-sm transition-all flex items-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed ${
-                      isFollowing
-                        ? 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                        : 'bg-gradient-to-r from-amber-500 to-orange-500 text-white hover:from-amber-600 hover:to-orange-600 shadow-lg'
-                    }`}
-                  >
-                    {followLoading ? (
-                      <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                    ) : isFollowing ? (
-                      <>
-                        <UserCheck className="w-5 h-5" />
-                        تتابع
-                      </>
-                    ) : (
-                      <>
-                        <UserPlus className="w-5 h-5" />
-                        متابعة
-                      </>
-                    )}
-                  </button>
-                )}
               </div>
             </div>
 

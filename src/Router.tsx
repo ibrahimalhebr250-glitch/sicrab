@@ -22,7 +22,6 @@ import ContactPage from './pages/ContactPage';
 import PrivacyPage from './pages/PrivacyPage';
 import Rewards from './pages/Rewards';
 import Favorites from './pages/Favorites';
-import Following from './pages/Following';
 
 export default function Router() {
   return (
@@ -51,7 +50,6 @@ export default function Router() {
       <Route path="/privacy" element={<PrivacyPage />} />
       <Route path="/rewards" element={<Rewards />} />
       <Route path="/favorites" element={<Favorites />} />
-      <Route path="/following" element={<Following />} />
       <Route path="/profile/:id" element={<PublicProfile />} />
     </Routes>
   );

@@ -1,7 +1,6 @@
-import { User, Calendar, Package, UserPlus, UserCheck, Star, Shield } from 'lucide-react';
+import { User, Calendar, Package, Star, Shield } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
-import { useAuth } from '../contexts/AuthContext';
 import SellerBadge from './SellerBadge';
 import SafeDealBadge from './SafeDealBadge';
 import ReputationBadge from './ReputationBadge';
@@ -31,15 +30,12 @@ interface SellerRewards {
 }
 
 export default function SellerCard({ sellerId, sellerName }: SellerCardProps) {
-  const { user } = useAuth();
   const [profile, setProfile] = useState<SellerProfile | null>(null);
-  const [isFollowing, setIsFollowing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [rewards, setRewards] = useState<SellerRewards | null>(null);
 
   useEffect(() => {
     loadSellerProfile();
-    checkIfFollowing();
     loadSellerRewards();
   }, [sellerId]);
 
@@ -74,54 +70,6 @@ export default function SellerCard({ sellerId, sellerName }: SellerCardProps) {
       setProfile(data);
     }
     setLoading(false);
-  }
-
-  async function checkIfFollowing() {
-    if (!user) return;
-
-    const { data } = await supabase
-      .from('follows')
-      .select('id')
-      .eq('follower_id', user.id)
-      .eq('following_type', 'user')
-      .eq('following_id', sellerId)
-      .maybeSingle();
-
-    setIsFollowing(!!data);
-  }
-
-  async function toggleFollow() {
-    if (!user) {
-      window.location.href = '/login';
-      return;
-    }
-
-    if (isFollowing) {
-      await supabase
-        .from('follows')
-        .delete()
-        .eq('follower_id', user.id)
-        .eq('following_type', 'user')
-        .eq('following_id', sellerId);
-
-      setIsFollowing(false);
-    } else {
-      await supabase.from('follows').insert({
-        follower_id: user.id,
-        following_type: 'user',
-        following_id: sellerId
-      });
-
-      await supabase.from('notifications').insert({
-        user_id: sellerId,
-        type: 'follow',
-        title: 'متابع جديد',
-        content: `بدأ ${user.email} بمتابعتك`,
-        link: `/user/${sellerId}`
-      });
-
-      setIsFollowing(true);
-    }
   }
 
   function getTimeAgo(dateString: string) {
@@ -241,28 +189,6 @@ export default function SellerCard({ sellerId, sellerName }: SellerCardProps) {
       </div>
 
       <div className="flex gap-2">
-        {user && user.id !== sellerId && (
-          <button
-            onClick={toggleFollow}
-            className={`flex-1 py-3 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2 ${
-              isFollowing
-                ? 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                : 'bg-gradient-to-r from-amber-500 to-orange-500 text-white hover:from-amber-600 hover:to-orange-600 shadow-lg'
-            }`}
-          >
-            {isFollowing ? (
-              <>
-                <UserCheck className="w-5 h-5" />
-                تتابع
-              </>
-            ) : (
-              <>
-                <UserPlus className="w-5 h-5" />
-                متابعة
-              </>
-            )}
-          </button>
-        )}
         <a
           href={`/user/${sellerId}`}
           className="flex-1 py-3 bg-white border-2 border-gray-300 text-gray-700 rounded-xl font-bold text-sm hover:bg-gray-50 transition-all text-center"
