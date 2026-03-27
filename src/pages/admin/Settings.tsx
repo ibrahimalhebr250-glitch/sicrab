@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Settings as SettingsIcon, Save, Building2, CreditCard, Eye, EyeOff, CheckCircle, XCircle, Clock, AlertCircle, RefreshCw, Check, X, LayoutGrid as Layout, Link, Mail, Phone, MessageCircle } from 'lucide-react';
+import { Settings as SettingsIcon, Save, Building2, CreditCard, Eye, EyeOff, CheckCircle, XCircle, Clock, AlertCircle, RefreshCw, Check, X, LayoutGrid as Layout, Link2, Mail, Phone, MessageCircle, Globe, FileText, HelpCircle, Users, Shield, ChevronDown, ToggleLeft, ToggleRight, ExternalLink, Hash } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 
 type SettingsTab = 'general' | 'footer' | 'bank' | 'transfers';
@@ -317,211 +317,7 @@ export default function AdminSettings() {
         )}
 
         {tab === 'footer' && (
-          <div className="space-y-5">
-            <div className="bg-blue-50 border-2 border-blue-200 rounded-2xl p-4 flex items-start gap-3">
-              <AlertCircle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
-              <div>
-                <p className="text-blue-800 font-bold text-sm">تنسيق الروابط</p>
-                <p className="text-blue-700 text-sm mt-0.5">
-                  يجب أن تبدأ الروابط الداخلية بـ <span className="font-mono bg-blue-100 px-1 rounded">/</span> مثل <span className="font-mono bg-blue-100 px-1 rounded">/about</span> أو <span className="font-mono bg-blue-100 px-1 rounded">/contact</span>، أو استخدم <span className="font-mono bg-blue-100 px-1 rounded">#</span> لإخفاء الرابط. الروابط الخارجية تبدأ بـ <span className="font-mono bg-blue-100 px-1 rounded">https://</span>
-                </p>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-2xl p-6 shadow-xl space-y-6">
-              <div className="flex items-center gap-3 pb-4 border-b border-gray-100">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center">
-                  <Layout className="w-5 h-5 text-white" />
-                </div>
-                <div>
-                  <h3 className="font-black text-gray-900">قسم المنصة</h3>
-                  <p className="text-gray-500 text-xs">روابط من نحن، كيف نعمل، الأسئلة الشائعة</p>
-                </div>
-              </div>
-              <div className="grid grid-cols-1 gap-4">
-                {[
-                  { key: 'footer_about_url', label: 'رابط "من نحن"', placeholder: '/about' },
-                  { key: 'footer_how_it_works_url', label: 'رابط "كيف نعمل"', placeholder: '/how-it-works' },
-                  { key: 'footer_faq_url', label: 'رابط "الأسئلة الشائعة"', placeholder: '/faq' },
-                ].map(({ key, label, placeholder }) => {
-                  const val = settings[key] || '';
-                  const isInvalid = val.length > 0 && !val.startsWith('/') && !val.startsWith('http://') && !val.startsWith('https://') && val !== '#';
-                  return (
-                    <div key={key}>
-                      <label className="block text-sm font-bold text-gray-700 mb-1.5">{label}</label>
-                      <div className="relative">
-                        <Link className={`absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 ${isInvalid ? 'text-red-400' : 'text-gray-400'}`} />
-                        <input
-                          type="text"
-                          value={val}
-                          onChange={e => setSettings({ ...settings, [key]: e.target.value })}
-                          placeholder={placeholder}
-                          className={`w-full pr-10 pl-4 py-3 border-2 rounded-xl focus:outline-none text-left ${isInvalid ? 'border-red-400 bg-red-50 focus:border-red-500' : 'border-gray-200 focus:border-amber-500'}`}
-                          dir="ltr"
-                        />
-                      </div>
-                      {isInvalid && <p className="text-xs text-red-500 mt-1">الرابط غير صالح - يجب أن يبدأ بـ / أو https:// أو استخدم #</p>}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
-            <div className="bg-white rounded-2xl p-6 shadow-xl space-y-6">
-              <div className="flex items-center gap-3 pb-4 border-b border-gray-100">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center">
-                  <AlertCircle className="w-5 h-5 text-white" />
-                </div>
-                <div>
-                  <h3 className="font-black text-gray-900">قسم الدعم</h3>
-                  <p className="text-gray-500 text-xs">روابط المساعدة، اتصل بنا، بلغ عن مخالفة</p>
-                </div>
-              </div>
-              <div className="grid grid-cols-1 gap-4">
-                {[
-                  { key: 'footer_help_url', label: 'رابط "المساعدة"', placeholder: '/help' },
-                  { key: 'footer_contact_url', label: 'رابط "اتصل بنا"', placeholder: '/contact' },
-                  { key: 'footer_report_url', label: 'رابط "بلغ عن مخالفة"', placeholder: '/report' },
-                ].map(({ key, label, placeholder }) => {
-                  const val = settings[key] || '';
-                  const isInvalid = val.length > 0 && !val.startsWith('/') && !val.startsWith('http://') && !val.startsWith('https://') && val !== '#';
-                  return (
-                    <div key={key}>
-                      <label className="block text-sm font-bold text-gray-700 mb-1.5">{label}</label>
-                      <div className="relative">
-                        <Link className={`absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 ${isInvalid ? 'text-red-400' : 'text-gray-400'}`} />
-                        <input
-                          type="text"
-                          value={val}
-                          onChange={e => setSettings({ ...settings, [key]: e.target.value })}
-                          placeholder={placeholder}
-                          className={`w-full pr-10 pl-4 py-3 border-2 rounded-xl focus:outline-none text-left ${isInvalid ? 'border-red-400 bg-red-50 focus:border-red-500' : 'border-gray-200 focus:border-blue-500'}`}
-                          dir="ltr"
-                        />
-                      </div>
-                      {isInvalid && <p className="text-xs text-red-500 mt-1">الرابط غير صالح - يجب أن يبدأ بـ / أو https:// أو استخدم #</p>}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
-            <div className="bg-white rounded-2xl p-6 shadow-xl space-y-6">
-              <div className="flex items-center gap-3 pb-4 border-b border-gray-100">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-green-500 to-emerald-500 flex items-center justify-center">
-                  <Save className="w-5 h-5 text-white" />
-                </div>
-                <div>
-                  <h3 className="font-black text-gray-900">قسم السياسات</h3>
-                  <p className="text-gray-500 text-xs">روابط سياسة الاستخدام، الخصوصية، الشروط</p>
-                </div>
-              </div>
-              <div className="grid grid-cols-1 gap-4">
-                {[
-                  { key: 'footer_usage_policy_url', label: 'رابط "سياسة الاستخدام"', placeholder: '/usage-policy' },
-                  { key: 'footer_privacy_url', label: 'رابط "الخصوصية"', placeholder: '/privacy' },
-                  { key: 'footer_terms_url', label: 'رابط "الشروط والأحكام"', placeholder: '/terms' },
-                ].map(({ key, label, placeholder }) => {
-                  const val = settings[key] || '';
-                  const isInvalid = val.length > 0 && !val.startsWith('/') && !val.startsWith('http://') && !val.startsWith('https://') && val !== '#';
-                  return (
-                    <div key={key}>
-                      <label className="block text-sm font-bold text-gray-700 mb-1.5">{label}</label>
-                      <div className="relative">
-                        <Link className={`absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 ${isInvalid ? 'text-red-400' : 'text-gray-400'}`} />
-                        <input
-                          type="text"
-                          value={val}
-                          onChange={e => setSettings({ ...settings, [key]: e.target.value })}
-                          placeholder={placeholder}
-                          className={`w-full pr-10 pl-4 py-3 border-2 rounded-xl focus:outline-none text-left ${isInvalid ? 'border-red-400 bg-red-50 focus:border-red-500' : 'border-gray-200 focus:border-green-500'}`}
-                          dir="ltr"
-                        />
-                      </div>
-                      {isInvalid && <p className="text-xs text-red-500 mt-1">الرابط غير صالح - يجب أن يبدأ بـ / أو https:// أو استخدم #</p>}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
-            <div className="bg-white rounded-2xl p-6 shadow-xl space-y-6">
-              <div className="flex items-center gap-3 pb-4 border-b border-gray-100">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-rose-500 to-pink-500 flex items-center justify-center">
-                  <Mail className="w-5 h-5 text-white" />
-                </div>
-                <div>
-                  <h3 className="font-black text-gray-900">بيانات التواصل</h3>
-                  <p className="text-gray-500 text-xs">الإيميل، رقم الجوال، واتساب، ونص حقوق الملكية</p>
-                </div>
-              </div>
-              <div className="grid grid-cols-1 gap-4">
-                <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-1.5">البريد الإلكتروني</label>
-                  <div className="relative">
-                    <Mail className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                    <input
-                      type="email"
-                      value={settings.footer_email || ''}
-                      onChange={e => setSettings({ ...settings, footer_email: e.target.value })}
-                      placeholder="info@example.com"
-                      className="w-full pr-10 pl-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-rose-500 text-left"
-                      dir="ltr"
-                    />
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-1.5">رقم الجوال</label>
-                  <div className="relative">
-                    <Phone className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                    <input
-                      type="text"
-                      value={settings.footer_phone || ''}
-                      onChange={e => setSettings({ ...settings, footer_phone: e.target.value })}
-                      placeholder="966501234567"
-                      className="w-full pr-10 pl-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-rose-500 text-left"
-                      dir="ltr"
-                    />
-                  </div>
-                  <p className="text-xs text-gray-400 mt-1">أدخل الرقم بالصيغة الدولية بدون علامة + (مثال: 966501234567)</p>
-                </div>
-                <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-1.5">رقم واتساب التواصل</label>
-                  <div className="relative">
-                    <MessageCircle className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                    <input
-                      type="text"
-                      value={settings.footer_whatsapp || ''}
-                      onChange={e => setSettings({ ...settings, footer_whatsapp: e.target.value })}
-                      placeholder="966501234567"
-                      className="w-full pr-10 pl-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-rose-500 text-left"
-                      dir="ltr"
-                    />
-                  </div>
-                  <p className="text-xs text-gray-400 mt-1">أدخل الرقم بالصيغة الدولية بدون علامة + (مثال: 966501234567)</p>
-                </div>
-                <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-1.5">نص حقوق الملكية</label>
-                  <input
-                    type="text"
-                    value={settings.footer_copyright || ''}
-                    onChange={e => setSettings({ ...settings, footer_copyright: e.target.value })}
-                    placeholder="© 2024 اسم المنصة - جميع الحقوق محفوظة"
-                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-rose-500 text-right"
-                  />
-                </div>
-              </div>
-            </div>
-
-            <button
-              onClick={handleSaveSettings}
-              disabled={saving}
-              className="w-full flex items-center justify-center gap-2 py-4 bg-gradient-to-r from-slate-700 to-slate-800 text-white rounded-xl font-bold hover:shadow-lg transition-all disabled:opacity-50"
-            >
-              <Save className="w-5 h-5" />
-              {saving ? 'جاري الحفظ...' : 'حفظ إعدادات الفوتر'}
-            </button>
-          </div>
+          <FooterSettingsTab settings={settings} setSettings={setSettings} saving={saving} onSave={handleSaveSettings} />
         )}
 
         {tab === 'bank' && (
@@ -702,6 +498,295 @@ export default function AdminSettings() {
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+const INTERNAL_PAGES = [
+  { path: '/about', label: 'من نحن', icon: '👥' },
+  { path: '/contact', label: 'تواصل معنا', icon: '📞' },
+  { path: '/privacy', label: 'سياسة الخصوصية', icon: '🔒' },
+  { path: '/terms', label: 'الشروط والأحكام', icon: '📄' },
+  { path: '/search', label: 'البحث', icon: '🔍' },
+  { path: '/growth', label: 'النمو والإحصائيات', icon: '📈' },
+  { path: '/#', label: 'لا يوجد رابط (إخفاء)', icon: '—' },
+];
+
+interface FooterLinkConfig {
+  settingKey: string;
+  label: string;
+  description: string;
+  accentColor: string;
+  IconComponent: React.ComponentType<{ className?: string }>;
+}
+
+function FooterLinkCard({
+  config,
+  value,
+  onChange,
+}: {
+  config: FooterLinkConfig;
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  const [mode, setMode] = useState<'internal' | 'external'>(() =>
+    value.startsWith('http://') || value.startsWith('https://') ? 'external' : 'internal'
+  );
+  const [externalUrl, setExternalUrl] = useState(() =>
+    value.startsWith('http') ? value : ''
+  );
+  const [enabled, setEnabled] = useState(value !== '#' && value !== '/#' && value.length > 0);
+
+  const handleToggle = (on: boolean) => {
+    setEnabled(on);
+    if (!on) onChange('#');
+    else {
+      if (mode === 'internal') onChange(INTERNAL_PAGES[0].path === '/#' ? '#' : INTERNAL_PAGES[0].path);
+      else onChange(externalUrl || '#');
+    }
+  };
+
+  const handleInternalSelect = (path: string) => {
+    onChange(path === '/#' ? '#' : path);
+  };
+
+  const handleExternalChange = (url: string) => {
+    setExternalUrl(url);
+    if (url.trim()) onChange(url.trim());
+  };
+
+  const handleModeChange = (m: 'internal' | 'external') => {
+    setMode(m);
+    if (m === 'internal') {
+      const matched = INTERNAL_PAGES.find(p => p.path === value || (value === '#' && p.path === '/#'));
+      onChange(matched?.path === '/#' ? '#' : (matched?.path || INTERNAL_PAGES[0].path));
+    } else {
+      onChange(externalUrl || '#');
+    }
+  };
+
+  const selectedPage = INTERNAL_PAGES.find(p =>
+    (value === '#' && p.path === '/#') || p.path === value
+  ) || INTERNAL_PAGES[0];
+
+  const { IconComponent, accentColor, label, description } = config;
+
+  return (
+    <div className={`bg-white rounded-2xl shadow-sm border-2 transition-all overflow-hidden ${enabled ? 'border-gray-200' : 'border-gray-100 opacity-75'}`}>
+      <div className="flex items-center gap-4 p-4">
+        <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${accentColor} flex items-center justify-center flex-shrink-0`}>
+          <IconComponent className="w-5 h-5 text-white" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="font-black text-gray-900 text-sm">{label}</p>
+          <p className="text-gray-400 text-xs truncate">{description}</p>
+        </div>
+        <button
+          type="button"
+          onClick={() => handleToggle(!enabled)}
+          className="flex-shrink-0"
+        >
+          {enabled
+            ? <ToggleRight className={`w-8 h-8 text-emerald-500`} />
+            : <ToggleLeft className="w-8 h-8 text-gray-300" />
+          }
+        </button>
+      </div>
+
+      {enabled && (
+        <div className="px-4 pb-4 border-t border-gray-50 pt-3 space-y-3">
+          <div className="flex gap-2 p-1 bg-gray-100 rounded-xl">
+            <button
+              type="button"
+              onClick={() => handleModeChange('internal')}
+              className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-bold transition-all ${mode === 'internal' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+            >
+              <Hash className="w-3.5 h-3.5" />
+              صفحة داخلية
+            </button>
+            <button
+              type="button"
+              onClick={() => handleModeChange('external')}
+              className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-bold transition-all ${mode === 'external' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+            >
+              <ExternalLink className="w-3.5 h-3.5" />
+              رابط خارجي
+            </button>
+          </div>
+
+          {mode === 'internal' ? (
+            <div className="space-y-2">
+              <p className="text-xs font-bold text-gray-500 mb-1">اختر الصفحة</p>
+              <div className="grid grid-cols-2 gap-2">
+                {INTERNAL_PAGES.map(page => (
+                  <button
+                    key={page.path}
+                    type="button"
+                    onClick={() => handleInternalSelect(page.path)}
+                    className={`flex items-center gap-2 p-2.5 rounded-xl border-2 text-right transition-all text-xs ${
+                      selectedPage.path === page.path
+                        ? 'border-emerald-400 bg-emerald-50 text-emerald-800 font-bold'
+                        : 'border-gray-100 bg-gray-50 text-gray-600 hover:border-gray-300 hover:bg-gray-100'
+                    }`}
+                  >
+                    <span className="text-base leading-none">{page.icon}</span>
+                    <span className="truncate">{page.label}</span>
+                    {selectedPage.path === page.path && <Check className="w-3.5 h-3.5 text-emerald-600 mr-auto flex-shrink-0" />}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div>
+              <p className="text-xs font-bold text-gray-500 mb-1.5">أدخل الرابط الخارجي</p>
+              <div className="relative">
+                <Globe className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <input
+                  type="url"
+                  value={externalUrl}
+                  onChange={e => handleExternalChange(e.target.value)}
+                  placeholder="https://example.com/page"
+                  className="w-full pr-10 pl-4 py-2.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-blue-400 text-left text-sm"
+                  dir="ltr"
+                />
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function FooterSettingsTab({
+  settings,
+  setSettings,
+  saving,
+  onSave,
+}: {
+  settings: Record<string, string>;
+  setSettings: (s: Record<string, string>) => void;
+  saving: boolean;
+  onSave: () => void;
+}) {
+  const linkConfigs: FooterLinkConfig[] = [
+    { settingKey: 'footer_about_url', label: 'من نحن', description: 'قسم المنصة', accentColor: 'from-amber-400 to-orange-500', IconComponent: Users },
+    { settingKey: 'footer_how_it_works_url', label: 'كيف نعمل', description: 'قسم المنصة', accentColor: 'from-amber-400 to-orange-500', IconComponent: HelpCircle },
+    { settingKey: 'footer_faq_url', label: 'الأسئلة الشائعة', description: 'قسم المنصة', accentColor: 'from-amber-400 to-orange-500', IconComponent: HelpCircle },
+    { settingKey: 'footer_help_url', label: 'المساعدة', description: 'قسم الدعم', accentColor: 'from-blue-400 to-cyan-500', IconComponent: AlertCircle },
+    { settingKey: 'footer_contact_url', label: 'اتصل بنا', description: 'قسم الدعم', accentColor: 'from-blue-400 to-cyan-500', IconComponent: Mail },
+    { settingKey: 'footer_report_url', label: 'بلغ عن مخالفة', description: 'قسم الدعم', accentColor: 'from-blue-400 to-cyan-500', IconComponent: AlertCircle },
+    { settingKey: 'footer_usage_policy_url', label: 'سياسة الاستخدام', description: 'قسم السياسات', accentColor: 'from-emerald-400 to-teal-500', IconComponent: FileText },
+    { settingKey: 'footer_privacy_url', label: 'الخصوصية', description: 'قسم السياسات', accentColor: 'from-emerald-400 to-teal-500', IconComponent: Shield },
+    { settingKey: 'footer_terms_url', label: 'الشروط والأحكام', description: 'قسم السياسات', accentColor: 'from-emerald-400 to-teal-500', IconComponent: FileText },
+  ];
+
+  const sectionGroups = [
+    { title: 'قسم المنصة', color: 'from-amber-400 to-orange-500', keys: ['footer_about_url', 'footer_how_it_works_url', 'footer_faq_url'] },
+    { title: 'قسم الدعم', color: 'from-blue-400 to-cyan-500', keys: ['footer_help_url', 'footer_contact_url', 'footer_report_url'] },
+    { title: 'قسم السياسات', color: 'from-emerald-400 to-teal-500', keys: ['footer_usage_policy_url', 'footer_privacy_url', 'footer_terms_url'] },
+  ];
+
+  return (
+    <div className="space-y-6">
+      {sectionGroups.map(section => (
+        <div key={section.title} className="space-y-3">
+          <div className={`flex items-center gap-2 px-1`}>
+            <div className={`w-1.5 h-5 rounded-full bg-gradient-to-b ${section.color}`} />
+            <h3 className="font-black text-white text-sm tracking-wide">{section.title}</h3>
+          </div>
+          <div className="grid grid-cols-1 gap-3">
+            {linkConfigs
+              .filter(c => section.keys.includes(c.settingKey))
+              .map(config => (
+                <FooterLinkCard
+                  key={config.settingKey}
+                  config={config}
+                  value={settings[config.settingKey] || '#'}
+                  onChange={v => setSettings({ ...settings, [config.settingKey]: v })}
+                />
+              ))}
+          </div>
+        </div>
+      ))}
+
+      <div className="bg-white rounded-2xl shadow-sm border-2 border-gray-200 p-5 space-y-4">
+        <div className="flex items-center gap-3 pb-3 border-b border-gray-100">
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-rose-400 to-pink-500 flex items-center justify-center">
+            <Mail className="w-4 h-4 text-white" />
+          </div>
+          <div>
+            <p className="font-black text-gray-900 text-sm">بيانات التواصل</p>
+            <p className="text-gray-400 text-xs">البريد الإلكتروني، الجوال، واتساب</p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-xs font-bold text-gray-600 mb-1.5">البريد الإلكتروني</label>
+            <div className="relative">
+              <Mail className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <input
+                type="email"
+                value={settings.footer_email || ''}
+                onChange={e => setSettings({ ...settings, footer_email: e.target.value })}
+                placeholder="info@example.com"
+                className="w-full pr-10 pl-4 py-2.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-rose-400 text-left text-sm"
+                dir="ltr"
+              />
+            </div>
+          </div>
+          <div>
+            <label className="block text-xs font-bold text-gray-600 mb-1.5">رقم الجوال</label>
+            <div className="relative">
+              <Phone className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <input
+                type="text"
+                value={settings.footer_phone || ''}
+                onChange={e => setSettings({ ...settings, footer_phone: e.target.value })}
+                placeholder="966501234567"
+                className="w-full pr-10 pl-4 py-2.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-rose-400 text-left text-sm"
+                dir="ltr"
+              />
+            </div>
+            <p className="text-xs text-gray-400 mt-1">الرقم الدولي بدون + (مثال: 966501234567)</p>
+          </div>
+          <div>
+            <label className="block text-xs font-bold text-gray-600 mb-1.5">واتساب التواصل</label>
+            <div className="relative">
+              <MessageCircle className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <input
+                type="text"
+                value={settings.footer_whatsapp || ''}
+                onChange={e => setSettings({ ...settings, footer_whatsapp: e.target.value })}
+                placeholder="966501234567"
+                className="w-full pr-10 pl-4 py-2.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-rose-400 text-left text-sm"
+                dir="ltr"
+              />
+            </div>
+            <p className="text-xs text-gray-400 mt-1">الرقم الدولي بدون + (مثال: 966501234567)</p>
+          </div>
+          <div>
+            <label className="block text-xs font-bold text-gray-600 mb-1.5">نص حقوق الملكية</label>
+            <input
+              type="text"
+              value={settings.footer_copyright || ''}
+              onChange={e => setSettings({ ...settings, footer_copyright: e.target.value })}
+              placeholder="© 2024 اسم المنصة - جميع الحقوق محفوظة"
+              className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-rose-400 text-right text-sm"
+            />
+          </div>
+        </div>
+      </div>
+
+      <button
+        onClick={onSave}
+        disabled={saving}
+        className="w-full flex items-center justify-center gap-2 py-4 bg-gradient-to-r from-slate-700 to-slate-800 text-white rounded-2xl font-bold hover:shadow-lg transition-all disabled:opacity-50 text-sm"
+      >
+        <Save className="w-5 h-5" />
+        {saving ? 'جاري الحفظ...' : 'حفظ إعدادات الفوتر'}
+      </button>
     </div>
   );
 }
