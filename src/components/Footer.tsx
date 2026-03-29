@@ -40,10 +40,11 @@ export default function Footer() {
   const [expandedSection, setExpandedSection] = useState<string | null>(null);
   const [contact, setContact] = useState<ContactSettings>(CONTACT_DEFAULTS);
   const [footerLinks, setFooterLinks] = useState<FooterLink[]>([]);
+  const [aboutText, setAboutText] = useState('');
 
   useEffect(() => {
     async function loadData() {
-      const [settingsRes, linksRes] = await Promise.all([
+      const [settingsRes, linksRes, siteRes] = await Promise.all([
         supabase
           .from('platform_settings')
           .select('setting_key, setting_value')
@@ -54,6 +55,10 @@ export default function Footer() {
           .eq('is_active', true)
           .order('section')
           .order('sort_order'),
+        supabase
+          .from('site_settings')
+          .select('footer_about_text')
+          .maybeSingle(),
       ]);
 
       if (settingsRes.data) {
@@ -71,6 +76,10 @@ export default function Footer() {
 
       if (linksRes.data) {
         setFooterLinks(linksRes.data);
+      }
+
+      if (siteRes.data?.footer_about_text) {
+        setAboutText(siteRes.data.footer_about_text);
       }
     }
     loadData();
@@ -175,6 +184,22 @@ export default function Footer() {
             </div>
           </div>
         </div>
+
+        {/* About Text - Desktop */}
+        {aboutText && (
+          <div className="hidden lg:block mb-8 pb-8 border-b border-slate-800">
+            <p className="text-gray-400 text-sm leading-relaxed text-right max-w-2xl mr-auto">
+              {aboutText}
+            </p>
+          </div>
+        )}
+
+        {/* About Text - Mobile */}
+        {aboutText && (
+          <div className="lg:hidden mb-4 p-4 bg-slate-800/50 rounded-xl border border-slate-700">
+            <p className="text-gray-400 text-sm leading-relaxed text-right">{aboutText}</p>
+          </div>
+        )}
 
         {/* Desktop Grid View */}
         <div className="hidden lg:grid lg:grid-cols-4 gap-8 mb-12 text-right">

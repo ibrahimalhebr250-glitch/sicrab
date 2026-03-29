@@ -1,19 +1,39 @@
+import { useEffect, useState } from 'react';
 import { ArrowRight, Mail, Phone, MapPin, MessageCircle, Send } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { useState } from 'react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import BottomNav from '../components/BottomNav';
+import { supabase } from '../lib/supabase';
+
+interface ContactInfo {
+  contact_email: string;
+  contact_phone: string;
+  contact_address: string;
+  contact_hours: string;
+}
+
+const defaultContact: ContactInfo = {
+  contact_email: 'info@scrapmarket.sa',
+  contact_phone: '+966 50 000 0000',
+  contact_address: 'المملكة العربية السعودية',
+  contact_hours: 'متاح من 9 صباحاً - 9 مساءً',
+};
 
 export default function ContactPage() {
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    phone: '',
-    subject: '',
-    message: '',
-  });
+  const [contactInfo, setContactInfo] = useState<ContactInfo>(defaultContact);
+  const [formData, setFormData] = useState({ name: '', email: '', phone: '', subject: '', message: '' });
   const [submitted, setSubmitted] = useState(false);
+
+  useEffect(() => {
+    supabase
+      .from('site_settings')
+      .select('contact_email,contact_phone,contact_address,contact_hours')
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data) setContactInfo({ ...defaultContact, ...data });
+      });
+  }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -23,6 +43,36 @@ export default function ContactPage() {
       setFormData({ name: '', email: '', phone: '', subject: '', message: '' });
     }, 3000);
   };
+
+  const contactCards = [
+    {
+      icon: <Phone className="w-6 h-6 text-white" />,
+      bg: 'bg-green-500',
+      containerBg: 'bg-gradient-to-br from-green-50 to-emerald-50 border-2 border-green-100',
+      title: 'الهاتف',
+      value: contactInfo.contact_phone || defaultContact.contact_phone,
+      sub: contactInfo.contact_hours || defaultContact.contact_hours,
+      dir: 'ltr' as const,
+    },
+    {
+      icon: <Mail className="w-6 h-6 text-white" />,
+      bg: 'bg-blue-500',
+      containerBg: 'bg-gradient-to-br from-blue-50 to-cyan-50 border-2 border-blue-100',
+      title: 'البريد الإلكتروني',
+      value: contactInfo.contact_email || defaultContact.contact_email,
+      sub: 'سنرد خلال 24 ساعة',
+      dir: 'ltr' as const,
+    },
+    {
+      icon: <MapPin className="w-6 h-6 text-white" />,
+      bg: 'bg-amber-500',
+      containerBg: 'bg-gradient-to-br from-amber-50 to-orange-50 border-2 border-amber-100',
+      title: 'الموقع',
+      value: contactInfo.contact_address || defaultContact.contact_address,
+      sub: 'نخدم جميع المناطق',
+      dir: 'rtl' as const,
+    },
+  ];
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
@@ -50,38 +100,18 @@ export default function ContactPage() {
               <div className="space-y-4">
                 <h2 className="text-xl font-bold text-gray-900 mb-4">معلومات التواصل</h2>
 
-                <div className="flex items-start gap-4 p-4 bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl border-2 border-green-100">
-                  <div className="w-12 h-12 bg-green-500 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <Phone className="w-6 h-6 text-white" />
+                {contactCards.map((card, i) => (
+                  <div key={i} className={`flex items-start gap-4 p-4 ${card.containerBg} rounded-xl`}>
+                    <div className={`w-12 h-12 ${card.bg} rounded-lg flex items-center justify-center flex-shrink-0`}>
+                      {card.icon}
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-gray-900 mb-1">{card.title}</h3>
+                      <p className="text-gray-600" dir={card.dir}>{card.value}</p>
+                      <p className="text-sm text-gray-500 mt-1">{card.sub}</p>
+                    </div>
                   </div>
-                  <div>
-                    <h3 className="font-bold text-gray-900 mb-1">الهاتف</h3>
-                    <p className="text-gray-600" dir="ltr">+966 50 000 0000</p>
-                    <p className="text-sm text-gray-500 mt-1">متاح من 9 صباحاً - 9 مساءً</p>
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-4 p-4 bg-gradient-to-br from-blue-50 to-cyan-50 rounded-xl border-2 border-blue-100">
-                  <div className="w-12 h-12 bg-blue-500 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <Mail className="w-6 h-6 text-white" />
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-gray-900 mb-1">البريد الإلكتروني</h3>
-                    <p className="text-gray-600">info@scrapmarket.sa</p>
-                    <p className="text-sm text-gray-500 mt-1">سنرد خلال 24 ساعة</p>
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-4 p-4 bg-gradient-to-br from-amber-50 to-orange-50 rounded-xl border-2 border-amber-100">
-                  <div className="w-12 h-12 bg-amber-500 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <MapPin className="w-6 h-6 text-white" />
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-gray-900 mb-1">الموقع</h3>
-                    <p className="text-gray-600">المملكة العربية السعودية</p>
-                    <p className="text-sm text-gray-500 mt-1">نخدم جميع المناطق</p>
-                  </div>
-                </div>
+                ))}
               </div>
 
               <div>
@@ -97,69 +127,31 @@ export default function ContactPage() {
                   </div>
                 ) : (
                   <form onSubmit={handleSubmit} className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-bold text-gray-700 mb-2">
-                        الاسم
-                      </label>
-                      <input
-                        type="text"
-                        value={formData.name}
-                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                        required
-                        className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all outline-none"
-                        placeholder="أدخل اسمك"
-                      />
-                    </div>
+                    {[
+                      { label: 'الاسم', field: 'name', type: 'text', placeholder: 'أدخل اسمك', required: true, dir: 'rtl' },
+                      { label: 'البريد الإلكتروني', field: 'email', type: 'email', placeholder: 'example@email.com', required: true, dir: 'ltr' },
+                      { label: 'رقم الجوال', field: 'phone', type: 'tel', placeholder: '05xxxxxxxx', required: false, dir: 'ltr' },
+                      { label: 'الموضوع', field: 'subject', type: 'text', placeholder: 'ما هو موضوع رسالتك؟', required: true, dir: 'rtl' },
+                    ].map(f => (
+                      <div key={f.field}>
+                        <label className="block text-sm font-bold text-gray-700 mb-2">{f.label}</label>
+                        <input
+                          type={f.type}
+                          value={(formData as any)[f.field]}
+                          onChange={e => setFormData({ ...formData, [f.field]: e.target.value })}
+                          required={f.required}
+                          dir={f.dir as any}
+                          placeholder={f.placeholder}
+                          className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all outline-none"
+                        />
+                      </div>
+                    ))}
 
                     <div>
-                      <label className="block text-sm font-bold text-gray-700 mb-2">
-                        البريد الإلكتروني
-                      </label>
-                      <input
-                        type="email"
-                        value={formData.email}
-                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                        required
-                        className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all outline-none"
-                        placeholder="example@email.com"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-bold text-gray-700 mb-2">
-                        رقم الجوال
-                      </label>
-                      <input
-                        type="tel"
-                        value={formData.phone}
-                        onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                        className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all outline-none"
-                        placeholder="05xxxxxxxx"
-                        dir="ltr"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-bold text-gray-700 mb-2">
-                        الموضوع
-                      </label>
-                      <input
-                        type="text"
-                        value={formData.subject}
-                        onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
-                        required
-                        className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all outline-none"
-                        placeholder="ما هو موضوع رسالتك؟"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-bold text-gray-700 mb-2">
-                        الرسالة
-                      </label>
+                      <label className="block text-sm font-bold text-gray-700 mb-2">الرسالة</label>
                       <textarea
                         value={formData.message}
-                        onChange={(e) => setFormData({ ...formData, message: e.target.value })}
+                        onChange={e => setFormData({ ...formData, message: e.target.value })}
                         required
                         rows={6}
                         className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all outline-none resize-none"

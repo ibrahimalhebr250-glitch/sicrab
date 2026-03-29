@@ -1,6 +1,63 @@
+import { useEffect, useState } from 'react';
 import { ArrowRight, Shield, AlertCircle, CheckCircle, FileText } from 'lucide-react';
+import { supabase } from '../lib/supabase';
 
 export default function TermsOfService() {
+  const [termsContent, setTermsContent] = useState('');
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    supabase
+      .from('site_settings')
+      .select('terms_content')
+      .maybeSingle()
+      .then(({ data }) => {
+        setTermsContent(data?.terms_content || '');
+        setLoading(false);
+      });
+  }, []);
+
+  const hasCustomContent = termsContent && termsContent.trim().length > 0;
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 pb-20 flex items-center justify-center">
+        <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (hasCustomContent) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 pb-20">
+        <div className="bg-gradient-to-r from-blue-600 to-teal-600 text-white px-4 py-6 sticky top-0 z-10 shadow-lg">
+          <div className="max-w-4xl mx-auto">
+            <button onClick={() => window.history.back()} className="flex items-center gap-2 mb-4 hover:opacity-80 transition-opacity">
+              <ArrowRight className="w-5 h-5" />
+              <span>رجوع</span>
+            </button>
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center">
+                <FileText className="w-6 h-6" />
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold">سياسة الاستخدام والعمولة</h1>
+                <p className="text-blue-100 text-sm mt-1">يُرجى قراءة السياسة بعناية قبل استخدام المنصة</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="max-w-4xl mx-auto px-4 py-8">
+          <div className="bg-white rounded-2xl shadow-lg p-8">
+            <div className="text-gray-700 leading-relaxed whitespace-pre-line text-right">
+              {termsContent}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 pb-20">
       <div className="bg-gradient-to-r from-blue-600 to-teal-600 text-white px-4 py-6 sticky top-0 z-10 shadow-lg">

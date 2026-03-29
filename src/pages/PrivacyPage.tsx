@@ -1,10 +1,63 @@
+import { useEffect, useState } from 'react';
 import { ArrowRight, Shield, Lock, Eye, Database, UserCheck } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import BottomNav from '../components/BottomNav';
+import { supabase } from '../lib/supabase';
+
+const DEFAULT_CONTENT = `نحن في سوق المشاتل نلتزم بحماية خصوصيتك وأمان بياناتك. توضح هذه السياسة كيفية جمع واستخدام وحماية معلوماتك الشخصية.
+
+المعلومات التي نجمعها:
+• الاسم الكامل
+• رقم الجوال
+• عنوان البريد الإلكتروني
+• الصورة الشخصية (اختياري)
+• تفاصيل المنتجات والنباتات المعروضة
+• الأسعار والكميات
+• الصور والوصف
+• الموقع الجغرافي
+
+كيف نستخدم معلوماتك:
+• توفير وتحسين خدماتنا
+• التواصل معك بخصوص حسابك وإعلاناتك
+• معالجة المعاملات والمدفوعات
+• حماية المنصة من الاحتيال والإساءة
+• إرسال إشعارات مهمة وتحديثات
+• تحليل الاستخدام لتحسين التجربة
+
+حماية معلوماتك:
+• تشفير البيانات باستخدام SSL/TLS
+• تخزين آمن للبيانات في خوادم محمية
+• مراقبة مستمرة لأي أنشطة مشبوهة
+• وصول محدود للبيانات الشخصية
+
+حقوقك:
+• الوصول إلى معلوماتك الشخصية
+• تصحيح أو تحديث معلوماتك
+• حذف حسابك ومعلوماتك
+• الاعتراض على معالجة بياناتك
+• تصدير بياناتك
+
+لا نبيع أو نؤجر معلوماتك الشخصية لأطراف ثالثة.`;
 
 export default function PrivacyPage() {
+  const [privacyContent, setPrivacyContent] = useState('');
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    supabase
+      .from('site_settings')
+      .select('privacy_content')
+      .maybeSingle()
+      .then(({ data }) => {
+        setPrivacyContent(data?.privacy_content || DEFAULT_CONTENT);
+        setLoading(false);
+      });
+  }, []);
+
+  const hasCustomContent = privacyContent && privacyContent.trim().length > 0;
+
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <Header />
@@ -23,179 +76,105 @@ export default function PrivacyPage() {
               </div>
               <div>
                 <h1 className="text-3xl font-bold text-gray-900">سياسة الخصوصية</h1>
-                <p className="text-gray-600">آخر تحديث: مارس 2024</p>
+                <p className="text-gray-600">آخر تحديث: مارس 2026</p>
               </div>
             </div>
 
-            <div className="prose prose-lg max-w-none text-right">
-              <div className="bg-blue-50 border-2 border-blue-100 rounded-xl p-6 mb-8">
-                <p className="text-gray-700 mb-0">
-                  نحن في سوق المشاتل نلتزم بحماية خصوصيتك وأمان بياناتك. توضح هذه السياسة كيفية
-                  جمع واستخدام وحماية معلوماتك الشخصية.
-                </p>
+            {loading ? (
+              <div className="animate-pulse space-y-3">
+                {[1,2,3,4,5].map(i => <div key={i} className="h-4 bg-gray-100 rounded-lg" />)}
               </div>
+            ) : hasCustomContent ? (
+              <div className="prose prose-lg max-w-none text-right">
+                <div className="text-gray-700 leading-relaxed whitespace-pre-line">
+                  {privacyContent}
+                </div>
+              </div>
+            ) : (
+              <div className="prose prose-lg max-w-none text-right">
+                <div className="bg-blue-50 border-2 border-blue-100 rounded-xl p-6 mb-8">
+                  <p className="text-gray-700 mb-0">
+                    نحن في سوق المشاتل نلتزم بحماية خصوصيتك وأمان بياناتك. توضح هذه السياسة كيفية
+                    جمع واستخدام وحماية معلوماتك الشخصية.
+                  </p>
+                </div>
 
-              <h2 className="text-2xl font-bold text-gray-900 mt-8 mb-4 flex items-center gap-3">
-                <Database className="w-7 h-7 text-blue-600" />
-                المعلومات التي نجمعها
-              </h2>
-              <div className="space-y-4">
-                <div className="bg-gray-50 rounded-xl p-5 border-2 border-gray-100">
-                  <h3 className="font-bold text-gray-900 text-lg mb-2">معلومات الحساب</h3>
-                  <ul className="space-y-2 text-gray-700 mr-4">
-                    <li>• الاسم الكامل</li>
-                    <li>• رقم الجوال</li>
-                    <li>• عنوان البريد الإلكتروني</li>
-                    <li>• الصورة الشخصية (اختياري)</li>
+                <h2 className="text-2xl font-bold text-gray-900 mt-8 mb-4 flex items-center gap-3">
+                  <Database className="w-7 h-7 text-blue-600" />
+                  المعلومات التي نجمعها
+                </h2>
+                <div className="space-y-4">
+                  <div className="bg-gray-50 rounded-xl p-5 border-2 border-gray-100">
+                    <h3 className="font-bold text-gray-900 text-lg mb-2">معلومات الحساب</h3>
+                    <ul className="space-y-2 text-gray-700 mr-4">
+                      <li>• الاسم الكامل</li>
+                      <li>• رقم الجوال</li>
+                      <li>• عنوان البريد الإلكتروني</li>
+                      <li>• الصورة الشخصية (اختياري)</li>
+                    </ul>
+                  </div>
+                  <div className="bg-gray-50 rounded-xl p-5 border-2 border-gray-100">
+                    <h3 className="font-bold text-gray-900 text-lg mb-2">معلومات الإعلانات</h3>
+                    <ul className="space-y-2 text-gray-700 mr-4">
+                      <li>• تفاصيل المنتجات والنباتات المعروضة</li>
+                      <li>• الأسعار والكميات</li>
+                      <li>• الصور والوصف</li>
+                      <li>• الموقع الجغرافي</li>
+                    </ul>
+                  </div>
+                </div>
+
+                <h2 className="text-2xl font-bold text-gray-900 mt-8 mb-4 flex items-center gap-3">
+                  <Eye className="w-7 h-7 text-green-600" />
+                  كيف نستخدم معلوماتك
+                </h2>
+                <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-6 border-2 border-green-100">
+                  <ul className="space-y-3 text-gray-700">
+                    {['توفير وتحسين خدماتنا','التواصل معك بخصوص حسابك وإعلاناتك','معالجة المعاملات والمدفوعات','حماية المنصة من الاحتيال والإساءة','إرسال إشعارات مهمة وتحديثات'].map((item, i) => (
+                      <li key={i} className="flex items-start gap-3">
+                        <span className="w-2 h-2 bg-green-500 rounded-full mt-2 flex-shrink-0"></span>
+                        <span>{item}</span>
+                      </li>
+                    ))}
                   </ul>
                 </div>
 
-                <div className="bg-gray-50 rounded-xl p-5 border-2 border-gray-100">
-                  <h3 className="font-bold text-gray-900 text-lg mb-2">معلومات الإعلانات</h3>
-                  <ul className="space-y-2 text-gray-700 mr-4">
-                    <li>• تفاصيل المنتجات والنباتات المعروضة</li>
-                    <li>• الأسعار والكميات</li>
-                    <li>• الصور والوصف</li>
-                    <li>• الموقع الجغرافي</li>
+                <h2 className="text-2xl font-bold text-gray-900 mt-8 mb-4 flex items-center gap-3">
+                  <Lock className="w-7 h-7 text-amber-600" />
+                  حماية معلوماتك
+                </h2>
+                <div className="bg-gradient-to-br from-amber-50 to-orange-50 rounded-xl p-6 border-2 border-amber-100">
+                  <ul className="space-y-3 text-gray-700">
+                    {['تشفير البيانات باستخدام SSL/TLS','تخزين آمن للبيانات في خوادم محمية','مراقبة مستمرة لأي أنشطة مشبوهة','وصول محدود للبيانات الشخصية'].map((item, i) => (
+                      <li key={i} className="flex items-start gap-3">
+                        <span className="w-2 h-2 bg-amber-500 rounded-full mt-2 flex-shrink-0"></span>
+                        <span>{item}</span>
+                      </li>
+                    ))}
                   </ul>
                 </div>
 
-                <div className="bg-gray-50 rounded-xl p-5 border-2 border-gray-100">
-                  <h3 className="font-bold text-gray-900 text-lg mb-2">معلومات الاستخدام</h3>
-                  <ul className="space-y-2 text-gray-700 mr-4">
-                    <li>• عنوان IP</li>
-                    <li>• نوع المتصفح والجهاز</li>
-                    <li>• الصفحات المزارة</li>
-                    <li>• وقت وتاريخ الزيارة</li>
+                <h2 className="text-2xl font-bold text-gray-900 mt-8 mb-4 flex items-center gap-3">
+                  <UserCheck className="w-7 h-7 text-blue-600" />
+                  حقوقك
+                </h2>
+                <div className="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-xl p-6 border-2 border-blue-100">
+                  <ul className="space-y-3 text-gray-700">
+                    {['الوصول إلى معلوماتك الشخصية','تصحيح أو تحديث معلوماتك','حذف حسابك ومعلوماتك','الاعتراض على معالجة بياناتك','تصدير بياناتك'].map((item, i) => (
+                      <li key={i} className="flex items-start gap-3">
+                        <span className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></span>
+                        <span>{item}</span>
+                      </li>
+                    ))}
                   </ul>
                 </div>
-              </div>
 
-              <h2 className="text-2xl font-bold text-gray-900 mt-8 mb-4 flex items-center gap-3">
-                <Eye className="w-7 h-7 text-green-600" />
-                كيف نستخدم معلوماتك
-              </h2>
-              <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-6 border-2 border-green-100">
-                <ul className="space-y-3 text-gray-700">
-                  <li className="flex items-start gap-3">
-                    <span className="w-2 h-2 bg-green-500 rounded-full mt-2 flex-shrink-0"></span>
-                    <span>توفير وتحسين خدماتنا</span>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <span className="w-2 h-2 bg-green-500 rounded-full mt-2 flex-shrink-0"></span>
-                    <span>التواصل معك بخصوص حسابك وإعلاناتك</span>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <span className="w-2 h-2 bg-green-500 rounded-full mt-2 flex-shrink-0"></span>
-                    <span>معالجة المعاملات والمدفوعات</span>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <span className="w-2 h-2 bg-green-500 rounded-full mt-2 flex-shrink-0"></span>
-                    <span>حماية المنصة من الاحتيال والإساءة</span>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <span className="w-2 h-2 bg-green-500 rounded-full mt-2 flex-shrink-0"></span>
-                    <span>إرسال إشعارات مهمة وتحديثات</span>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <span className="w-2 h-2 bg-green-500 rounded-full mt-2 flex-shrink-0"></span>
-                    <span>تحليل الاستخدام لتحسين التجربة</span>
-                  </li>
-                </ul>
-              </div>
-
-              <h2 className="text-2xl font-bold text-gray-900 mt-8 mb-4 flex items-center gap-3">
-                <Lock className="w-7 h-7 text-amber-600" />
-                حماية معلوماتك
-              </h2>
-              <div className="bg-gradient-to-br from-amber-50 to-orange-50 rounded-xl p-6 border-2 border-amber-100">
-                <p className="text-gray-700 mb-4">
-                  نتخذ إجراءات أمنية صارمة لحماية بياناتك:
+                <h2 className="text-2xl font-bold text-gray-900 mt-8 mb-4">مشاركة المعلومات</h2>
+                <p className="text-gray-700 leading-relaxed">
+                  لا نبيع أو نؤجر معلوماتك الشخصية لأطراف ثالثة.
                 </p>
-                <ul className="space-y-3 text-gray-700">
-                  <li className="flex items-start gap-3">
-                    <span className="w-2 h-2 bg-amber-500 rounded-full mt-2 flex-shrink-0"></span>
-                    <span>تشفير البيانات باستخدام SSL/TLS</span>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <span className="w-2 h-2 bg-amber-500 rounded-full mt-2 flex-shrink-0"></span>
-                    <span>تخزين آمن للبيانات في خوادم محمية</span>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <span className="w-2 h-2 bg-amber-500 rounded-full mt-2 flex-shrink-0"></span>
-                    <span>مراقبة مستمرة لأي أنشطة مشبوهة</span>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <span className="w-2 h-2 bg-amber-500 rounded-full mt-2 flex-shrink-0"></span>
-                    <span>وصول محدود للبيانات الشخصية</span>
-                  </li>
-                </ul>
               </div>
-
-              <h2 className="text-2xl font-bold text-gray-900 mt-8 mb-4 flex items-center gap-3">
-                <UserCheck className="w-7 h-7 text-purple-600" />
-                حقوقك
-              </h2>
-              <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl p-6 border-2 border-purple-100">
-                <p className="text-gray-700 mb-4">
-                  لديك الحق في:
-                </p>
-                <ul className="space-y-3 text-gray-700">
-                  <li className="flex items-start gap-3">
-                    <span className="w-2 h-2 bg-purple-500 rounded-full mt-2 flex-shrink-0"></span>
-                    <span>الوصول إلى معلوماتك الشخصية</span>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <span className="w-2 h-2 bg-purple-500 rounded-full mt-2 flex-shrink-0"></span>
-                    <span>تصحيح أو تحديث معلوماتك</span>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <span className="w-2 h-2 bg-purple-500 rounded-full mt-2 flex-shrink-0"></span>
-                    <span>حذف حسابك ومعلوماتك</span>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <span className="w-2 h-2 bg-purple-500 rounded-full mt-2 flex-shrink-0"></span>
-                    <span>الاعتراض على معالجة بياناتك</span>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <span className="w-2 h-2 bg-purple-500 rounded-full mt-2 flex-shrink-0"></span>
-                    <span>تصدير بياناتك</span>
-                  </li>
-                </ul>
-              </div>
-
-              <h2 className="text-2xl font-bold text-gray-900 mt-8 mb-4">مشاركة المعلومات</h2>
-              <p className="text-gray-700 leading-relaxed mb-4">
-                لا نبيع أو نؤجر معلوماتك الشخصية لأطراف ثالثة. قد نشارك معلوماتك فقط في الحالات التالية:
-              </p>
-              <ul className="space-y-2 text-gray-700 mr-4">
-                <li>• مع مقدمي الخدمات الموثوقين الذين يساعدوننا في تشغيل المنصة</li>
-                <li>• عند الطلب القانوني من الجهات المختصة</li>
-                <li>• لحماية حقوقنا وأمان المستخدمين</li>
-                <li>• بموافقتك الصريحة</li>
-              </ul>
-
-              <h2 className="text-2xl font-bold text-gray-900 mt-8 mb-4">ملفات تعريف الارتباط (Cookies)</h2>
-              <p className="text-gray-700 leading-relaxed mb-4">
-                نستخدم ملفات تعريف الارتباط لتحسين تجربتك على المنصة. يمكنك التحكم في هذه الملفات من
-                إعدادات متصفحك.
-              </p>
-
-              <h2 className="text-2xl font-bold text-gray-900 mt-8 mb-4">التغييرات على سياسة الخصوصية</h2>
-              <p className="text-gray-700 leading-relaxed mb-4">
-                قد نقوم بتحديث هذه السياسة من وقت لآخر. سنخطرك بأي تغييرات مهمة عبر البريد الإلكتروني
-                أو إشعار على المنصة.
-              </p>
-
-              <div className="bg-gradient-to-r from-blue-500 to-cyan-500 rounded-xl p-6 text-white mt-8">
-                <h3 className="font-bold text-xl mb-2">تواصل معنا</h3>
-                <p className="mb-4">
-                  إذا كان لديك أي أسئلة حول سياسة الخصوصية، يرجى التواصل معنا:
-                </p>
-                <p>البريد الإلكتروني: privacy@scrapmarket.sa</p>
-                <p dir="ltr">الهاتف: +966 50 000 0000</p>
-              </div>
-            </div>
+            )}
           </div>
         </div>
       </main>
