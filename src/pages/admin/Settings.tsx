@@ -119,10 +119,15 @@ export default function AdminSettings() {
 
   const [saveSuccess, setSaveSuccess] = useState(false);
 
+  const [footerAboutText, setFooterAboutText] = useState('');
+  const [footerAboutSaving, setFooterAboutSaving] = useState(false);
+  const [siteSettingsId, setSiteSettingsId] = useState<string | null>(null);
+
   useEffect(() => {
     loadSettings();
     loadBankAccount();
     loadFooterLinks();
+    loadFooterAboutText();
   }, []);
 
   useEffect(() => {
@@ -161,6 +166,41 @@ export default function AdminSettings() {
       .order('sort_order');
     setFooterLinks(data || []);
     setFooterLinksLoading(false);
+  }
+
+  async function loadFooterAboutText() {
+    const { data } = await supabase.from('site_settings').select('id, footer_about_text').maybeSingle();
+    if (data) {
+      setSiteSettingsId(data.id);
+      setFooterAboutText(data.footer_about_text || '');
+    }
+  }
+
+  async function handleSaveFooterAboutText() {
+    setFooterAboutSaving(true);
+    try {
+      if (siteSettingsId) {
+        const { error } = await supabase
+          .from('site_settings')
+          .update({ footer_about_text: footerAboutText, updated_at: new Date().toISOString() })
+          .eq('id', siteSettingsId);
+        if (error) throw error;
+      } else {
+        const { data, error } = await supabase
+          .from('site_settings')
+          .insert({ footer_about_text: footerAboutText })
+          .select('id')
+          .single();
+        if (error) throw error;
+        if (data) setSiteSettingsId(data.id);
+      }
+      showSuccess();
+    } catch (e) {
+      console.error(e);
+      alert('حدث خطأ أثناء الحفظ');
+    } finally {
+      setFooterAboutSaving(false);
+    }
   }
 
   async function loadBankAccount() {
@@ -555,6 +595,36 @@ export default function AdminSettings() {
                 </div>
               );
             })}
+
+            <div className="bg-white rounded-2xl p-6 shadow-xl space-y-4">
+              <div className="flex items-center gap-3 pb-4 border-b border-gray-100">
+                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center">
+                  <FileText className="w-4 h-4 text-white" />
+                </div>
+                <div>
+                  <h3 className="font-black text-gray-900">نص من نحن في الفوتر</h3>
+                  <p className="text-gray-400 text-xs">يظهر في أسفل الموقع كمقدمة قصيرة عن المنصة</p>
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-500 mb-1.5">نص التعريف بالمنصة</label>
+                <textarea
+                  value={footerAboutText}
+                  onChange={e => setFooterAboutText(e.target.value)}
+                  rows={3}
+                  placeholder="مثال: منصة موثوقة لبيع وشراء الأشجار والنباتات والمشاتل في المملكة العربية السعودية."
+                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-amber-400 text-right text-sm resize-none"
+                />
+              </div>
+              <button
+                onClick={handleSaveFooterAboutText}
+                disabled={footerAboutSaving}
+                className="w-full flex items-center justify-center gap-2 py-3.5 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-xl font-bold hover:shadow-lg transition-all disabled:opacity-50"
+              >
+                <Save className="w-5 h-5" />
+                {footerAboutSaving ? 'جاري الحفظ...' : 'حفظ نص من نحن'}
+              </button>
+            </div>
 
             <div className="bg-white rounded-2xl p-6 shadow-xl space-y-4">
               <div className="flex items-center gap-3 pb-4 border-b border-gray-100">
