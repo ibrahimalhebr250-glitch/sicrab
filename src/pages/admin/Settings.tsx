@@ -1,13 +1,28 @@
 import { useEffect, useState } from 'react';
-import { Settings as SettingsIcon, Save, Building2, CreditCard, Eye, EyeOff, CheckCircle, XCircle, Clock, AlertCircle, RefreshCw, Check, X, LayoutGrid as Layout, Mail, Phone, MessageCircle, FileText, HelpCircle } from 'lucide-react';
+import {
+  Settings as SettingsIcon, Save, Building2, CreditCard, Eye, EyeOff,
+  CheckCircle, XCircle, Clock, AlertCircle, RefreshCw, Check, X,
+  LayoutGrid as Layout, Mail, Phone, MessageCircle, FileText, HelpCircle,
+  Plus, Trash2, GripVertical, Link as LinkIcon, ChevronUp, ChevronDown,
+} from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 
 type SettingsTab = 'general' | 'footer' | 'bank' | 'transfers';
+type FooterSection = 'platform' | 'support' | 'policies';
 
 interface PlatformSetting {
   setting_key: string;
   setting_value: any;
   description: string;
+}
+
+interface FooterLink {
+  id: string;
+  section: FooterSection;
+  label: string;
+  url: string;
+  sort_order: number;
+  is_active: boolean;
 }
 
 interface BankAccount {
@@ -36,11 +51,54 @@ interface CommissionTransfer {
   listing_title?: string;
 }
 
+const SECTION_CONFIG: Record<FooterSection, { label: string; color: string; icon: React.ReactNode }> = {
+  platform: {
+    label: 'قسم المنصة',
+    color: 'amber',
+    icon: <Layout className="w-4 h-4" />,
+  },
+  support: {
+    label: 'قسم الدعم',
+    color: 'blue',
+    icon: <HelpCircle className="w-4 h-4" />,
+  },
+  policies: {
+    label: 'قسم السياسات',
+    color: 'emerald',
+    icon: <FileText className="w-4 h-4" />,
+  },
+};
+
+const COLOR_CLASSES: Record<string, { bg: string; border: string; focus: string; badge: string }> = {
+  amber: {
+    bg: 'bg-amber-50',
+    border: 'border-amber-200',
+    focus: 'focus:border-amber-400',
+    badge: 'bg-gradient-to-br from-amber-400 to-orange-500',
+  },
+  blue: {
+    bg: 'bg-blue-50',
+    border: 'border-blue-200',
+    focus: 'focus:border-blue-400',
+    badge: 'bg-gradient-to-br from-blue-400 to-cyan-500',
+  },
+  emerald: {
+    bg: 'bg-emerald-50',
+    border: 'border-emerald-200',
+    focus: 'focus:border-emerald-400',
+    badge: 'bg-gradient-to-br from-emerald-400 to-teal-500',
+  },
+};
+
 export default function AdminSettings() {
   const [tab, setTab] = useState<SettingsTab>('general');
   const [settings, setSettings] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+
+  const [footerLinks, setFooterLinks] = useState<FooterLink[]>([]);
+  const [footerLinksLoading, setFooterLinksLoading] = useState(false);
+  const [footerLinksSaving, setFooterLinksSaving] = useState<Record<string, boolean>>({});
 
   const [bankAccount, setBankAccount] = useState<BankAccount>({
     id: '',
@@ -59,9 +117,12 @@ export default function AdminSettings() {
   const [transfersLoading, setTransfersLoading] = useState(false);
   const [transferFilter, setTransferFilter] = useState<'all' | 'pending' | 'confirmed' | 'rejected'>('all');
 
+  const [saveSuccess, setSaveSuccess] = useState(false);
+
   useEffect(() => {
     loadSettings();
     loadBankAccount();
+    loadFooterLinks();
   }, []);
 
   useEffect(() => {
@@ -70,33 +131,8 @@ export default function AdminSettings() {
 
   async function loadSettings() {
     try {
-      const footerDefaults: Record<string, string> = {
-        footer_about_label: 'من نحن',
-        footer_about_url: '#',
-        footer_how_it_works_label: 'كيف نعمل',
-        footer_how_it_works_url: '#',
-        footer_faq_label: 'الأسئلة الشائعة',
-        footer_faq_url: '#',
-        footer_help_label: 'المساعدة',
-        footer_help_url: '#',
-        footer_contact_label: 'اتصل بنا',
-        footer_contact_url: '#',
-        footer_report_label: 'بلغ عن مخالفة',
-        footer_report_url: '#',
-        footer_usage_policy_label: 'سياسة الاستخدام',
-        footer_usage_policy_url: '#',
-        footer_privacy_label: 'الخصوصية',
-        footer_privacy_url: '#',
-        footer_terms_label: 'الشروط والأحكام',
-        footer_terms_url: '#',
-        footer_email: '',
-        footer_phone: '',
-        footer_whatsapp: '',
-        footer_copyright: '',
-      };
-
       const { data } = await supabase.from('platform_settings').select('setting_key, setting_value');
-      const settingsMap: Record<string, string> = { ...footerDefaults };
+      const settingsMap: Record<string, string> = {};
       data?.forEach((s: PlatformSetting) => {
         let val: string;
         if (typeof s.setting_value === 'string') {
@@ -116,6 +152,17 @@ export default function AdminSettings() {
     }
   }
 
+  async function loadFooterLinks() {
+    setFooterLinksLoading(true);
+    const { data } = await supabase
+      .from('footer_links')
+      .select('*')
+      .order('section')
+      .order('sort_order');
+    setFooterLinks(data || []);
+    setFooterLinksLoading(false);
+  }
+
   async function loadBankAccount() {
     setBankLoading(true);
     const { data } = await supabase.from('platform_bank_account').select('*').limit(1).maybeSingle();
@@ -127,11 +174,7 @@ export default function AdminSettings() {
     setTransfersLoading(true);
     const { data } = await supabase
       .from('commission_transfers')
-      .select(`
-        *,
-        profiles(full_name),
-        commissions(commission_amount, listings(title))
-      `)
+      .select(`*, profiles(full_name), commissions(commission_amount, listings(title))`)
       .order('created_at', { ascending: false });
 
     const formatted = (data || []).map((t: any) => ({
@@ -165,13 +208,107 @@ export default function AdminSettings() {
         .from('platform_settings')
         .upsert(upsertRows, { onConflict: 'setting_key' });
       if (error) throw error;
-      alert('تم حفظ الإعدادات بنجاح');
+      showSuccess();
     } catch (e) {
       console.error(e);
       alert('حدث خطأ أثناء حفظ الإعدادات');
     } finally {
       setSaving(false);
     }
+  }
+
+  function showSuccess() {
+    setSaveSuccess(true);
+    setTimeout(() => setSaveSuccess(false), 2500);
+  }
+
+  async function handleSaveContactSettings() {
+    setSaving(true);
+    try {
+      const contactKeys = ['footer_email', 'footer_phone', 'footer_whatsapp', 'footer_copyright'];
+      const upsertRows = contactKeys.map(key => ({
+        setting_key: key,
+        setting_value: settings[key] || '',
+        updated_at: new Date().toISOString(),
+      }));
+      const { error } = await supabase
+        .from('platform_settings')
+        .upsert(upsertRows, { onConflict: 'setting_key' });
+      if (error) throw error;
+      showSuccess();
+    } catch (e) {
+      console.error(e);
+      alert('حدث خطأ أثناء حفظ بيانات التواصل');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleAddLink(section: FooterSection) {
+    const maxOrder = footerLinks
+      .filter(l => l.section === section)
+      .reduce((m, l) => Math.max(m, l.sort_order), 0);
+
+    const { data, error } = await supabase
+      .from('footer_links')
+      .insert({ section, label: 'رابط جديد', url: '#', sort_order: maxOrder + 1, is_active: true })
+      .select()
+      .single();
+
+    if (!error && data) {
+      setFooterLinks(prev => [...prev, data]);
+    }
+  }
+
+  async function handleDeleteLink(id: string) {
+    if (!confirm('هل أنت متأكد من حذف هذا الرابط؟')) return;
+    const { error } = await supabase.from('footer_links').delete().eq('id', id);
+    if (!error) {
+      setFooterLinks(prev => prev.filter(l => l.id !== id));
+    }
+  }
+
+  async function handleUpdateLink(link: FooterLink) {
+    setFooterLinksSaving(prev => ({ ...prev, [link.id]: true }));
+    const { error } = await supabase
+      .from('footer_links')
+      .update({ label: link.label, url: link.url, is_active: link.is_active, updated_at: new Date().toISOString() })
+      .eq('id', link.id);
+
+    if (!error) {
+      setFooterLinks(prev => prev.map(l => l.id === link.id ? link : l));
+    }
+    setFooterLinksSaving(prev => ({ ...prev, [link.id]: false }));
+  }
+
+  async function handleMoveLink(id: string, direction: 'up' | 'down', section: FooterSection) {
+    const sectionLinks = footerLinks
+      .filter(l => l.section === section)
+      .sort((a, b) => a.sort_order - b.sort_order);
+
+    const idx = sectionLinks.findIndex(l => l.id === id);
+    const swapIdx = direction === 'up' ? idx - 1 : idx + 1;
+    if (swapIdx < 0 || swapIdx >= sectionLinks.length) return;
+
+    const current = sectionLinks[idx];
+    const swap = sectionLinks[swapIdx];
+    const newOrder1 = swap.sort_order;
+    const newOrder2 = current.sort_order;
+
+    await Promise.all([
+      supabase.from('footer_links').update({ sort_order: newOrder1 }).eq('id', current.id),
+      supabase.from('footer_links').update({ sort_order: newOrder2 }).eq('id', swap.id),
+    ]);
+
+    setFooterLinks(prev => prev.map(l => {
+      if (l.id === current.id) return { ...l, sort_order: newOrder1 };
+      if (l.id === swap.id) return { ...l, sort_order: newOrder2 };
+      return l;
+    }));
+  }
+
+  function updateLinkField(id: string, field: keyof FooterLink, value: any) {
+    setFooterLinks(prev => prev.map(l => l.id === id ? { ...l, [field]: value } : l));
   }
 
   async function handleSaveBankAccount() {
@@ -198,7 +335,7 @@ export default function AdminSettings() {
         }).select().single();
         if (data) setBankAccount(data);
       }
-      alert('تم حفظ بيانات الحساب البنكي بنجاح');
+      showSuccess();
     } catch (e) {
       alert('حدث خطأ أثناء حفظ الحساب البنكي');
     } finally {
@@ -225,6 +362,9 @@ export default function AdminSettings() {
   const filteredTransfers = transfers.filter(t => transferFilter === 'all' || t.status === transferFilter);
   const pendingCount = transfers.filter(t => t.status === 'pending').length;
 
+  const getSectionLinks = (section: FooterSection) =>
+    footerLinks.filter(l => l.section === section).sort((a, b) => a.sort_order - b.sort_order);
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-800 p-6">
@@ -247,6 +387,12 @@ export default function AdminSettings() {
             <h1 className="text-3xl font-black text-white">إعدادات المنصة</h1>
             <p className="text-slate-400 text-sm">إدارة الإعدادات العامة والبنكية</p>
           </div>
+          {saveSuccess && (
+            <div className="mr-auto flex items-center gap-2 bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 px-4 py-2 rounded-xl text-sm font-bold animate-pulse">
+              <CheckCircle className="w-4 h-4" />
+              تم الحفظ بنجاح
+            </div>
+          )}
         </div>
 
         <div className="flex flex-wrap gap-2 mb-6 bg-white/5 rounded-2xl p-1.5">
@@ -353,125 +499,62 @@ export default function AdminSettings() {
         {tab === 'footer' && (
           <div className="space-y-5">
 
-            <div className="bg-white rounded-2xl p-6 shadow-xl space-y-5">
-              <div className="flex items-center gap-3 pb-4 border-b border-gray-100">
-                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center">
-                  <Layout className="w-4 h-4 text-white" />
-                </div>
-                <div>
-                  <h3 className="font-black text-gray-900">قسم المنصة</h3>
-                  <p className="text-gray-400 text-xs">روابط تظهر في عمود المنصة بالفوتر</p>
-                </div>
-              </div>
-              {[
-                { labelKey: 'footer_about_label', urlKey: 'footer_about_url', defaultLabel: 'من نحن' },
-                { labelKey: 'footer_how_it_works_label', urlKey: 'footer_how_it_works_url', defaultLabel: 'كيف نعمل' },
-                { labelKey: 'footer_faq_label', urlKey: 'footer_faq_url', defaultLabel: 'الأسئلة الشائعة' },
-              ].map(({ labelKey, urlKey, defaultLabel }) => (
-                <div key={urlKey} className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-xs font-bold text-gray-500 mb-1.5">النص</label>
-                    <input
-                      type="text"
-                      value={settings[labelKey] !== undefined ? settings[labelKey] : defaultLabel}
-                      onChange={e => setSettings({ ...settings, [labelKey]: e.target.value })}
-                      className="w-full px-3 py-2.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-amber-400 text-sm"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold text-gray-500 mb-1.5">الرابط</label>
-                    <input
-                      type="text"
-                      value={settings[urlKey] || ''}
-                      onChange={e => setSettings({ ...settings, [urlKey]: e.target.value })}
-                      placeholder="/about"
-                      className="w-full px-3 py-2.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-amber-400 text-sm"
-                      dir="ltr"
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
+            {(['platform', 'support', 'policies'] as FooterSection[]).map(section => {
+              const config = SECTION_CONFIG[section];
+              const colors = COLOR_CLASSES[config.color];
+              const links = getSectionLinks(section);
 
-            <div className="bg-white rounded-2xl p-6 shadow-xl space-y-5">
-              <div className="flex items-center gap-3 pb-4 border-b border-gray-100">
-                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-400 to-cyan-500 flex items-center justify-center">
-                  <HelpCircle className="w-4 h-4 text-white" />
-                </div>
-                <div>
-                  <h3 className="font-black text-gray-900">قسم الدعم</h3>
-                  <p className="text-gray-400 text-xs">روابط تظهر في عمود الدعم بالفوتر</p>
-                </div>
-              </div>
-              {[
-                { labelKey: 'footer_help_label', urlKey: 'footer_help_url', defaultLabel: 'المساعدة' },
-                { labelKey: 'footer_contact_label', urlKey: 'footer_contact_url', defaultLabel: 'اتصل بنا' },
-                { labelKey: 'footer_report_label', urlKey: 'footer_report_url', defaultLabel: 'بلغ عن مخالفة' },
-              ].map(({ labelKey, urlKey, defaultLabel }) => (
-                <div key={urlKey} className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-xs font-bold text-gray-500 mb-1.5">النص</label>
-                    <input
-                      type="text"
-                      value={settings[labelKey] !== undefined ? settings[labelKey] : defaultLabel}
-                      onChange={e => setSettings({ ...settings, [labelKey]: e.target.value })}
-                      className="w-full px-3 py-2.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-blue-400 text-sm"
-                    />
+              return (
+                <div key={section} className="bg-white rounded-2xl shadow-xl overflow-hidden">
+                  <div className={`flex items-center justify-between px-6 py-4 border-b border-gray-100 ${colors.bg}`}>
+                    <button
+                      onClick={() => handleAddLink(section)}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-bold transition-all border-2 ${colors.border} text-gray-700 hover:bg-white`}
+                    >
+                      <Plus className="w-4 h-4" />
+                      إضافة رابط
+                    </button>
+                    <div className="flex items-center gap-3">
+                      <div>
+                        <h3 className="font-black text-gray-900 text-right">{config.label}</h3>
+                        <p className="text-gray-400 text-xs text-right">{links.length} رابط</p>
+                      </div>
+                      <div className={`w-9 h-9 rounded-xl ${colors.badge} flex items-center justify-center text-white`}>
+                        {config.icon}
+                      </div>
+                    </div>
                   </div>
-                  <div>
-                    <label className="block text-xs font-bold text-gray-500 mb-1.5">الرابط</label>
-                    <input
-                      type="text"
-                      value={settings[urlKey] || ''}
-                      onChange={e => setSettings({ ...settings, [urlKey]: e.target.value })}
-                      placeholder="/contact"
-                      className="w-full px-3 py-2.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-blue-400 text-sm"
-                      dir="ltr"
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
 
-            <div className="bg-white rounded-2xl p-6 shadow-xl space-y-5">
-              <div className="flex items-center gap-3 pb-4 border-b border-gray-100">
-                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center">
-                  <FileText className="w-4 h-4 text-white" />
+                  {footerLinksLoading ? (
+                    <div className="p-6 space-y-3">
+                      {[1, 2, 3].map(i => <div key={i} className="h-14 bg-gray-100 rounded-xl animate-pulse" />)}
+                    </div>
+                  ) : links.length === 0 ? (
+                    <div className="p-8 text-center">
+                      <LinkIcon className="w-8 h-8 text-gray-300 mx-auto mb-2" />
+                      <p className="text-gray-400 text-sm">لا توجد روابط. اضغط "إضافة رابط" لإضافة أول رابط.</p>
+                    </div>
+                  ) : (
+                    <div className="divide-y divide-gray-50">
+                      {links.map((link, idx) => (
+                        <FooterLinkRow
+                          key={link.id}
+                          link={link}
+                          idx={idx}
+                          total={links.length}
+                          colors={colors}
+                          saving={!!footerLinksSaving[link.id]}
+                          onUpdate={handleUpdateLink}
+                          onDelete={handleDeleteLink}
+                          onMove={(id, dir) => handleMoveLink(id, dir, section)}
+                          onChange={updateLinkField}
+                        />
+                      ))}
+                    </div>
+                  )}
                 </div>
-                <div>
-                  <h3 className="font-black text-gray-900">قسم السياسات</h3>
-                  <p className="text-gray-400 text-xs">روابط تظهر في عمود السياسات بالفوتر</p>
-                </div>
-              </div>
-              {[
-                { labelKey: 'footer_usage_policy_label', urlKey: 'footer_usage_policy_url', defaultLabel: 'سياسة الاستخدام' },
-                { labelKey: 'footer_privacy_label', urlKey: 'footer_privacy_url', defaultLabel: 'الخصوصية' },
-                { labelKey: 'footer_terms_label', urlKey: 'footer_terms_url', defaultLabel: 'الشروط والأحكام' },
-              ].map(({ labelKey, urlKey, defaultLabel }) => (
-                <div key={urlKey} className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-xs font-bold text-gray-500 mb-1.5">النص</label>
-                    <input
-                      type="text"
-                      value={settings[labelKey] !== undefined ? settings[labelKey] : defaultLabel}
-                      onChange={e => setSettings({ ...settings, [labelKey]: e.target.value })}
-                      className="w-full px-3 py-2.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-emerald-400 text-sm"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold text-gray-500 mb-1.5">الرابط</label>
-                    <input
-                      type="text"
-                      value={settings[urlKey] || ''}
-                      onChange={e => setSettings({ ...settings, [urlKey]: e.target.value })}
-                      placeholder="/privacy"
-                      className="w-full px-3 py-2.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-emerald-400 text-sm"
-                      dir="ltr"
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
+              );
+            })}
 
             <div className="bg-white rounded-2xl p-6 shadow-xl space-y-4">
               <div className="flex items-center gap-3 pb-4 border-b border-gray-100">
@@ -539,16 +622,15 @@ export default function AdminSettings() {
                   />
                 </div>
               </div>
+              <button
+                onClick={handleSaveContactSettings}
+                disabled={saving}
+                className="w-full flex items-center justify-center gap-2 py-3.5 bg-gradient-to-r from-rose-500 to-pink-600 text-white rounded-xl font-bold hover:shadow-lg transition-all disabled:opacity-50"
+              >
+                <Save className="w-5 h-5" />
+                {saving ? 'جاري الحفظ...' : 'حفظ بيانات التواصل'}
+              </button>
             </div>
-
-            <button
-              onClick={handleSaveSettings}
-              disabled={saving}
-              className="w-full flex items-center justify-center gap-2 py-4 bg-gradient-to-r from-slate-700 to-slate-800 text-white rounded-2xl font-bold hover:shadow-lg transition-all disabled:opacity-50"
-            >
-              <Save className="w-5 h-5" />
-              {saving ? 'جاري الحفظ...' : 'حفظ إعدادات الفوتر'}
-            </button>
           </div>
         )}
 
@@ -729,6 +811,96 @@ export default function AdminSettings() {
             )}
           </div>
         )}
+      </div>
+    </div>
+  );
+}
+
+function FooterLinkRow({
+  link, idx, total, colors, saving,
+  onUpdate, onDelete, onMove, onChange,
+}: {
+  link: FooterLink;
+  idx: number;
+  total: number;
+  colors: { bg: string; border: string; focus: string; badge: string };
+  saving: boolean;
+  onUpdate: (link: FooterLink) => Promise<void>;
+  onDelete: (id: string) => Promise<void>;
+  onMove: (id: string, dir: 'up' | 'down') => void;
+  onChange: (id: string, field: keyof FooterLink, value: any) => void;
+}) {
+  return (
+    <div className="flex items-center gap-3 px-5 py-4 hover:bg-gray-50 transition-all group">
+      <div className="flex flex-col gap-0.5">
+        <button
+          onClick={() => onMove(link.id, 'up')}
+          disabled={idx === 0}
+          className="p-0.5 rounded text-gray-300 hover:text-gray-600 disabled:opacity-20 transition-all"
+        >
+          <ChevronUp className="w-4 h-4" />
+        </button>
+        <button
+          onClick={() => onMove(link.id, 'down')}
+          disabled={idx === total - 1}
+          className="p-0.5 rounded text-gray-300 hover:text-gray-600 disabled:opacity-20 transition-all"
+        >
+          <ChevronDown className="w-4 h-4" />
+        </button>
+      </div>
+
+      <GripVertical className="w-4 h-4 text-gray-300 flex-shrink-0" />
+
+      <div className="flex-1 grid grid-cols-2 gap-3">
+        <div>
+          <label className="block text-xs font-bold text-gray-400 mb-1">النص</label>
+          <input
+            type="text"
+            value={link.label}
+            onChange={e => onChange(link.id, 'label', e.target.value)}
+            className={`w-full px-3 py-2 border-2 border-gray-200 rounded-lg text-sm focus:outline-none ${colors.focus} transition-all`}
+            placeholder="نص الرابط"
+          />
+        </div>
+        <div>
+          <label className="block text-xs font-bold text-gray-400 mb-1">الرابط</label>
+          <input
+            type="text"
+            value={link.url}
+            onChange={e => onChange(link.id, 'url', e.target.value)}
+            className={`w-full px-3 py-2 border-2 border-gray-200 rounded-lg text-sm focus:outline-none ${colors.focus} transition-all`}
+            placeholder="/about"
+            dir="ltr"
+          />
+        </div>
+      </div>
+
+      <div className="flex items-center gap-2 flex-shrink-0">
+        <button
+          type="button"
+          onClick={() => onChange(link.id, 'is_active', !link.is_active)}
+          title={link.is_active ? 'مفعّل' : 'مخفي'}
+          className={`w-9 h-5 rounded-full transition-all relative ${link.is_active ? 'bg-emerald-400' : 'bg-gray-200'}`}
+        >
+          <span className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-all ${link.is_active ? 'left-4' : 'left-0.5'}`} />
+        </button>
+
+        <button
+          onClick={() => onUpdate(link)}
+          disabled={saving}
+          className="p-2 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition-all disabled:opacity-50"
+          title="حفظ"
+        >
+          {saving ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+        </button>
+
+        <button
+          onClick={() => onDelete(link.id)}
+          className="p-2 rounded-lg bg-red-50 text-red-500 hover:bg-red-100 transition-all opacity-0 group-hover:opacity-100"
+          title="حذف"
+        >
+          <Trash2 className="w-4 h-4" />
+        </button>
       </div>
     </div>
   );
